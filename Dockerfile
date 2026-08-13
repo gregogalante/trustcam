@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir torch torchvision --index-url https://download.py
 RUN git clone --depth 1 https://github.com/facebookresearch/videoseal.git /app/videoseal \
     && pip install --no-cache-dir fastapi uvicorn python-multipart numpy Pillow \
        omegaconf einops timm==0.9.16 safetensors requests scipy PyWavelets \
-       pytorch_msssim lpips av opencv-python-headless \
+       pytorch_msssim lpips av opencv-python-headless pycocotools tqdm pandas \
     && pip install --no-cache-dir -e /app/videoseal --no-deps
 
 # Bake the checkpoint (218MB) so cold starts don't download it.
