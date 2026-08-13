@@ -18,12 +18,14 @@ Capture app: CameraX → MediaCodec per-GOP rolling hash → StrongBox ES256 sig
 
 Milestone: a clip that triggers YouTube's "Captured with a camera" label.
 
-## Phase 2 — Recovery service
+## Phase 2 — Recovery service ✅ (server-side variant, 2026-08-13)
 
-- VideoSeal embedder in the capture pipeline (NPU)
-- Manifest registry indexed by watermark payload
-- Public verifier: upload a re-encoded copy / paste a social link → extract watermark → BCH decode → registry lookup → full provenance display
-- The demo that sells: record → post to TikTok → verify the TikTok copy.
+- [x] Watermark service (`watermark/`): VideoSeal embed/extract API, payload = proof id (24-bit + CRC8, 8× repetition, burst-resistant interleave)
+- [x] Capture flow: app uploads signed original → server embeds proof id → watermarked copy replaces the gallery file
+- [x] Verifier recovery: exact match → else watermark extraction → proof lookup; honest UX distinguishing "verified" from "provenance recovered"
+- [x] E2E automated test incl. re-encode recovery (conf 1.0); service-level tests: image survives JPEG q8+70% scale, video survives 720p/2M re-encode
+- [ ] On-device embedding (needs int8+QNN + Kotlin port of the embed pipeline) — removes the media-transits-server trade-off
+- [ ] The demo that sells: record → post to TikTok → verify the TikTok copy (real-platform validation of the full loop)
 
 ## Phase 3 — Monetization + iOS
 

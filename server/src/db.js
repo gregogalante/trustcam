@@ -37,4 +37,10 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_proofs_sha256 ON proofs(sha256);
 `)
 
+// wm_sha256: hash of the watermarked copy returned to the app (phase 2)
+try {
+  db.exec('ALTER TABLE proofs ADD COLUMN wm_sha256 TEXT')
+} catch { /* column already exists */ }
+db.exec('CREATE INDEX IF NOT EXISTS idx_proofs_wm_sha256 ON proofs(wm_sha256)')
+
 export default db

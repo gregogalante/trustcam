@@ -1,12 +1,18 @@
 package app.trustcam
 
+import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.BufferedSink
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 /** Thin client for the TrustCam registry API. All calls are blocking — use off the main thread. */
@@ -14,6 +20,9 @@ class Api(context: Context) {
     private val prefs = context.getSharedPreferences("trustcam", Context.MODE_PRIVATE)
     private val http = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
+        // Server-side video watermarking takes minutes for long clips
+        .writeTimeout(15, TimeUnit.MINUTES)
+        .readTimeout(15, TimeUnit.MINUTES)
         .build()
     private val json = "application/json".toMediaType()
 
@@ -72,6 +81,59 @@ class Api(context: Context) {
             .put("sizeBytes", sizeBytes)
             .put("capturedAt", capturedAtIso), auth = true
         ).getLong("id")
+    }
+
+    /**
+     * Uploads the signed capture; the server registers the proof, embeds the
+     * invisible watermark and returns the watermarked file. On success the
+     * callback receives the watermarked stream to persist; on watermark-service
+     * failure the proof still exists and `watermarked` is false.
+     */
+    data class CaptureResult(val proofId: Long, val watermarked: Boolean)
+
+    fun capture(resolver: ContentResolver, uri: Uri, filename: String,
+                sha256Hex: String, signatureB64: String, mediaType: String,
+                capturedAtIso: String, writeWatermarked: (InputStream) -> Unit): CaptureResult {
+        val fileBody = object : RequestBody() {
+            override fun contentType() =
+                (if (mediaType == "video") "video/mp4" else "image/jpeg").toMediaType()
+            override fun writeTo(sink: BufferedSink) {
+                resolver.openInputStream(uri)!!.use { ins ->
+                    val buf = ByteArray(1 shl 16)
+                    while (true) {
+                        val n = ins.read(buf)
+                        if (n < 0) break
+                        sink.write(buf, 0, n)
+                    }
+                }
+            }
+        }
+        val body = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("file", filename, fileBody)
+            .addFormDataPart("deviceId", deviceId.toString())
+            .addFormDataPart("sha256", sha256Hex)
+            .addFormDataPart("signature", signatureB64)
+            .addFormDataPart("mediaType", mediaType)
+            .addFormDataPart("capturedAt", capturedAtIso)
+            .build()
+        val req = Request.Builder()
+            .url("$baseUrl/api/capture")
+            .post(body)
+            .header("Authorization", "Bearer $token")
+            .build()
+        http.newCall(req).execute().use { res ->
+            if (res.code == 502) {
+                // Watermarking failed but the proof of the original is registered
+                val parsed = JSONObject(res.body!!.string())
+                return CaptureResult(parsed.optLong("proofId", -1), watermarked = false)
+            }
+            if (!res.isSuccessful) {
+                throw ApiException(JSONObject(res.body!!.string()).optString("error", "HTTP ${res.code}"))
+            }
+            val proofId = res.header("x-proof-id")?.toLong() ?: -1
+            res.body!!.byteStream().use(writeWatermarked)
+            return CaptureResult(proofId, watermarked = true)
+        }
     }
 }
 

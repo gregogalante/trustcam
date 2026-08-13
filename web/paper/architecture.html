@@ -17,37 +17,84 @@
     <h1>System architecture</h1>
 
     <h2>Design principle: two integrity layers</h2>
-    <p>
-      Signatures and watermarks fail in opposite places, so the full design uses both:
-    </p>
+    <p>Signatures and watermarks fail in opposite places, so the design uses both:</p>
     <table>
       <tr><th>Layer</th><th>Proves</th><th>Survives re-encoding?</th></tr>
       <tr><td>Cryptographic signature over content hashes</td><td>Exact integrity, device identity, capture time</td><td>No — any transcode invalidates it, by design</td></tr>
-      <tr><td>Robust invisible watermark (roadmap)</td><td>Pointer to the registered proof (device ID + segment index)</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
+      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the registered proof (payload = proof id)</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
     </table>
-    <p>
-      An intact file verifies exactly. A social-media copy — re-encoded, metadata
-      stripped — recovers its provenance via watermark extraction and a registry
-      lookup. The MVP implements the first layer end-to-end; the watermark layer
-      is validated experimentally (see <a href="/paper/research.html">research</a>)
-      and lands next.
-    </p>
 
-    <h2>Capture pipeline (Android)</h2>
+    <svg class="layers-diagram" viewBox="0 0 760 240" role="img" aria-label="The signature verifies exact files; the watermark survives social platforms and recovers provenance">
+      <g class="flow-node">
+        <rect x="8" y="80" width="130" height="80" rx="12"/>
+        <text x="73" y="112" class="flow-label" text-anchor="middle">Your capture</text>
+        <text x="73" y="130" class="flow-sub" text-anchor="middle">signed +</text>
+        <text x="73" y="144" class="flow-sub" text-anchor="middle">watermarked</text>
+      </g>
+      <path class="flow-arrow" d="M142 100 C 240 40, 420 40, 600 92"/>
+      <text x="360" y="46" class="flow-sub" text-anchor="middle">shared as exact file (email, drive, download)</text>
+      <path class="flow-arrow" d="M142 140 C 220 190, 260 190, 306 176"/>
+      <g class="flow-node warn">
+        <rect x="310" y="150" width="170" height="70" rx="12"/>
+        <text x="395" y="178" class="flow-label" text-anchor="middle">Social platform</text>
+        <text x="395" y="196" class="flow-sub" text-anchor="middle">re-encodes the pixels,</text>
+        <text x="395" y="210" class="flow-sub" text-anchor="middle">strips all metadata</text>
+      </g>
+      <path class="flow-arrow" d="M484 185 C 540 185, 560 160, 598 132"/>
+      <g class="flow-node ok">
+        <rect x="602" y="76" width="150" height="88" rx="12"/>
+        <path class="icon" d="M622 106l8 8 14-14" fill="none"/>
+        <text x="677" y="112" class="flow-label" text-anchor="start">Verified</text>
+        <text x="622" y="140" class="flow-sub" text-anchor="start">signature → exact copy</text>
+        <text x="622" y="154" class="flow-sub" text-anchor="start">watermark → social copy</text>
+      </g>
+    </svg>
+
+    <h2>Capture &amp; signing pipeline</h2>
+
+    <svg class="layers-diagram" viewBox="0 0 760 130" role="img" aria-label="Camera output is hashed, the hash is signed inside the secure element, and the proof is registered">
+      <g class="flow-node">
+        <rect x="4" y="20" width="150" height="90" rx="12"/>
+        <text x="79" y="52" class="flow-label" text-anchor="middle">Camera</text>
+        <text x="79" y="72" class="flow-sub" text-anchor="middle">photo / video file</text>
+        <text x="79" y="86" class="flow-sub" text-anchor="middle">written to gallery</text>
+      </g>
+      <path class="flow-arrow" d="M158 65h34"/>
+      <g class="flow-node">
+        <rect x="196" y="20" width="150" height="90" rx="12"/>
+        <text x="271" y="52" class="flow-label" text-anchor="middle">SHA-256</text>
+        <text x="271" y="72" class="flow-sub" text-anchor="middle">32-byte fingerprint</text>
+        <text x="271" y="86" class="flow-sub" text-anchor="middle">of the exact bytes</text>
+      </g>
+      <path class="flow-arrow" d="M350 65h34"/>
+      <g class="flow-node">
+        <rect x="388" y="20" width="170" height="90" rx="12"/>
+        <text x="473" y="52" class="flow-label" text-anchor="middle">🔒 Secure element</text>
+        <text x="473" y="72" class="flow-sub" text-anchor="middle">ECDSA P-256 — the private</text>
+        <text x="473" y="86" class="flow-sub" text-anchor="middle">key never leaves the chip</text>
+      </g>
+      <path class="flow-arrow" d="M562 65h34"/>
+      <g class="flow-node ok">
+        <rect x="600" y="20" width="156" height="90" rx="12"/>
+        <text x="678" y="52" class="flow-label" text-anchor="middle">Proof registered</text>
+        <text x="678" y="72" class="flow-sub" text-anchor="middle">hash + signature +</text>
+        <text x="678" y="86" class="flow-sub" text-anchor="middle">attestation + timestamp</text>
+      </g>
+    </svg>
+
     <ol>
-      <li>Device enrollment: an ECDSA P-256 key pair is generated <strong>inside StrongBox</strong>
+      <li><strong>Device enrollment</strong>: an ECDSA P-256 key pair is generated inside StrongBox
         (dedicated secure element; TEE fallback on devices without it — the level is
         recorded in every proof). Android Key Attestation produces an X.509 chain,
         rooted at Google's hardware attestation root, proving the key lives in
         hardware and the device passed verified boot.</li>
-      <li>Capture: photo or video via the camera pipeline; the file's SHA-256 is
-        computed as data is written.</li>
-      <li>Signing: the 32 hash bytes are signed in the secure element
-        (<code>SHA256withECDSA</code>). The private key never exists in application
-        memory, and signing requires the key's hardware.</li>
-      <li>Registration: the proof — hash, signature, media type, capture timestamp,
-        device reference — is uploaded to the registry. <strong>The media file itself
-        is never uploaded</strong>; the proof is 200 bytes of metadata.</li>
+      <li><strong>Capture</strong>: photo or video; the file's SHA-256 is computed over the final bytes.</li>
+      <li><strong>Signing</strong>: the 32 hash bytes are signed in the secure element
+        (<code>SHA256withECDSA</code>). The private key never exists in application memory.</li>
+      <li><strong>Watermarking</strong>: the signed original is uploaded once; the watermark service
+        embeds the proof id into the pixels and the watermarked copy replaces the file in the
+        gallery. <strong>Media transits the service for embedding but is never stored</strong> —
+        the registry keeps only hashes, signatures and metadata (~200 bytes per proof).</li>
     </ol>
 
     <h2>Signature convention</h2>
@@ -58,6 +105,45 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
       <code>sig</code> against the device's enrolled public key — the stored proof
       row is a claim, the signature is the evidence, and it is re-checked on every
       verification.
+    </p>
+
+    <h2>Watermark payload encoding</h2>
+    <p>
+      The watermark carries a 256-bit message decoded from the pixels. Robustness comes
+      from structure, not secrecy:
+    </p>
+
+    <svg class="layers-diagram" viewBox="0 0 760 150" role="img" aria-label="24-bit proof id plus CRC8 form a 32-bit block, repeated 8 times across the 256-bit message">
+      <!-- one block -->
+      <rect class="pl-id" x="40" y="16" width="330" height="34" rx="6"/>
+      <rect class="pl-crc" x="374" y="16" width="110" height="34" rx="6"/>
+      <text x="205" y="38" class="flow-label" text-anchor="middle">proof id — 24 bit</text>
+      <text x="429" y="38" class="flow-label" text-anchor="middle">CRC-8</text>
+      <text x="500" y="38" class="flow-sub" text-anchor="start">= one 32-bit block</text>
+      <!-- braces / arrow -->
+      <path class="flow-arrow" d="M262 58v18"/>
+      <!-- 8 repetitions -->
+      <g>
+        <rect class="pl-rep" x="40" y="84" width="86" height="26" rx="4"/>
+        <rect class="pl-rep" x="130" y="84" width="86" height="26" rx="4"/>
+        <rect class="pl-rep" x="220" y="84" width="86" height="26" rx="4"/>
+        <rect class="pl-rep" x="310" y="84" width="86" height="26" rx="4"/>
+        <rect class="pl-rep" x="400" y="84" width="86" height="26" rx="4"/>
+        <rect class="pl-rep" x="490" y="84" width="86" height="26" rx="4"/>
+        <rect class="pl-rep" x="580" y="84" width="86" height="26" rx="4"/>
+        <rect class="pl-rep" x="670" y="84" width="86" height="26" rx="4"/>
+      </g>
+      <text x="398" y="101" class="flow-label" text-anchor="middle">× 8 repetitions = 256 bits</text>
+      <text x="398" y="130" class="flow-sub" text-anchor="middle">copies of each bit sit 32 positions apart — an error burst hits at most one copy per bit;</text>
+      <text x="398" y="144" class="flow-sub" text-anchor="middle">decoding soft-combines all 8 copies and validates the CRC</text>
+    </svg>
+
+    <p>
+      Extraction averages the decoded signal across sampled frames, soft-combines the
+      eight copies of each bit, and accepts the result only if the CRC validates and
+      signal agreement exceeds a threshold. Measured end-to-end: full payload recovery
+      after real YouTube and WhatsApp round-trips and 720p/2Mbps re-encodes
+      (<a href="/paper/research.html">data</a>).
     </p>
 
     <h2>Bitstream signatures for video (next iteration)</h2>
@@ -73,14 +159,14 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
     </p>
 
     <h2>Verification service</h2>
-    <ul>
-      <li><strong>Registry API</strong> — accounts, device enrollment (attestation
-        chain validation), proof registration with immediate signature verification.</li>
-      <li><strong>Public verifier</strong> — anyone uploads a file; the service
-        recomputes the hash, finds the proof, re-verifies the signature, and reports
-        owner, device model, hardware security level, capture and registration
-        times. Files are hashed in a stream and never stored.</li>
-    </ul>
+    <p>Given any file, the verifier resolves in order — each level is weaker than the
+    previous and the UI says so explicitly:</p>
+    <ol>
+      <li><strong>Byte-exact original</strong> → hardware signature re-verified → <em>Verified (original)</em>.</li>
+      <li><strong>Byte-exact watermarked copy</strong> → derived server-side from a signed original → <em>Verified (watermarked copy)</em>.</li>
+      <li><strong>Watermark extraction</strong> on re-encoded copies → proof id recovered from the pixels → <em>Provenance recovered</em>: owner, device and capture time are known, but byte integrity of this specific copy is not verifiable.</li>
+    </ol>
+    <p>Uploaded files are hashed and scanned in a stream and never stored.</p>
 
     <h2>Trust model and standards alignment</h2>
     <p>

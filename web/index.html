@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TrustCam — verifiable capture</title>
+  <title>TrustCam — prove your video is real</title>
+  <meta name="description" content="TrustCam signs photos and videos at capture inside your phone's secure hardware, and embeds an invisible watermark that survives social media. Anyone can verify who recorded a file, when, and that it wasn't tampered with.">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -13,42 +14,256 @@
     <a href="/paper/">Paper</a>
     <a href="/register.html">Register</a>
   </nav>
-  <main>
-    <h1>Prove your video is real — cryptographically.</h1>
-    <p class="lead">
-      TrustCam signs photos and videos at the moment of capture with a key that
-      never leaves your phone's secure hardware. Anyone can then verify who
-      recorded a file, when, and that not a single byte changed since.
-    </p>
+  <main class="landing">
 
-    <div class="cta-row">
-      <a class="btn" href="/trustcam.apk" download>⬇ Get the Android app (APK)</a>
-      <a class="btn secondary" href="/register.html">Create an account</a>
-    </div>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <p class="eyebrow">Cryptographic provenance for mobile photo &amp; video</p>
+      <h1>In a world of AI fakes,<br>prove yours is real.</h1>
+      <p class="lead">
+        TrustCam signs every capture inside your phone's secure hardware and hides an
+        invisible watermark in the pixels — one that survives WhatsApp, YouTube and
+        re-encoding. Anyone, anywhere, can verify who recorded a file, when,
+        and that it hasn't been touched.
+      </p>
+      <div class="cta-row">
+        <a class="btn" href="/trustcam.apk" download>⬇ Get the Android app</a>
+        <a class="btn secondary" href="/verify.html">Verify a file</a>
+        <a class="btn ghost" href="/paper/">Read the paper</a>
+      </div>
 
-    <h2>How it works</h2>
-    <div class="card">
-      <ol>
-        <li><strong>Capture</strong> — the app records photo/video and computes its cryptographic hash on the fly.</li>
-        <li><strong>Sign</strong> — the hash is signed inside the phone's secure element (StrongBox/TEE). The private key is generated there and cannot be extracted.</li>
-        <li><strong>Register</strong> — the signed proof (not the file — your media stays yours) is registered with your account and your device's hardware attestation.</li>
-        <li><strong>Verify</strong> — anyone uploads the file here and sees the owner, device, capture time, and integrity verdict.</li>
-      </ol>
-    </div>
+      <svg class="hero-flow" viewBox="0 0 720 110" role="img" aria-label="Capture is signed in hardware, registered, and verifiable by anyone">
+        <g class="flow-node">
+          <rect x="8" y="12" width="160" height="86" rx="12"/>
+          <path class="icon" d="M70 33h7l4-5h14l4 5h7a3 3 0 0 1 3 3v19a3 3 0 0 1-3 3H70a3 3 0 0 1-3-3V36a3 3 0 0 1 3-3z" fill="none"/>
+          <circle class="icon" cx="88" cy="45" r="6" fill="none"/>
+          <text x="88" y="82" class="flow-label" text-anchor="middle">Capture</text>
+        </g>
+        <path class="flow-arrow" d="M172 55h38"/>
+        <g class="flow-node">
+          <rect x="214" y="12" width="160" height="86" rx="12"/>
+          <path class="icon" d="M286 40v-6a8 8 0 0 1 16 0v6m-19 0h22a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3h-22a3 3 0 0 1-3-3V43a3 3 0 0 1 3-3z" fill="none"/>
+          <text x="294" y="82" class="flow-label" text-anchor="middle">Signed on-chip</text>
+        </g>
+        <path class="flow-arrow" d="M378 55h38"/>
+        <g class="flow-node">
+          <rect x="420" y="12" width="160" height="86" rx="12"/>
+          <path class="icon" d="M488 58a10 10 0 0 1 2-19 13 13 0 0 1 25 3 8 8 0 0 1-2 16z" fill="none"/>
+          <text x="500" y="82" class="flow-label" text-anchor="middle">Proof registered</text>
+        </g>
+        <path class="flow-arrow" d="M584 55h38"/>
+        <g class="flow-node ok">
+          <rect x="626" y="12" width="86" height="86" rx="12"/>
+          <path class="icon" d="M657 43l8 8 15-15" fill="none"/>
+          <text x="669" y="82" class="flow-label" text-anchor="middle">Verified</text>
+        </g>
+      </svg>
+    </section>
 
-    <h2>What it proves — and what it doesn't</h2>
-    <p>
-      A valid proof means: <em>this exact file was signed by this specific device,
-      registered to this account, at this time, and is unmodified since</em>.
-      It does <strong>not</strong> prove the scene itself was real: a camera
-      pointed at a screen still signs what its sensor sees. We say what we can
-      prove, nothing more — the technical details are in the
-      <a href="/paper/">paper</a>.
-    </p>
+    <!-- ============ PROBLEM ============ -->
+    <section>
+      <h2>Seeing is no longer believing</h2>
+      <div class="grid3">
+        <div class="card">
+          <h3>Generated media is indistinguishable</h3>
+          <p>State-of-the-art models produce photos and video that pass human inspection.
+          Detection is a losing arms race — <strong>proving authentic media authentic</strong> is the durable answer.</p>
+        </div>
+        <div class="card">
+          <h3>Platforms destroy provenance</h3>
+          <p>Social platforms re-encode every upload and strip embedded credentials
+          essentially 100% of the time. A signature alone dies exactly where media
+          actually circulates.</p>
+        </div>
+        <div class="card">
+          <h3>Trust has a price tag</h3>
+          <p>Manipulated media drives hundreds of billions in annual fraud exposure
+          across insurance, KYC and legal evidence — and regulators are now mandating
+          machine-readable content provenance.</p>
+        </div>
+      </div>
+    </section>
 
-    <p><a href="/verify.html"><strong>Verify a file now →</strong></a></p>
+    <!-- ============ HOW IT WORKS ============ -->
+    <section>
+      <h2>How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-icon"><svg viewBox="0 0 48 48"><path d="M10 16h6l3-4h10l3 4h6a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V19a3 3 0 0 1 3-3z" fill="none"/><circle cx="24" cy="27" r="6" fill="none"/></svg></div>
+          <h3>1 · Capture</h3>
+          <p>Photo or video, from the TrustCam app. The file's cryptographic
+          fingerprint (SHA-256) is computed as it's written.</p>
+        </div>
+        <div class="step">
+          <div class="step-icon"><svg viewBox="0 0 48 48"><rect x="12" y="12" width="24" height="24" rx="4" fill="none"/><rect x="20" y="20" width="8" height="8" fill="none"/><path d="M17 6v6M24 6v6M31 6v6M17 36v6M24 36v6M31 36v6M6 17h6M6 24h6M6 31h6M36 17h6M36 24h6M36 31h6" fill="none"/></svg></div>
+          <h3>2 · Sign in silicon</h3>
+          <p>The fingerprint is signed by a key generated <em>inside</em> the phone's
+          secure element. The key physically cannot leave the chip — no malware,
+          no cloud breach can steal it.</p>
+        </div>
+        <div class="step">
+          <div class="step-icon"><svg viewBox="0 0 48 48"><path d="M24 6l14 6v10c0 9-6 15-14 20-8-5-14-11-14-20V12z" fill="none"/><path d="M18 24l4 4 8-8" fill="none"/></svg></div>
+          <h3>3 · Watermark</h3>
+          <p>An invisible signal carrying the proof's identity is woven into the
+          pixels themselves. Re-encoding, scaling, compressing — it survives what
+          social platforms do to files.</p>
+        </div>
+        <div class="step">
+          <div class="step-icon"><svg viewBox="0 0 48 48"><circle cx="21" cy="21" r="12" fill="none"/><path d="M30 30l11 11" fill="none"/><path d="M16 21l4 4 7-7" fill="none"/></svg></div>
+          <h3>4 · Anyone verifies</h3>
+          <p>Drop any copy of the file on the public verifier: owner, device,
+          hardware security level and capture time — or proof that it was tampered with.</p>
+        </div>
+      </div>
+    </section>
 
-    <footer>TrustCam MVP — working name, work in progress.</footer>
+    <!-- ============ TWO LAYERS ============ -->
+    <section>
+      <h2>Two layers, because one is never enough</h2>
+      <p class="section-lead">Signatures prove integrity but die on re-encoding.
+      Watermarks survive re-encoding but can't prove integrity. TrustCam is the first
+      mobile capture system that ships both.</p>
+
+      <svg class="layers-diagram" viewBox="0 0 760 240" role="img" aria-label="The signature verifies exact files; the watermark survives social platforms and recovers provenance">
+        <!-- source file -->
+        <g class="flow-node">
+          <rect x="8" y="80" width="130" height="80" rx="12"/>
+          <text x="73" y="112" class="flow-label" text-anchor="middle">Your capture</text>
+          <text x="73" y="130" class="flow-sub" text-anchor="middle">signed +</text>
+          <text x="73" y="144" class="flow-sub" text-anchor="middle">watermarked</text>
+        </g>
+        <!-- direct path (signature) -->
+        <path class="flow-arrow" d="M142 100 C 240 40, 420 40, 600 92"/>
+        <text x="360" y="46" class="flow-sub" text-anchor="middle">shared as exact file (email, drive, download)</text>
+        <!-- social path -->
+        <path class="flow-arrow" d="M142 140 C 220 190, 260 190, 306 176"/>
+        <g class="flow-node warn">
+          <rect x="310" y="150" width="170" height="70" rx="12"/>
+          <text x="395" y="178" class="flow-label" text-anchor="middle">Social platform</text>
+          <text x="395" y="196" class="flow-sub" text-anchor="middle">re-encodes the pixels,</text>
+          <text x="395" y="210" class="flow-sub" text-anchor="middle">strips all metadata</text>
+        </g>
+        <path class="flow-arrow" d="M484 185 C 540 185, 560 160, 598 132"/>
+        <!-- verifier -->
+        <g class="flow-node ok">
+          <rect x="602" y="76" width="150" height="88" rx="12"/>
+          <path class="icon" d="M622 106l8 8 14-14" fill="none"/>
+          <text x="677" y="112" class="flow-label" text-anchor="start">Verified</text>
+          <text x="622" y="140" class="flow-sub" text-anchor="start">signature → exact copy</text>
+          <text x="622" y="154" class="flow-sub" text-anchor="start">watermark → social copy</text>
+        </g>
+      </svg>
+
+      <div class="grid2">
+        <div class="card">
+          <h3><span class="dot"></span> Layer 1 — Hardware signature</h3>
+          <p>ECDSA P-256 in the secure element, with Android Key Attestation proving
+          the key lives in tamper-resistant silicon. Byte-exact files verify against
+          it — <strong>any single-bit change is detected</strong>.</p>
+        </div>
+        <div class="card">
+          <h3><span class="dot dot2"></span> Layer 2 — Invisible watermark</h3>
+          <p>A 256-bit error-corrected payload embedded in the pixels
+          (Meta's VideoSeal, state of the art in the open literature). When platforms
+          strip everything else, <strong>the pixels still testify</strong>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MEASURED ============ -->
+    <section>
+      <h2>Measured, not promised</h2>
+      <p class="section-lead">Every number below comes from our own experiments on real
+      hardware and real platforms — methodology in the <a href="/paper/research.html">paper</a>.</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-value">100%</div><div class="kpi-label">watermark recovery after a real WhatsApp round-trip</div></div>
+        <div class="kpi"><div class="kpi-value">99.6%</div><div class="kpi-label">bit accuracy after a real YouTube upload &amp; re-download</div></div>
+        <div class="kpi"><div class="kpi-value">46.8 dB</div><div class="kpi-label">PSNR — the watermark is invisible to the eye</div></div>
+        <div class="kpi"><div class="kpi-value">60/60</div><div class="kpi-label">bitstream signatures preserved through a consumer phone's encoder</div></div>
+      </div>
+
+      <div class="card survival">
+        <h3>Watermark survival under platform-grade degradation</h3>
+        <ul class="matrix">
+          <li><span class="check">✓</span> YouTube 1080p re-encode <span class="val">100%</span></li>
+          <li><span class="check">✓</span> TikTok-class 3 Mbps re-encode <span class="val">100%</span></li>
+          <li><span class="check">✓</span> Crop 10% + rescale <span class="val">100%</span></li>
+          <li><span class="check">✓</span> H.265 heavy compression <span class="val">99.2%</span></li>
+          <li><span class="check">✓</span> WhatsApp-class 480p / 1 Mbps <span class="val">98.1%</span></li>
+          <li><span class="check">✓</span> Stress: 360p / 0.5 Mbps <span class="val">94.9%</span></li>
+        </ul>
+        <p class="note">Bit accuracy of the 256-bit payload; error correction recovers the full
+        proof identity in every condition above.</p>
+      </div>
+    </section>
+
+    <!-- ============ WHY NOW ============ -->
+    <section>
+      <h2>Why now</h2>
+      <div class="timeline">
+        <div class="tl-item done">
+          <div class="tl-date">2023–24</div>
+          <p>First signing cameras ship (Leica, Sony). C2PA becomes the industry
+          standard with 6,000+ member organizations.</p>
+        </div>
+        <div class="tl-item done">
+          <div class="tl-date">2025</div>
+          <p>Google Pixel signs photos by default. Content provenance reaches
+          consumer hardware — <strong>photos only, flagship only</strong>.</p>
+        </div>
+        <div class="tl-item now">
+          <div class="tl-date">Aug 2026</div>
+          <p><strong>EU AI Act transparency obligations apply</strong>: machine-readable
+          marking of synthetic content becomes law. Authenticity marking is the
+          complement every publisher will need.</p>
+        </div>
+        <div class="tl-item">
+          <div class="tl-date">Jan 2028</div>
+          <p>California AB 853: capture devices must embed provenance by default.
+          The market window for independent verification infrastructure is <strong>now</strong>.</p>
+        </div>
+      </div>
+      <p>Video — the hardest and most valuable case — is still unclaimed territory:
+      no shipping mobile product combines hardware-signed video with a watermark
+      that survives social distribution. TrustCam does.</p>
+    </section>
+
+    <!-- ============ HONESTY ============ -->
+    <section>
+      <h2>Honest by design</h2>
+      <div class="grid2">
+        <div class="card">
+          <h3>What a proof means</h3>
+          <p><em>“This exact file was recorded by this specific device, bound to this
+          account, at this time — and is unmodified since.”</em> Every claim is
+          re-verified cryptographically on every check; the database is treated as
+          a claim, the signature as the evidence.</p>
+        </div>
+        <div class="card">
+          <h3>What it doesn't</h3>
+          <p>No capture system can prove the <em>scene</em> was real — a camera filming
+          a screen signs what its sensor sees. We say precisely what we can prove and
+          nothing more. In this market, overclaiming is fatal;
+          <a href="/paper/research.html">our threat model is public</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FINAL CTA ============ -->
+    <section class="final-cta">
+      <h2>See it work in 60 seconds</h2>
+      <p class="section-lead">Create an account, capture a video with the app, share it
+      on WhatsApp — then drop the received copy on the verifier and watch the
+      provenance come back.</p>
+      <div class="cta-row">
+        <a class="btn" href="/register.html">Create an account</a>
+        <a class="btn secondary" href="/trustcam.apk" download>Download the app</a>
+      </div>
+    </section>
+
+    <footer>TrustCam — working name, MVP in active development.
+    Research &amp; engineering documentation: <a href="/paper/">the paper</a>.</footer>
   </main>
 </body>
 </html>

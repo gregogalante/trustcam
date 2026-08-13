@@ -24,8 +24,9 @@
 
     <div class="result" id="result"></div>
 
-    <footer>Exact-file verification. Re-encoded copies (e.g. downloaded from social media)
-    will not match — watermark-based recovery is on the roadmap.</footer>
+    <footer>Exact files verify byte-for-byte against the hardware signature. Re-encoded
+    copies (e.g. downloaded from social media) are scanned for the invisible watermark —
+    for videos this can take a minute or two.</footer>
   </main>
 
   <script>
@@ -44,7 +45,8 @@
     input.addEventListener('change', () => { if (input.files[0]) check(input.files[0]) })
 
     async function check (file) {
-      result.innerHTML = '<div class="card">Checking <code>' + esc(file.name) + '</code>…</div>'
+      result.innerHTML = '<div class="card">Checking <code>' + esc(file.name) +
+        '</code>… If no exact match is found, the file is scanned for the invisible watermark (up to a couple of minutes for video).</div>'
       const body = new FormData()
       body.append('file', file)
       try {
@@ -65,12 +67,24 @@
           </div>`
         return
       }
-      const badge = r.verified
-        ? '<span class="badge ok">Verified ✓</span>'
-        : '<span class="badge bad">Proof found but signature INVALID</span>'
+      let badge, note
+      if (r.match === 'watermark-recovered') {
+        badge = '<span class="badge ok">Provenance recovered via watermark</span>'
+        note = `<p>${esc(r.message || '')} (signal confidence ${Math.round(r.confidence * 100)}%)</p>`
+      } else if (r.match === 'watermarked') {
+        badge = '<span class="badge ok">Verified ✓ (watermarked copy)</span>'
+        note = '<p class="note">Byte-exact watermarked copy, derived from a hardware-signed capture.</p>'
+      } else if (r.verified) {
+        badge = '<span class="badge ok">Verified ✓ (original)</span>'
+        note = ''
+      } else {
+        badge = '<span class="badge bad">Proof found but signature INVALID</span>'
+        note = ''
+      }
       result.innerHTML = `
         <div class="card">
           ${badge}
+          ${note}
           <dl>
             <dt>Recorded by</dt><dd>${esc(r.owner)}</dd>
             <dt>Device</dt><dd>${esc(r.device.model)} (${esc(r.device.securityLevel)}${r.device.attested ? ', hardware-attested' : ''})</dd>

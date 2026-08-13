@@ -3,10 +3,11 @@ import fastifyJwt from '@fastify/jwt'
 import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import db from './db.js'
-import { verifyFileSignature, attestationLeafMatchesKey, sha256Stream } from './crypto.js'
+import { verifyFileSignature, attestationLeafMatchesKey } from './crypto.js'
 
 const dir = path.dirname(fileURLToPath(import.meta.url))
 const app = Fastify({ logger: true })
@@ -96,40 +97,132 @@ app.get('/api/proofs', { preHandler: auth }, async (req) => {
   `).all(req.user.uid)
 })
 
-// --- public verification ---
+// --- capture with watermarking (phase 2) ---
 
-app.post('/api/verify', async (req, reply) => {
-  const file = await req.file()
-  if (!file) return reply.code(400).send({ error: 'file required' })
-  const { sha256, size } = await sha256Stream(file.file)
+const WATERMARK_URL = process.env.WATERMARK_URL || 'http://localhost:8000'
 
-  const proof = db.prepare(`
-    SELECT p.*, d.model, d.security_level, d.public_key_pem, d.attestation_chain, u.name AS owner_name
-    FROM proofs p JOIN devices d ON d.id = p.device_id JOIN users u ON u.id = p.user_id
-    WHERE p.sha256 = ? ORDER BY p.id LIMIT 1
-  `).get(sha256)
-
-  if (!proof) {
-    return {
-      found: false, sha256, sizeBytes: size,
-      message: 'No proof registered for this exact file. The file may have been re-encoded or modified after capture, or was not captured with a registered device.'
+// Multipart: file + fields (deviceId, sha256, signature, mediaType, capturedAt).
+// Verifies the device signature over the ORIGINAL bytes, registers the proof,
+// gets a watermarked copy from the watermark service (payload = proof id),
+// stores its hash and streams it back to the app.
+app.post('/api/capture', { preHandler: auth }, async (req, reply) => {
+  let fileBuf = null
+  let filename = 'capture.bin'
+  const fields = {}
+  for await (const part of req.parts()) {
+    if (part.type === 'file') {
+      filename = part.filename || filename
+      fileBuf = await part.toBuffer()
+    } else {
+      fields[part.fieldname] = part.value
     }
   }
+  const { deviceId, sha256, signature, mediaType, capturedAt } = fields
+  if (!fileBuf || !deviceId || !sha256 || !signature || !mediaType || !capturedAt) {
+    return reply.code(400).send({ error: 'file, deviceId, sha256, signature, mediaType, capturedAt required' })
+  }
 
-  // Re-verify the stored signature against the recomputed hash — the DB row
-  // is a claim, the signature is the evidence.
-  const signatureValid = verifyFileSignature(sha256, proof.signature, proof.public_key_pem)
+  const device = db.prepare('SELECT * FROM devices WHERE id = ? AND user_id = ?').get(deviceId, req.user.uid)
+  if (!device) return reply.code(404).send({ error: 'device not found' })
 
+  // The claimed hash must match the uploaded bytes AND the device signature
+  const actual = crypto.createHash('sha256').update(fileBuf).digest('hex')
+  if (actual !== sha256.toLowerCase()) return reply.code(400).send({ error: 'sha256 does not match file' })
+  if (!verifyFileSignature(actual, signature, device.public_key_pem)) {
+    return reply.code(400).send({ error: 'signature verification failed' })
+  }
+
+  const info = db.prepare(
+    'INSERT INTO proofs (user_id, device_id, sha256, signature, media_type, size_bytes, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(req.user.uid, deviceId, actual, signature, mediaType, fileBuf.length, capturedAt)
+  const proofId = info.lastInsertRowid
+
+  const form = new FormData()
+  form.append('file', new Blob([fileBuf]), filename)
+  form.append('proof_id', String(proofId))
+  const wmRes = await fetch(`${WATERMARK_URL}/embed`, { method: 'POST', body: form })
+  if (!wmRes.ok) {
+    req.log.error(`watermark embed failed: ${wmRes.status}`)
+    // Proof of the original still stands; the app keeps the unwatermarked file
+    return reply.code(502).send({ error: 'watermarking failed', proofId })
+  }
+  const wmBuf = Buffer.from(await wmRes.arrayBuffer())
+  const wmSha = crypto.createHash('sha256').update(wmBuf).digest('hex')
+  db.prepare('UPDATE proofs SET wm_sha256 = ? WHERE id = ?').run(wmSha, proofId)
+
+  return reply
+    .header('content-type', wmRes.headers.get('content-type') || 'application/octet-stream')
+    .header('x-proof-id', String(proofId))
+    .send(wmBuf)
+})
+
+// --- public verification ---
+
+const PROOF_LOOKUP = `
+  SELECT p.*, d.model, d.security_level, d.public_key_pem, d.attestation_chain, u.name AS owner_name
+  FROM proofs p JOIN devices d ON d.id = p.device_id JOIN users u ON u.id = p.user_id
+`
+
+function proofResponse (proof, extra) {
   return {
     found: true,
-    verified: signatureValid,
-    sha256,
-    sizeBytes: size,
     mediaType: proof.media_type,
     owner: proof.owner_name,
     device: { model: proof.model, securityLevel: proof.security_level, attested: !!proof.attestation_chain },
     capturedAt: proof.captured_at,
-    registeredAt: proof.created_at
+    registeredAt: proof.created_at,
+    ...extra
+  }
+}
+
+app.post('/api/verify', async (req, reply) => {
+  const file = await req.file()
+  if (!file) return reply.code(400).send({ error: 'file required' })
+  const fileBuf = await file.toBuffer()
+  const sha256 = crypto.createHash('sha256').update(fileBuf).digest('hex')
+  const size = fileBuf.length
+
+  // 1. Exact match: original bytes (hardware-signed) or watermarked copy
+  let proof = db.prepare(`${PROOF_LOOKUP} WHERE p.sha256 = ? ORDER BY p.id LIMIT 1`).get(sha256)
+  if (proof) {
+    const signatureValid = verifyFileSignature(sha256, proof.signature, proof.public_key_pem)
+    return proofResponse(proof, {
+      verified: signatureValid, match: 'original', sha256, sizeBytes: size
+    })
+  }
+  proof = db.prepare(`${PROOF_LOOKUP} WHERE p.wm_sha256 = ? ORDER BY p.id LIMIT 1`).get(sha256)
+  if (proof) {
+    // Byte-exact watermarked copy: derived server-side from a hardware-signed
+    // original, so integrity holds even though the device signed the original
+    return proofResponse(proof, {
+      verified: true, match: 'watermarked', sha256, sizeBytes: size
+    })
+  }
+
+  // 2. No exact match: try to recover the proof id from the invisible watermark
+  try {
+    const form = new FormData()
+    form.append('file', new Blob([fileBuf]), file.filename || 'upload.bin')
+    const res = await fetch(`${WATERMARK_URL}/extract`, { method: 'POST', body: form })
+    if (res.ok) {
+      const { proofId, confidence } = await res.json()
+      if (proofId != null && confidence >= 0.7) {
+        proof = db.prepare(`${PROOF_LOOKUP} WHERE p.id = ? LIMIT 1`).get(proofId)
+        if (proof) {
+          return proofResponse(proof, {
+            verified: false, match: 'watermark-recovered', confidence, sha256, sizeBytes: size,
+            message: 'This file has been re-encoded (its bytes differ from the registered capture), but the invisible watermark identifies the original proof. Byte-level integrity cannot be verified.'
+          })
+        }
+      }
+    }
+  } catch (e) {
+    req.log.warn(`watermark extract unavailable: ${e.message}`)
+  }
+
+  return {
+    found: false, sha256, sizeBytes: size,
+    message: 'No proof found: no exact match and no recoverable watermark. The file was not captured with a registered device, or was modified beyond watermark survival.'
   }
 })
 

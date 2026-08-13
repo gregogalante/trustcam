@@ -87,3 +87,61 @@ const verify2 = await api('/api/verify', { method: 'POST', body: form2 })
 assert.equal(verify2.body.found, false, 'modified file must not match')
 
 console.log('E2E OK: signup, enroll, proof, tamper-reject, verify-hit, verify-miss')
+
+// --- phase 2: watermark flow (runs only if the watermark service is up) ---
+const WM = process.env.WATERMARK_URL || 'http://localhost:8000'
+const wmUp = await fetch(WM + '/health').then(r => r.ok).catch(() => false)
+if (!wmUp) {
+  console.log('watermark service not running — phase 2 tests skipped')
+  process.exit(0)
+}
+
+const { execFileSync } = await import('child_process')
+const fs = await import('fs')
+const os = await import('os')
+const path = await import('path')
+
+const imgPath = process.env.TEST_IMAGE ||
+  new URL('../../spikes/videoseal/assets/imgs/1.jpg', import.meta.url).pathname
+const img = fs.readFileSync(imgPath)
+const imgSha = crypto.createHash('sha256').update(img).digest()
+
+// simulated capture upload
+const capForm = new FormData()
+capForm.append('file', new Blob([img]), 'capture.jpg')
+capForm.append('deviceId', String(device.body.id))
+capForm.append('sha256', imgSha.toString('hex'))
+capForm.append('signature', crypto.sign('sha256', imgSha, privateKey).toString('base64'))
+capForm.append('mediaType', 'photo')
+capForm.append('capturedAt', new Date().toISOString())
+const capRes = await fetch(BASE + '/api/capture', {
+  method: 'POST', body: capForm, headers: { authorization: `Bearer ${token}` }
+})
+assert.equal(capRes.status, 200, 'capture failed: ' + await capRes.clone().text())
+const proofId = capRes.headers.get('x-proof-id')
+const wmFile = Buffer.from(await capRes.arrayBuffer())
+assert.ok(wmFile.length > 1000)
+
+// exact match on the watermarked copy
+const vForm = new FormData()
+vForm.append('file', new Blob([wmFile]), 'wm.jpg')
+const v1 = await (await fetch(BASE + '/api/verify', { method: 'POST', body: vForm })).json()
+assert.equal(v1.match, 'watermarked', JSON.stringify(v1))
+assert.equal(v1.verified, true)
+
+// social-style degradation: re-encode + downscale, then recover via watermark
+const tmp = path.join(os.tmpdir(), 'tc-e2e')
+fs.mkdirSync(tmp, { recursive: true })
+const wmPath = path.join(tmp, 'wm.jpg')
+const degPath = path.join(tmp, 'deg.jpg')
+fs.writeFileSync(wmPath, wmFile)
+execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', wmPath, '-q:v', '7', '-vf', 'scale=iw*0.8:ih*0.8', degPath])
+const deg = fs.readFileSync(degPath)
+const v2Form = new FormData()
+v2Form.append('file', new Blob([deg]), 'deg.jpg')
+const v2 = await (await fetch(BASE + '/api/verify', { method: 'POST', body: v2Form })).json()
+assert.equal(v2.match, 'watermark-recovered', JSON.stringify(v2))
+assert.equal(v2.owner, 'Test User')
+fs.rmSync(tmp, { recursive: true, force: true })
+
+console.log(`E2E phase 2 OK: capture #${proofId} watermarked, exact wm match, recovery after re-encode (conf ${v2.confidence})`)

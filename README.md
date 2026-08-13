@@ -8,8 +8,9 @@ Feasibility research and phase-0 experiment reports live in [docs/](docs/); spik
 
 ```
 server/    Fastify + SQLite: auth, device enrollment (Key Attestation), proofs, /api/verify
+watermark/ Python service: VideoSeal invisible watermark embed/extract (payload = proof id)
 web/       Static site served by the server: landing, verify UI, paper pages
-android/   Kotlin app: signup/login, CameraX photo+video, StrongBox/TEE ECDSA P-256 signing
+android/   Kotlin app: sign-in, CameraX photo+video, StrongBox/TEE ECDSA P-256 signing
 docs/      Research findings, architecture, market analysis, phase-0 reports, device runbook
 spikes/    Phase-0 experiment scripts (VideoSeal robustness, export, round-trip checks)
 seitest/   Android instrumented tests: SEI passthrough + on-device embedder benchmark
@@ -27,12 +28,18 @@ Test: `node server/test/e2e.js` (server must be running; use a throwaway `DB_PAT
 
 ## Deploy (trustcam.gregoriogalante.com)
 
-### Railway
+### Railway (single service)
 
-1. New service from this repo — the Dockerfile is picked up automatically.
-2. Add a **Volume** to the service with mount path `/data` (SQLite lives there; without it the DB resets on every deploy).
-3. Set the `JWT_SECRET` variable (e.g. `openssl rand -hex 32`); the server refuses to boot in production without it. Railway injects `PORT` and the server honors it.
+The root Dockerfile bundles the Node API and the Python watermark service in one
+container (`start.sh` runs both; the watermark service is localhost-only).
+
+1. New service from this repo — the root Dockerfile is picked up automatically. First build is heavy (~2GB: CPU torch + baked VideoSeal checkpoint).
+2. Add a **Volume** with mount path `/data` (SQLite lives there; without it the DB resets on every deploy).
+3. Set `JWT_SECRET` (e.g. `openssl rand -hex 32`); the server refuses to boot in production without it. Railway injects `PORT` and the server honors it.
 4. Attach the custom domain `trustcam.gregoriogalante.com` in Settings → Networking (then add the CNAME Railway shows you at your DNS provider). TLS is automatic.
+5. Give the service as much CPU as the plan allows: video watermarking is CPU-bound (~3-4× clip duration per request).
+
+`watermark/Dockerfile` still exists if you ever want to split the watermark service out (set `WATERMARK_URL` on the Node service accordingly).
 
 ### Generic VPS (docker compose)
 
@@ -63,4 +70,10 @@ SQLite data persists in the `trustcam-data` volume.
 - At capture the app computes the file's SHA-256 and signs the 32 hash bytes in hardware (`SHA256withECDSA`); the proof (hash+signature+timestamps, ~200 bytes — never the media) is registered.
 - `/api/verify` recomputes the hash from an uploaded file, finds the proof, re-verifies the signature against the enrolled key.
 
-Known MVP limits (by design, see roadmap): whole-file signature (per-GOP SEI pipeline is the validated next step), attestation chain checked for key match but not yet validated to the Google root, capture time is device-claimed, exact-file match only (watermark recovery is phase 2).
+## Watermark layer (phase 2)
+
+At capture the app uploads the hardware-signed original; the server registers the proof, has the watermark service embed the **proof id as an invisible VideoSeal watermark** (256-bit message: 24-bit id + CRC8, 8× repetition-coded), and returns the watermarked copy, which replaces the gallery file. `/api/verify` then resolves, in order: byte-exact original → byte-exact watermarked copy → **watermark extraction on re-encoded copies** (survives social-media transcodes; measured 100% recovery after YouTube/WhatsApp round-trips and 720p/2Mbps re-encodes).
+
+Trade-offs: media transits the server for embedding (it is not stored — only hashes are); watermarked verification of re-encoded copies proves provenance, not byte integrity; proof ids are capped at 16.7M by the 24-bit payload.
+
+Known MVP limits (by design, see roadmap): whole-file signature (per-GOP SEI pipeline is the validated next step), attestation chain checked for key match but not yet validated to the Google root, capture time is device-claimed, on-device embedding deferred until int8+QNN work lands.

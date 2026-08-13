@@ -29,13 +29,3 @@ export function attestationLeafMatchesKey (chainB64, publicKeyPem) {
     return false
   }
 }
-
-export function sha256Stream (stream) {
-  return new Promise((resolve, reject) => {
-    const hash = crypto.createHash('sha256')
-    let size = 0
-    stream.on('data', chunk => { hash.update(chunk); size += chunk.length })
-    stream.on('end', () => resolve({ sha256: hash.digest('hex'), size }))
-    stream.on('error', reject)
-  })
-}

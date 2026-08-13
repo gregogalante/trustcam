@@ -13,11 +13,11 @@ body {
   margin: 0; background: var(--bg); color: var(--fg);
   font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
-main { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem }
+main { max-width: 860px; margin: 0 auto; padding: 2rem 1.25rem 4rem }
 nav {
   display: flex; gap: 1.25rem; align-items: baseline;
   padding: 1rem 1.25rem; border-bottom: 1px solid var(--line);
-  max-width: 760px; margin: 0 auto;
+  max-width: 860px; margin: 0 auto;
 }
 nav .brand { font-weight: 700; margin-right: auto; text-decoration: none; color: var(--fg) }
 nav a { color: var(--muted); text-decoration: none }
@@ -61,3 +61,91 @@ form.card button:disabled { opacity: .6; cursor: default }
 .error { color: var(--bad); margin: 1rem 0 0 }
 .note { color: var(--muted); font-size: .85rem }
 .cta-row { display: flex; gap: .8rem; flex-wrap: wrap; margin: 1.5rem 0 }
+
+/* ---------- landing ---------- */
+.landing section { margin-top: 4.5rem }
+.hero { margin-top: 2.5rem !important; text-align: left }
+.eyebrow {
+  color: var(--accent); font-weight: 600; font-size: .85rem;
+  letter-spacing: .08em; text-transform: uppercase; margin-bottom: .4rem;
+}
+.hero h1 { font-size: clamp(2rem, 5.5vw, 3rem); line-height: 1.12; margin: .2rem 0 1rem }
+.section-lead { color: var(--muted); max-width: 620px }
+.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line) }
+.btn.ghost:hover { color: var(--accent); border-color: var(--accent) }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.2rem }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.2rem }
+.card h3 { margin-top: 0; font-size: 1rem }
+
+/* hero flow + layers diagram */
+.hero-flow, .layers-diagram { width: 100%; height: auto; margin-top: 2.2rem }
+.flow-node rect { fill: var(--card); stroke: var(--line); stroke-width: 1.5 }
+.flow-node.ok rect { stroke: var(--ok) }
+.flow-node.warn rect { stroke: var(--bad); stroke-dasharray: 5 4 }
+.flow-node .icon { stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round }
+.flow-node.ok .icon { stroke: var(--ok); stroke-width: 3.5 }
+.flow-label { fill: var(--fg); font: 600 13px system-ui, sans-serif }
+.flow-sub { fill: var(--muted); font: 400 11px system-ui, sans-serif }
+.flow-arrow {
+  fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 6 5;
+  marker-end: none;
+}
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.4rem }
+.step h3 { font-size: .95rem; margin: .8rem 0 .3rem }
+.step p { font-size: .88rem; color: var(--muted); margin: 0 }
+.step-icon {
+  width: 56px; height: 56px; border-radius: 14px; background: var(--card);
+  border: 1px solid var(--line); display: flex; align-items: center; justify-content: center;
+}
+.step-icon svg { width: 32px; height: 32px; stroke: var(--accent); stroke-width: 2.4;
+  stroke-linecap: round; stroke-linejoin: round; fill: none }
+
+/* payload layout diagram */
+.pl-id { fill: color-mix(in srgb, var(--accent) 22%, transparent); stroke: var(--accent); stroke-width: 1.5 }
+.pl-crc { fill: color-mix(in srgb, var(--ok) 22%, transparent); stroke: var(--ok); stroke-width: 1.5 }
+.pl-rep { fill: var(--card); stroke: var(--line); stroke-width: 1.5 }
+
+/* layer cards */
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); margin-right: .45rem }
+.dot2 { background: var(--ok) }
+
+/* KPI tiles */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.4rem 0 }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem }
+.kpi-value { font-size: 2rem; font-weight: 700; letter-spacing: -.02em }
+.kpi-label { color: var(--muted); font-size: .82rem; margin-top: .3rem; line-height: 1.4 }
+
+/* survival matrix */
+.survival { margin-top: .4rem }
+.matrix { list-style: none; padding: 0; margin: .8rem 0 0 }
+.matrix li {
+  display: flex; align-items: baseline; gap: .6rem; padding: .45rem 0;
+  border-bottom: 1px solid var(--line); font-size: .95rem;
+}
+.matrix li:last-child { border-bottom: 0 }
+.matrix .check { color: var(--ok); font-weight: 700 }
+.matrix .val { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600 }
+
+/* timeline */
+.timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.4rem 0 }
+.tl-item { border-top: 3px solid var(--line); padding-top: .8rem }
+.tl-item.done { border-top-color: var(--muted) }
+.tl-item.now { border-top-color: var(--accent) }
+.tl-item p { font-size: .86rem; color: var(--muted); margin: .3rem 0 0 }
+.tl-date { font-weight: 700; font-size: .9rem }
+.tl-item.now .tl-date { color: var(--accent) }
+
+.final-cta { text-align: center; padding: 2.5rem 0 0 }
+.final-cta .cta-row { justify-content: center }
+.final-cta .section-lead { margin-left: auto; margin-right: auto }
+
+@media (max-width: 720px) {
+  .grid2, .grid3, .steps, .kpis, .timeline { grid-template-columns: 1fr 1fr }
+}
+@media (max-width: 480px) {
+  .grid2, .grid3, .steps { grid-template-columns: 1fr }
+}

@@ -13,5 +13,7 @@
     <string name="record">Record</string>
     <string name="stop">Stop</string>
     <string name="registering">Signing and registering proof…</string>
-    <string name="registered">Proof #%1$d registered — %2$s</string>
+    <string name="watermarking">Registered — applying invisible watermark… (can take a while for video)</string>
+    <string name="registered_watermarked">Proof #%1$d ✓ — watermarked copy saved to gallery</string>
+    <string name="registered_no_watermark">Proof #%1$d registered (watermark unavailable, original kept)</string>
 </resources>
