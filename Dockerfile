@@ -17,7 +17,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV DB_PATH=/data/trustcam.db
 
-VOLUME /data
+# Persistence: mount a volume at /data (docker-compose does it; on Railway
+# add a Volume with mount path /data — Dockerfile VOLUME is not supported there)
 EXPOSE 3000
 
 CMD ["node", "server/src/index.js"]

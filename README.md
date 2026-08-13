@@ -27,6 +27,15 @@ Test: `node server/test/e2e.js` (server must be running; use a throwaway `DB_PAT
 
 ## Deploy (trustcam.gregoriogalante.com)
 
+### Railway
+
+1. New service from this repo — the Dockerfile is picked up automatically.
+2. Add a **Volume** to the service with mount path `/data` (SQLite lives there; without it the DB resets on every deploy).
+3. Set the `JWT_SECRET` variable (e.g. `openssl rand -hex 32`); the server refuses to boot in production without it. Railway injects `PORT` and the server honors it.
+4. Attach the custom domain `trustcam.gregoriogalante.com` in Settings → Networking (then add the CNAME Railway shows you at your DNS provider). TLS is automatic.
+
+### Generic VPS (docker compose)
+
 ```bash
 echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
 docker compose up -d --build
@@ -40,7 +49,7 @@ trustcam.gregoriogalante.com {
 }
 ```
 
-SQLite data persists in the `trustcam-data` volume. The server refuses to boot in production without `JWT_SECRET`.
+SQLite data persists in the `trustcam-data` volume.
 
 ## Android app
 
