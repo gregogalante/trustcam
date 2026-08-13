@@ -42,11 +42,11 @@
       </g>
       <path class="flow-arrow" d="M484 185 C 540 185, 560 160, 598 132"/>
       <g class="flow-node ok">
-        <rect x="602" y="76" width="150" height="88" rx="12"/>
-        <path class="icon" d="M622 106l8 8 14-14" fill="none"/>
-        <text x="677" y="112" class="flow-label" text-anchor="start">Verified</text>
-        <text x="622" y="140" class="flow-sub" text-anchor="start">signature → exact copy</text>
-        <text x="622" y="154" class="flow-sub" text-anchor="start">watermark → social copy</text>
+        <rect x="594" y="76" width="160" height="88" rx="12"/>
+        <path class="icon" d="M655 92l6 6 12-12" fill="none"/>
+        <text x="674" y="118" class="flow-label" text-anchor="middle">Verified</text>
+        <text x="674" y="138" class="flow-sub" text-anchor="middle">exact copy → signature</text>
+        <text x="674" y="152" class="flow-sub" text-anchor="middle">social copy → watermark</text>
       </g>
     </svg>
 
@@ -113,7 +113,7 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
       from structure, not secrecy:
     </p>
 
-    <svg class="layers-diagram" viewBox="0 0 760 150" role="img" aria-label="24-bit proof id plus CRC8 form a 32-bit block, repeated 8 times across the 256-bit message">
+    <svg class="layers-diagram" viewBox="0 0 760 175" role="img" aria-label="24-bit proof id plus CRC8 form a 32-bit block, repeated 8 times across the 256-bit message">
       <!-- one block -->
       <rect class="pl-id" x="40" y="16" width="330" height="34" rx="6"/>
       <rect class="pl-crc" x="374" y="16" width="110" height="34" rx="6"/>
@@ -133,9 +133,9 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
         <rect class="pl-rep" x="580" y="84" width="86" height="26" rx="4"/>
         <rect class="pl-rep" x="670" y="84" width="86" height="26" rx="4"/>
       </g>
-      <text x="398" y="101" class="flow-label" text-anchor="middle">× 8 repetitions = 256 bits</text>
-      <text x="398" y="130" class="flow-sub" text-anchor="middle">copies of each bit sit 32 positions apart — an error burst hits at most one copy per bit;</text>
-      <text x="398" y="144" class="flow-sub" text-anchor="middle">decoding soft-combines all 8 copies and validates the CRC</text>
+      <text x="398" y="128" class="flow-label" text-anchor="middle">× 8 repetitions = 256 bits</text>
+      <text x="398" y="152" class="flow-sub" text-anchor="middle">copies of each bit sit 32 positions apart — an error burst hits at most one copy per bit;</text>
+      <text x="398" y="166" class="flow-sub" text-anchor="middle">decoding soft-combines all 8 copies and validates the CRC</text>
     </svg>
 
     <p>

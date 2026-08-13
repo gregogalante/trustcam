@@ -140,31 +140,66 @@ class CaptureActivity : AppCompatActivity() {
         val capturedAt = Instant.now().toString()
         b.status.visibility = View.VISIBLE
         b.status.text = getString(R.string.registering)
+        showProgress(indeterminate = true)
         thread {
             try {
                 val digest = MessageDigest.getInstance("SHA-256")
+                var size = 0L
                 contentResolver.openInputStream(uri)!!.use { ins ->
                     val buf = ByteArray(1 shl 16)
                     while (true) {
                         val n = ins.read(buf)
                         if (n < 0) break
                         digest.update(buf, 0, n)
+                        size += n
                     }
                 }
                 val hash = digest.digest()
                 val signature = DeviceKey.signHash(hash)
                 val hex = hash.joinToString("") { "%02x".format(it) }
 
-                runOnUiThread { b.status.text = getString(R.string.watermarking) }
                 val name = "TC_${System.currentTimeMillis()}.${if (mediaType == "video") "mp4" else "jpg"}"
                 val result = api.capture(contentResolver, uri, name, hex, signature,
-                    mediaType, capturedAt) { wmStream ->
+                    mediaType, capturedAt, size,
+                    onProgress = { stage, pct ->
+                        runOnUiThread {
+                            when (stage) {
+                                "upload" -> {
+                                    showProgress(indeterminate = false, percent = pct)
+                                    b.status.text = getString(R.string.uploading, pct)
+                                }
+                                "processing" -> {
+                                    showProgress(indeterminate = true)
+                                    b.status.text = getString(R.string.watermarking)
+                                }
+                            }
+                        }
+                    }) { wmStream, total ->
                     // Overwrite the gallery entry with the watermarked copy
                     contentResolver.openOutputStream(uri, "wt")!!.use { out ->
-                        wmStream.copyTo(out, 1 shl 16)
+                        val buf = ByteArray(1 shl 16)
+                        var done = 0L
+                        var lastPct = -1
+                        while (true) {
+                            val n = wmStream.read(buf)
+                            if (n < 0) break
+                            out.write(buf, 0, n)
+                            done += n
+                            if (total > 0) {
+                                val pct = (done * 100 / total).toInt()
+                                if (pct != lastPct) {
+                                    lastPct = pct
+                                    runOnUiThread {
+                                        showProgress(indeterminate = false, percent = pct)
+                                        b.status.text = getString(R.string.downloading, pct)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 runOnUiThread {
+                    b.progress.visibility = View.GONE
                     b.status.text = if (result.watermarked) {
                         getString(R.string.registered_watermarked, result.proofId)
                     } else {
@@ -172,9 +207,22 @@ class CaptureActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                runOnUiThread { b.status.text = "Proof failed: ${e.message}" }
+                runOnUiThread {
+                    b.progress.visibility = View.GONE
+                    b.status.text = "Proof failed: ${e.message}"
+                }
             }
         }
+    }
+
+    /** Material progress indicators only allow mode switches while hidden. */
+    private fun showProgress(indeterminate: Boolean, percent: Int = 0) {
+        if (b.progress.isIndeterminate != indeterminate) {
+            b.progress.visibility = View.GONE
+            b.progress.isIndeterminate = indeterminate
+        }
+        if (!indeterminate) b.progress.progress = percent
+        b.progress.visibility = View.VISIBLE
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()

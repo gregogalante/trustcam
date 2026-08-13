@@ -91,21 +91,35 @@ class Api(context: Context) {
      */
     data class CaptureResult(val proofId: Long, val watermarked: Boolean)
 
+    /** Progress stages: "upload" (0-100), "processing" (-1, server-side embedding). */
     fun capture(resolver: ContentResolver, uri: Uri, filename: String,
                 sha256Hex: String, signatureB64: String, mediaType: String,
-                capturedAtIso: String, writeWatermarked: (InputStream) -> Unit): CaptureResult {
+                capturedAtIso: String, sizeBytes: Long,
+                onProgress: (stage: String, percent: Int) -> Unit,
+                writeWatermarked: (InputStream, Long) -> Unit): CaptureResult {
         val fileBody = object : RequestBody() {
             override fun contentType() =
                 (if (mediaType == "video") "video/mp4" else "image/jpeg").toMediaType()
+            override fun contentLength() = sizeBytes
             override fun writeTo(sink: BufferedSink) {
                 resolver.openInputStream(uri)!!.use { ins ->
                     val buf = ByteArray(1 shl 16)
+                    var sent = 0L
+                    var lastPct = -1
                     while (true) {
                         val n = ins.read(buf)
                         if (n < 0) break
                         sink.write(buf, 0, n)
+                        sent += n
+                        val pct = (sent * 100 / sizeBytes).toInt()
+                        if (pct != lastPct) {
+                            lastPct = pct
+                            onProgress("upload", pct)
+                        }
                     }
                 }
+                // Upload complete: the server is now verifying + embedding
+                onProgress("processing", -1)
             }
         }
         val body = MultipartBody.Builder().setType(MultipartBody.FORM)
@@ -131,7 +145,7 @@ class Api(context: Context) {
                 throw ApiException(JSONObject(res.body!!.string()).optString("error", "HTTP ${res.code}"))
             }
             val proofId = res.header("x-proof-id")?.toLong() ?: -1
-            res.body!!.byteStream().use(writeWatermarked)
+            res.body!!.byteStream().use { writeWatermarked(it, res.body!!.contentLength()) }
             return CaptureResult(proofId, watermarked = true)
         }
     }
