@@ -1,0 +1,235 @@
+W0812 16:15:12.631000 65507 site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+W0812 16:15:12.647000 65507 site-packages/torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+objc[65507]: Class AVFFrameReceiver is implemented in both /Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/av/.dylibs/libavdevice.62.3.102.dylib (0x1327e03a8) and /Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/cv2/.dylibs/libavdevice.61.3.100.dylib (0x137a583a8). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+objc[65507]: Class AVFAudioReceiver is implemented in both /Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/av/.dylibs/libavdevice.62.3.102.dylib (0x1327e03f8) and /Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/cv2/.dylibs/libavdevice.61.3.100.dylib (0x137a583f8). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+File /Users/galante/Desktop/videoseal-spike/videoseal/ckpts/videoseal_y_256b_img.pth exists, skipping download
+Model loaded successfully from /Users/galante/Desktop/videoseal-spike/videoseal/ckpts/videoseal_y_256b_img.pth with message: <All keys matched successfully>
+(00:00) [START] LiteRT-Torch Convert
+(00:00) [START] LiteRT-Torch Convert > Torch Export: serving_default
+(00:00) [START] LiteRT-Torch Convert > Torch Export: serving_default > 
+ExportedProgram Run Decompositions
+/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/copyreg.py:105: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+(00:00) [ DONE] LiteRT-Torch Convert > Torch Export: serving_default > 
+ExportedProgram Run Decompositions (+00:00)
+(00:00) [ DONE] LiteRT-Torch Convert > Torch Export: serving_default (+00:00)
+(00:00) [START] LiteRT-Torch Convert > Run FX Passes
+(00:07) [START] LiteRT-Torch Convert > Run FX Passes > ExportedProgram Run 
+Decompositions
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090] failed while attempting to run meta for aten.cat.default
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090] Traceback (most recent call last):
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_subclasses/fake_tensor.py", line 3086, in _dispatch_impl
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     r = func(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]         ^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_ops.py", line 875, in __call__
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return self._op(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_prims_common/wrappers.py", line 313, in _fn
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     result = fn(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]              ^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_compile.py", line 54, in inner
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return disable_fn(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 1445, in _fn
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return fn(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_prims_common/wrappers.py", line 151, in _fn
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     result = fn(**bound.arguments)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]              ^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_refs/__init__.py", line 3007, in cat
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return prims.cat(filtered, dim).clone(memory_format=memory_format)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_ops.py", line 875, in __call__
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return self._op(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_library/fake_impl.py", line 123, in meta_kernel
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return fake_impl_holder.kernel(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_library/utils.py", line 23, in __call__
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return self.func(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/library.py", line 1642, in inner
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return func(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_library/custom_ops.py", line 784, in fake_impl
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     return self._abstract_fn(*args, **kwargs)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_prims/__init__.py", line 1875, in _cat_meta
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     torch._check(
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/__init__.py", line 1768, in _check
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     _check_with(RuntimeError, cond, message)  # pyrefly: ignore [bad-argument-type]
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]   File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/__init__.py", line 1750, in _check_with
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090]     raise error_type(message_evaluated)
+E0812 16:16:06.535000 65507 site-packages/torch/_subclasses/fake_tensor.py:3090] RuntimeError: Sizes of tensors must match except in dimension 3. Expected 32 in dimension 1 but got 1 for tensor number 1 in the list
+(00:08) [ FAIL] LiteRT-Torch Convert > Run FX Passes > ExportedProgram Run 
+Decompositions
+(00:08) [ FAIL] LiteRT-Torch Convert > Run FX Passes
+(00:08) [ FAIL] LiteRT-Torch Convert
+Traceback (most recent call last):
+  File "/Users/galante/Desktop/videoseal-spike/videoseal/../convert_tflite.py", line 51, in <module>
+    main()
+  File "/Users/galante/Desktop/videoseal-spike/videoseal/../convert_tflite.py", line 38, in main
+    edge = litert_torch.convert(wrapper, (frame, msg))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/litert_torch/_convert/interface.py", line 323, in convert
+    return Converter().convert(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/litert_torch/_convert/interface.py", line 208, in convert
+    converted_model = core.convert_signatures(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/litert_torch/_convert/core.py", line 156, in convert_signatures
+    exported_programs = list(map(_run_convert_passes, exported_programs))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/litert_torch/_convert/core.py", line 54, in _run_convert_passes
+    exported_program = fx_infra.run_passes(exported_program, passes)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/litert_torch/fx_infra/pass_base.py", line 66, in run_passes
+    exported_program = pass_(exported_program).exported_program
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/litert_torch/fx_infra/pass_base.py", line 39, in __call__
+    res = self.call(exported_program)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/litert_torch/fx_infra/_canonicalize_pass.py", line 23, in call
+    exported_program = _safe_run_decompositions.safe_run_decompositions(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/litert_torch/fx_infra/_safe_run_decompositions.py", line 103, in safe_run_decompositions
+    exported_program = exported_program.run_decompositions(decomp_table)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/export/exported_program.py", line 124, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/export/exported_program.py", line 1563, in run_decompositions
+    return _decompose_exported_program(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/export/exported_program.py", line 1015, in _decompose_exported_program
+    ) = _decompose_and_get_gm_with_new_signature_constants(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/export/exported_program.py", line 483, in _decompose_and_get_gm_with_new_signature_constants
+    aten_export_artifact = _export_to_aten_ir(
+                           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/export/_trace.py", line 1042, in _export_to_aten_ir
+    gm, graph_signature = transform(_aot_export_joint_with_descriptors)(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/export/_trace.py", line 971, in _aot_export_joint_with_descriptors
+    joint_with_descriptors = aot_export_joint_with_descriptors(
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_functorch/aot_autograd.py", line 1418, in aot_export_joint_with_descriptors
+    aot_state = create_aot_state(
+                ^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_functorch/aot_autograd.py", line 586, in create_aot_state
+    fw_metadata = run_functionalized_fw_and_collect_metadata(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/collect_metadata_analysis.py", line 220, in inner
+    flat_f_outs = f(*flat_f_args)
+                  ^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/utils.py", line 192, in flat_fn
+    tree_out = fn(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/graph_capture_wrappers.py", line 1534, in functional_call
+    out = PropagateUnbackedSymInts(mod).run(*args)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/fx/interpreter.py", line 197, in run
+    self.env[node] = self.run_node(node)
+                     ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/fx/experimental/symbolic_shapes.py", line 8798, in run_node
+    result = super().run_node(n)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/fx/interpreter.py", line 294, in run_node
+    return getattr(self, n.op)(n.target, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/fx/interpreter.py", line 377, in call_function
+    return target(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_ops.py", line 875, in __call__
+    return self._op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 1446, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_subclasses/functional_tensor.py", line 625, in __torch_dispatch__
+    outs_unwrapped = func._op_dk(
+                     ^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 1446, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/utils/_stats.py", line 29, in wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_subclasses/fake_tensor.py", line 1606, in __torch_dispatch__
+    return self.dispatch(func, types, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_subclasses/fake_tensor.py", line 2386, in dispatch
+    return self._cached_dispatch_impl(func, types, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_subclasses/fake_tensor.py", line 1754, in _cached_dispatch_impl
+    output = self._dispatch_impl(func, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_subclasses/fake_tensor.py", line 3086, in _dispatch_impl
+    r = func(*args, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_ops.py", line 875, in __call__
+    return self._op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_prims_common/wrappers.py", line 313, in _fn
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_compile.py", line 54, in inner
+    return disable_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_dynamo/eval_frame.py", line 1445, in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_prims_common/wrappers.py", line 151, in _fn
+    result = fn(**bound.arguments)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_refs/__init__.py", line 3007, in cat
+    return prims.cat(filtered, dim).clone(memory_format=memory_format)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_ops.py", line 875, in __call__
+    return self._op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_library/fake_impl.py", line 123, in meta_kernel
+    return fake_impl_holder.kernel(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_library/utils.py", line 23, in __call__
+    return self.func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/library.py", line 1642, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_library/custom_ops.py", line 784, in fake_impl
+    return self._abstract_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/_prims/__init__.py", line 1875, in _cat_meta
+    torch._check(
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/__init__.py", line 1768, in _check
+    _check_with(RuntimeError, cond, message)  # pyrefly: ignore [bad-argument-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/galante/.miniconda3/envs/aiedge/lib/python3.11/site-packages/torch/__init__.py", line 1750, in _check_with
+    raise error_type(message_evaluated)
+RuntimeError: Sizes of tensors must match except in dimension 3. Expected 32 in dimension 1 but got 1 for tensor number 1 in the list
+
+While executing %cat : [num_users=3] = call_function[target=torch.ops.aten.cat.default](args = ([%add_3, %mul_2], 3), kwargs = {})
+Original traceback:
+File "/Users/galante/Desktop/videoseal-spike/videoseal/../convert_tflite.py", line 23, in forward
+    return self.embedder(frame, msg)
+  File "/Users/galante/Desktop/videoseal-spike/videoseal/../videoseal/videoseal/models/embedder.py", line 164, in forward
+    imgs_w = self.unet(imgs, msgs)
+  File "/Users/galante/Desktop/videoseal-spike/videoseal/../videoseal/videoseal/modules/unet.py", line 216, in forward
+    hiddens.append(self.msg_processor(hiddens.pop(), msgs))  # b c+c' h w
+  File "/Users/galante/Desktop/videoseal-spike/videoseal/../videoseal/videoseal/modules/msg_processor.py", line 112, in forward
+    latents = torch.cat([
+Use tlparse to see full graph. (https://github.com/pytorch/tlparse?tab=readme-ov-file#tlparse-parse-structured-pt2-logs)

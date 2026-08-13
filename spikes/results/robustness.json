@@ -1,0 +1,45 @@
+{
+  "embed_seconds": 26.4,
+  "embed_fps": 9.7,
+  "psnr_watermarked_vs_source": 46.783304,
+  "conditions": {
+    "baseline_no_transcode": {
+      "bit_acc": 100.0
+    },
+    "youtube_1080p_8M": {
+      "bit_acc": 100.0,
+      "wrong_bits_of_256": 0,
+      "size_mb": 10.4
+    },
+    "tiktok_1080p_3M": {
+      "bit_acc": 100.0,
+      "wrong_bits_of_256": 0,
+      "size_mb": 3.9
+    },
+    "twitter_720p_2M": {
+      "bit_acc": 100.0,
+      "wrong_bits_of_256": 0,
+      "size_mb": 2.6
+    },
+    "whatsapp_480p_1M": {
+      "bit_acc": 98.05,
+      "wrong_bits_of_256": 5,
+      "size_mb": 1.3
+    },
+    "h265_crf28": {
+      "bit_acc": 99.22,
+      "wrong_bits_of_256": 2,
+      "size_mb": 2.3
+    },
+    "crop10_rescale": {
+      "bit_acc": 100.0,
+      "wrong_bits_of_256": 0,
+      "size_mb": 5.7
+    },
+    "stress_360p_500k": {
+      "bit_acc": 94.92,
+      "wrong_bits_of_256": 13,
+      "size_mb": 0.6
+    }
+  }
+}

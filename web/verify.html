@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verify a file — TrustCam</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/">TrustCam</a>
+    <a href="/verify.html">Verify</a>
+    <a href="/paper/">Paper</a>
+    <a href="/register.html">Register</a>
+  </nav>
+  <main>
+    <h1>Verify a photo or video</h1>
+    <p class="lead">The file is hashed and checked against registered proofs. It is not stored.</p>
+
+    <div class="drop" id="drop">
+      <p><strong>Drop a file here</strong> or click to choose</p>
+      <input type="file" id="file" hidden>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <footer>Exact-file verification. Re-encoded copies (e.g. downloaded from social media)
+    will not match — watermark-based recovery is on the roadmap.</footer>
+  </main>
+
+  <script>
+    const drop = document.getElementById('drop')
+    const input = document.getElementById('file')
+    const result = document.getElementById('result')
+
+    drop.addEventListener('click', () => input.click())
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover') })
+    drop.addEventListener('dragleave', () => drop.classList.remove('hover'))
+    drop.addEventListener('drop', e => {
+      e.preventDefault()
+      drop.classList.remove('hover')
+      if (e.dataTransfer.files[0]) check(e.dataTransfer.files[0])
+    })
+    input.addEventListener('change', () => { if (input.files[0]) check(input.files[0]) })
+
+    async function check (file) {
+      result.innerHTML = '<div class="card">Checking <code>' + esc(file.name) + '</code>…</div>'
+      const body = new FormData()
+      body.append('file', file)
+      try {
+        const res = await fetch('/api/verify', { method: 'POST', body })
+        render(await res.json())
+      } catch {
+        result.innerHTML = '<div class="card"><span class="badge bad">Error</span> Could not reach the verification service.</div>'
+      }
+    }
+
+    function render (r) {
+      if (!r.found) {
+        result.innerHTML = `
+          <div class="card">
+            <span class="badge bad">No proof found</span>
+            <p>${esc(r.message || '')}</p>
+            <dl><dt>SHA-256</dt><dd><code>${esc(r.sha256)}</code></dd></dl>
+          </div>`
+        return
+      }
+      const badge = r.verified
+        ? '<span class="badge ok">Verified ✓</span>'
+        : '<span class="badge bad">Proof found but signature INVALID</span>'
+      result.innerHTML = `
+        <div class="card">
+          ${badge}
+          <dl>
+            <dt>Recorded by</dt><dd>${esc(r.owner)}</dd>
+            <dt>Device</dt><dd>${esc(r.device.model)} (${esc(r.device.securityLevel)}${r.device.attested ? ', hardware-attested' : ''})</dd>
+            <dt>Captured at</dt><dd>${esc(r.capturedAt)}</dd>
+            <dt>Registered at</dt><dd>${esc(r.registeredAt)} (UTC)</dd>
+            <dt>Media</dt><dd>${esc(r.mediaType)}, ${Number(r.sizeBytes).toLocaleString()} bytes</dd>
+            <dt>SHA-256</dt><dd><code>${esc(r.sha256)}</code></dd>
+          </dl>
+        </div>`
+    }
+
+    function esc (s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[c])
+    }
+  </script>
+</body>
+</html>

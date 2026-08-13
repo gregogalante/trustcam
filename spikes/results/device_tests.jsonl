@@ -1,0 +1,1 @@
+{"date": "2026-08-12", "manufacturer": "Motorola", "model": "Moto G75 5G", "soc": "SM6475", "android": "16", "encoder": "c2.qti.avc.encoder", "sei_pass": true, "sei_count": 60, "ort_cpu4_ms": 1044.6, "ort_xnnpack_ms": 1042.2, "ort_nnapi_ms": 2843.9, "notes": "baseline device"}

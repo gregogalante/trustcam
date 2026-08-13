@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Research &amp; feasibility — TrustCam</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/">TrustCam</a>
+    <a href="/verify.html">Verify</a>
+    <a href="/paper/">Paper</a>
+    <a href="/register.html">Register</a>
+  </nav>
+  <main>
+    <h1>Research background &amp; feasibility</h1>
+
+    <h2>Context: the provenance ecosystem</h2>
+    <p>
+      Capture-time provenance is an active, standards-backed field.
+      <a href="https://spec.c2pa.org/">C2PA / Content Credentials</a> (Adobe, Google,
+      Sony, Microsoft; 6,000+ organizations) defines signed manifests embedded in
+      media; the EU AI Act's transparency obligations (Art. 50, applicable from
+      August 2026) and the near-final ISO 22144 point to it as the de facto standard.
+      Shipping hardware already signs at capture: Google Pixel 10 (photos, keys in
+      StrongBox), Sony's video Content Credentials on professional bodies, Leica
+      M11-P. The 2025 Nikon Z6III incident — a researcher induced the camera to sign
+      an AI-generated image — established the field's central lesson:
+      <em>the weak point is what gets signed, not the cryptography</em>.
+    </p>
+
+    <h2>Why signatures alone are not enough</h2>
+    <p>
+      Social platforms re-encode uploads and strip embedded metadata, including
+      C2PA manifests, essentially 100% of the time. A signature proves integrity,
+      not presence: a stripped file is not "tampered", merely unsigned. Conversely,
+      statistical watermarks alone are removable and forgeable. The literature
+      converges on combining them — an exact cryptographic layer plus a robust
+      watermark used as a recovery pointer ("durable credentials").
+    </p>
+
+    <h2>Key literature</h2>
+    <table>
+      <tr><th>Work</th><th>Year</th><th>Relevance</th></tr>
+      <tr><td><a href="https://arxiv.org/abs/2412.09492">VideoSeal</a> (Meta)</td><td>2024</td><td>Open-source robust video watermarking, 256-bit payload — our watermark layer</td></tr>
+      <tr><td><a href="https://arxiv.org/html/2604.23016">DeepSignature</a></td><td>2026</td><td>Ed25519 signature embedded as a neural watermark</td></tr>
+      <tr><td><a href="https://arxiv.org/pdf/2510.09656">Signing Right Away</a></td><td>2025</td><td>Signing raw sensor output before the ISP (anti-injection)</td></tr>
+      <tr><td>ETH Zurich sensor chip (Nature Electronics)</td><td>2026</td><td>Signature inside the sensor die</td></tr>
+      <tr><td><a href="https://eprint.iacr.org/2024/1066">VerITAS</a></td><td>2024</td><td>zk-SNARK proofs that edits of signed media were permitted ones</td></tr>
+      <tr><td><a href="https://eprint.iacr.org/2026/1598">zk-Cinema</a></td><td>2026</td><td>First zero-knowledge provenance for video</td></tr>
+      <tr><td><a href="https://developer.axis.com/video-streaming-and-recording/signed-video/">Axis Signed Video / ONVIF Media Signing</a></td><td>2021–</td><td>Per-GOP rolling signatures in SEI NAL units, deployed in production cameras</td></tr>
+    </table>
+
+    <h2>Our feasibility results (phase 0)</h2>
+    <h2 style="font-size:1rem">Watermark robustness</h2>
+    <p>
+      A 256-bit VideoSeal payload embedded in 1080p video (imperceptible: PSNR
+      46.8&nbsp;dB) survived simulated platform re-encodes at 100% bit accuracy
+      (YouTube/TikTok/X ladders) and ≥94.9% in a 360p/500kbps stress case — fully
+      recoverable with standard error correction. <strong>Real-platform round
+      trips</strong>: actual YouTube upload/download 99.61%, WhatsApp 100%.
+    </p>
+    <h2 style="font-size:1rem">Bitstream signature transport</h2>
+    <p>
+      Custom SEI NAL units prepended to every access unit passed through a consumer
+      phone's hardware H.264 encoder and MP4 muxer intact (60/60, Motorola Moto G75,
+      Qualcomm encoder) — per-GOP signatures need no custom media stack.
+    </p>
+    <h2 style="font-size:1rem">On-device embedding cost</h2>
+    <p>
+      The watermark embedder (23.7M params, 28.3 GFLOPs at fp32) runs at
+      ~1.0&nbsp;s/inference on a mid-range phone CPU — about 2× short of real-time
+      at 30fps with temporal propagation. The identified path is int8 quantization
+      on the NPU (typically 4–8× on this SoC class); flagship NPUs are expected to
+      be comfortably real-time. An engineering gap, not a feasibility wall.
+    </p>
+
+    <h2>Threat model and honest limits</h2>
+    <ul>
+      <li><strong>Analog hole</strong> — filming a screen produces a validly signed
+        capture of fake content. Unsolvable by signing; mitigable with depth/IMU
+        coherence signals, which we treat as signals, never guarantees.</li>
+      <li><strong>Injection before signing</strong> — virtual cameras, HDMI-to-CSI
+        injection (exploited at scale against KYC systems). Hardware attestation and
+        verified boot raise the bar; sensor-level signing (see literature) is where
+        the industry is heading.</li>
+      <li><strong>Key compromise</strong> — hardware-backed, non-exportable per-device
+        keys limit blast radius to one device; attestation lets the registry refuse
+        unattested keys.</li>
+      <li><strong>Clock trust</strong> — capture time is device-claimed in the MVP;
+        registration time is server-attested. RFC 3161 timestamping closes the gap.</li>
+    </ul>
+
+    <footer><a href="/paper/">← Paper index</a></footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,63 @@
+:root {
+  --bg: #ffffff; --fg: #16181d; --muted: #5c6470; --line: #e3e6ea;
+  --accent: #2456d6; --ok: #0f7b3f; --bad: #b3261e; --card: #f6f7f9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101318; --fg: #e8eaee; --muted: #98a0ac; --line: #2a2f38;
+    --accent: #6d95ff; --ok: #4ccb84; --bad: #ff7a70; --card: #191d24;
+  }
+}
+* { box-sizing: border-box }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+main { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem }
+nav {
+  display: flex; gap: 1.25rem; align-items: baseline;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--line);
+  max-width: 760px; margin: 0 auto;
+}
+nav .brand { font-weight: 700; margin-right: auto; text-decoration: none; color: var(--fg) }
+nav a { color: var(--muted); text-decoration: none }
+nav a:hover { color: var(--accent) }
+h1 { font-size: 1.7rem; line-height: 1.25 }
+h2 { font-size: 1.2rem; margin-top: 2.2rem }
+a { color: var(--accent) }
+p.lead { font-size: 1.1rem; color: var(--muted) }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem }
+.drop {
+  border: 2px dashed var(--line); border-radius: 12px; padding: 3rem 1rem;
+  text-align: center; color: var(--muted); cursor: pointer; transition: border-color .15s;
+}
+.drop.hover, .drop:hover { border-color: var(--accent) }
+.result { margin-top: 1.5rem }
+.badge { display: inline-block; padding: .2rem .6rem; border-radius: 99px; font-size: .85rem; font-weight: 600 }
+.badge.ok { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok) }
+.badge.bad { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad) }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.2rem; margin: 1rem 0 0 }
+dt { color: var(--muted) }
+dd { margin: 0; word-break: break-all }
+table { border-collapse: collapse; width: 100%; font-size: .95rem }
+th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--line) }
+code, pre { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: .9em }
+pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem; overflow-x: auto }
+footer { color: var(--muted); font-size: .85rem; margin-top: 4rem; border-top: 1px solid var(--line); padding-top: 1rem }
+form.card label { display: block; margin: 1rem 0 .3rem; color: var(--muted); font-size: .9rem }
+form.card label:first-child { margin-top: 0 }
+form.card input {
+  width: 100%; padding: .65rem .8rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--fg); font: inherit;
+}
+form.card input:focus { outline: 2px solid var(--accent); border-color: transparent }
+form.card button, .btn {
+  display: inline-block; margin-top: 1.4rem; padding: .7rem 1.4rem; border: 0; border-radius: 8px;
+  background: var(--accent); color: #fff; font: inherit; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+}
+form.card button:disabled { opacity: .6; cursor: default }
+.btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent) }
+.error { color: var(--bad); margin: 1rem 0 0 }
+.note { color: var(--muted); font-size: .85rem }
+.cta-row { display: flex; gap: .8rem; flex-wrap: wrap; margin: 1.5rem 0 }

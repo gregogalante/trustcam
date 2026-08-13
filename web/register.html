@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account — TrustCam</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/">TrustCam</a>
+    <a href="/verify.html">Verify</a>
+    <a href="/paper/">Paper</a>
+    <a href="/register.html">Register</a>
+  </nav>
+  <main>
+    <h1>Create your account</h1>
+    <p class="lead">Register here, then sign in from the app to start capturing verifiable media.</p>
+
+    <form id="form" class="card">
+      <label for="name">Name</label>
+      <input id="name" type="text" required autocomplete="name">
+      <label for="email">Email</label>
+      <input id="email" type="email" required autocomplete="email">
+      <label for="password">Password (min 8 characters)</label>
+      <input id="password" type="password" required minlength="8" autocomplete="new-password">
+      <button type="submit" id="submit">Create account</button>
+      <p id="error" class="error" hidden></p>
+    </form>
+
+    <div id="done" class="card" hidden>
+      <span class="badge ok">Account created ✓</span>
+      <p>Now install the app and sign in with your email and password:</p>
+      <p><a class="btn" href="/trustcam.apk" download>⬇ Download TrustCam for Android (APK)</a></p>
+      <p class="note">Sideload install: open the downloaded APK and allow installation from your browser when prompted.</p>
+    </div>
+
+    <footer>Your password is stored hashed; the media you capture never leaves your device — only signed proofs do.</footer>
+  </main>
+
+  <script>
+    const form = document.getElementById('form')
+    const error = document.getElementById('error')
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault()
+      error.hidden = true
+      document.getElementById('submit').disabled = true
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value
+          })
+        })
+        const body = await res.json()
+        if (!res.ok) throw new Error(body.error || 'Registration failed')
+        form.hidden = true
+        document.getElementById('done').hidden = false
+      } catch (err) {
+        error.textContent = err.message
+        error.hidden = false
+        document.getElementById('submit').disabled = false
+      }
+    })
+  </script>
+</body>
+</html>

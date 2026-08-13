@@ -1,0 +1,30 @@
+# Node
+node_modules/
+server/trustcam.db*
+
+# Android / Gradle
+android/build/
+android/app/build/
+android/.gradle/
+seitest/build/
+seitest/app/build/
+seitest/.gradle/
+local.properties
+
+# Spike heavy artifacts (re-downloadable / re-generatable, see spikes/README.md)
+spikes/videoseal/
+spikes/ckpts/
+spikes/results/*.mp4
+spikes/results/*.h264
+spikes/results/*.onnx
+spikes/results/embedder_tf/
+
+# OS
+.DS_Store
+
+# Android signing (local only)
+android/release.keystore
+android/keystore.properties
+
+# Regenerable via spikes/spike_export.py (see seitest/README.md)
+seitest/app/src/androidTest/assets/embedder.onnx

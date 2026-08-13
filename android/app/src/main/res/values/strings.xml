@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TrustCam</string>
+    <string name="tagline">Every capture, cryptographically yours.</string>
+    <string name="server_url_hint">Server URL (dev override)</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="login">Sign in</string>
+    <string name="register_cta">No account? Register on the website</string>
+    <string name="fill_credentials">Enter email and password</string>
+    <string name="generic_error">Something went wrong</string>
+    <string name="photo">Photo</string>
+    <string name="record">Record</string>
+    <string name="stop">Stop</string>
+    <string name="registering">Signing and registering proof…</string>
+    <string name="registered">Proof #%1$d registered — %2$s</string>
+</resources>

@@ -1,0 +1,10 @@
+# Only server/ and web/ go into the image
+android
+seitest
+spikes
+docs
+.git
+.claude
+server/node_modules
+server/trustcam.db*
+**/.DS_Store

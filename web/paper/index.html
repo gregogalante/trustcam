@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paper — TrustCam</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/">TrustCam</a>
+    <a href="/verify.html">Verify</a>
+    <a href="/paper/">Paper</a>
+    <a href="/register.html">Register</a>
+  </nav>
+  <main>
+    <h1>TrustCam: capture-time provenance for photos and video</h1>
+    <p class="lead">Project description and technical documentation.</p>
+
+    <h2>Abstract</h2>
+    <p>
+      As generative models make fabricated photos and videos indistinguishable
+      from real captures, "detecting fakes" is a losing race. TrustCam takes the
+      complementary approach: <strong>proving authentic media authentic</strong>
+      at the moment of capture. The mobile app hashes media as it is recorded and
+      signs it with an ECDSA P-256 key generated inside the phone's secure
+      hardware (StrongBox / TEE), whose attestation chain proves both the key's
+      hardware protection and the device's integrity. The signed proof is
+      registered with the user's account; a public verifier then lets anyone
+      confirm <em>who</em> recorded a file, <em>when</em>, and that it is
+      byte-for-byte unmodified.
+    </p>
+    <p>
+      The roadmap extends this to per-segment rolling signatures carried in the
+      video bitstream (ONVIF Media Signing) and a robust invisible watermark
+      (Meta VideoSeal) that survives social-media re-encoding, so provenance can
+      be recovered even after platforms strip metadata — validated in our
+      feasibility experiments below.
+    </p>
+
+    <h2>Documents</h2>
+    <div class="card">
+      <ul>
+        <li><a href="/paper/architecture.html">System architecture</a> — the capture pipeline, key management, signature conventions, verification service.</li>
+        <li><a href="/paper/research.html">Research background &amp; feasibility</a> — state of the art (C2PA, in-camera signing), key papers, our experimental results, threat model and honest limits.</li>
+      </ul>
+    </div>
+
+    <h2>Claims and non-claims</h2>
+    <p>
+      A valid TrustCam proof asserts: <em>this exact file was produced by this
+      specific device, bound to this account, at this time, and has not been
+      modified since</em>. It deliberately does <strong>not</strong> assert that
+      the depicted scene is real — no capture-time cryptography can: a trusted
+      camera filming a high-resolution display signs what its sensor sees (the
+      "analog hole"). Systems that overclaim here have failed publicly; we scope
+      claims to what the cryptography actually proves.
+    </p>
+
+    <footer>Working draft — contents evolve with the project.</footer>
+  </main>
+</body>
+</html>

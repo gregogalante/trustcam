@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrustCam — verifiable capture</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/">TrustCam</a>
+    <a href="/verify.html">Verify</a>
+    <a href="/paper/">Paper</a>
+    <a href="/register.html">Register</a>
+  </nav>
+  <main>
+    <h1>Prove your video is real — cryptographically.</h1>
+    <p class="lead">
+      TrustCam signs photos and videos at the moment of capture with a key that
+      never leaves your phone's secure hardware. Anyone can then verify who
+      recorded a file, when, and that not a single byte changed since.
+    </p>
+
+    <div class="cta-row">
+      <a class="btn" href="/trustcam.apk" download>⬇ Get the Android app (APK)</a>
+      <a class="btn secondary" href="/register.html">Create an account</a>
+    </div>
+
+    <h2>How it works</h2>
+    <div class="card">
+      <ol>
+        <li><strong>Capture</strong> — the app records photo/video and computes its cryptographic hash on the fly.</li>
+        <li><strong>Sign</strong> — the hash is signed inside the phone's secure element (StrongBox/TEE). The private key is generated there and cannot be extracted.</li>
+        <li><strong>Register</strong> — the signed proof (not the file — your media stays yours) is registered with your account and your device's hardware attestation.</li>
+        <li><strong>Verify</strong> — anyone uploads the file here and sees the owner, device, capture time, and integrity verdict.</li>
+      </ol>
+    </div>
+
+    <h2>What it proves — and what it doesn't</h2>
+    <p>
+      A valid proof means: <em>this exact file was signed by this specific device,
+      registered to this account, at this time, and is unmodified since</em>.
+      It does <strong>not</strong> prove the scene itself was real: a camera
+      pointed at a screen still signs what its sensor sees. We say what we can
+      prove, nothing more — the technical details are in the
+      <a href="/paper/">paper</a>.
+    </p>
+
+    <p><a href="/verify.html"><strong>Verify a file now →</strong></a></p>
+
+    <footer>TrustCam MVP — working name, work in progress.</footer>
+  </main>
+</body>
+</html>

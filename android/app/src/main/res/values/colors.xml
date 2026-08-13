@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the web accent color in web/style.css -->
+    <color name="brand">#2456D6</color>
+</resources>

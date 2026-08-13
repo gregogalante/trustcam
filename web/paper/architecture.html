@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Architecture — TrustCam</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/">TrustCam</a>
+    <a href="/verify.html">Verify</a>
+    <a href="/paper/">Paper</a>
+    <a href="/register.html">Register</a>
+  </nav>
+  <main>
+    <h1>System architecture</h1>
+
+    <h2>Design principle: two integrity layers</h2>
+    <p>
+      Signatures and watermarks fail in opposite places, so the full design uses both:
+    </p>
+    <table>
+      <tr><th>Layer</th><th>Proves</th><th>Survives re-encoding?</th></tr>
+      <tr><td>Cryptographic signature over content hashes</td><td>Exact integrity, device identity, capture time</td><td>No — any transcode invalidates it, by design</td></tr>
+      <tr><td>Robust invisible watermark (roadmap)</td><td>Pointer to the registered proof (device ID + segment index)</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
+    </table>
+    <p>
+      An intact file verifies exactly. A social-media copy — re-encoded, metadata
+      stripped — recovers its provenance via watermark extraction and a registry
+      lookup. The MVP implements the first layer end-to-end; the watermark layer
+      is validated experimentally (see <a href="/paper/research.html">research</a>)
+      and lands next.
+    </p>
+
+    <h2>Capture pipeline (Android)</h2>
+    <ol>
+      <li>Device enrollment: an ECDSA P-256 key pair is generated <strong>inside StrongBox</strong>
+        (dedicated secure element; TEE fallback on devices without it — the level is
+        recorded in every proof). Android Key Attestation produces an X.509 chain,
+        rooted at Google's hardware attestation root, proving the key lives in
+        hardware and the device passed verified boot.</li>
+      <li>Capture: photo or video via the camera pipeline; the file's SHA-256 is
+        computed as data is written.</li>
+      <li>Signing: the 32 hash bytes are signed in the secure element
+        (<code>SHA256withECDSA</code>). The private key never exists in application
+        memory, and signing requires the key's hardware.</li>
+      <li>Registration: the proof — hash, signature, media type, capture timestamp,
+        device reference — is uploaded to the registry. <strong>The media file itself
+        is never uploaded</strong>; the proof is 200 bytes of metadata.</li>
+    </ol>
+
+    <h2>Signature convention</h2>
+    <pre>H   = SHA-256(file bytes)                    // 32 bytes
+sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</pre>
+    <p>
+      The verifier recomputes <code>H</code> from the uploaded file and checks
+      <code>sig</code> against the device's enrolled public key — the stored proof
+      row is a claim, the signature is the evidence, and it is re-checked on every
+      verification.
+    </p>
+
+    <h2>Bitstream signatures for video (next iteration)</h2>
+    <p>
+      Whole-file signing is the MVP baseline. The validated upgrade path embeds a
+      <strong>rolling signature per GOP</strong> (group of pictures) directly in the
+      H.264/H.265 bitstream as SEI NAL units in the ONVIF Media Signing format:
+      each GOP's hash chains the previous one, proving continuous, ordered,
+      real-time capture, and making any cut or splice detectable at GOP granularity.
+      Our device tests confirmed these SEI units pass through the hardware encoder
+      and MP4 muxer untouched on consumer hardware (60/60 preserved,
+      Qualcomm <code>c2.qti.avc.encoder</code>).
+    </p>
+
+    <h2>Verification service</h2>
+    <ul>
+      <li><strong>Registry API</strong> — accounts, device enrollment (attestation
+        chain validation), proof registration with immediate signature verification.</li>
+      <li><strong>Public verifier</strong> — anyone uploads a file; the service
+        recomputes the hash, finds the proof, re-verifies the signature, and reports
+        owner, device model, hardware security level, capture and registration
+        times. Files are hashed in a stream and never stored.</li>
+    </ul>
+
+    <h2>Trust model and standards alignment</h2>
+    <p>
+      The design maps onto C2PA concepts (hard binding = content hash + signature;
+      soft binding = watermark) and is built to become C2PA-conformant: proofs can
+      be re-expressed as C2PA manifests, and the device keys/attestation flow
+      matches the requirements of C2PA Conformance Level 2 (hardware-backed keys).
+      Timestamping today relies on the registry's clock plus the device-claimed
+      capture time; RFC 3161 tokens are the planned upgrade.
+    </p>
+
+    <footer><a href="/paper/">← Paper index</a></footer>
+  </main>
+</body>
+</html>

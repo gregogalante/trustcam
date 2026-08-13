@@ -1,0 +1,11 @@
+{
+  "embedder_params_M": 23.7,
+  "yuv": true,
+  "cpu_ms_per_frame": 133.7,
+  "mps_ms_per_frame": 23.6,
+  "onnx_export": {
+    "ok": true,
+    "size_mb": 94.7
+  },
+  "onnxruntime_cpu_ms": 59.9
+}
