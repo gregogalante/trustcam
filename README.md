@@ -37,7 +37,7 @@ container (`start.sh` runs both; the watermark service is localhost-only).
 2. Add a **Volume** with mount path `/data` (SQLite lives there; without it the DB resets on every deploy).
 3. Set `JWT_SECRET` (e.g. `openssl rand -hex 32`); the server refuses to boot in production without it. Railway injects `PORT` and the server honors it.
 4. Attach the custom domain `trustcam.gregoriogalante.com` in Settings → Networking (then add the CNAME Railway shows you at your DNS provider). TLS is automatic.
-5. Give the service as much CPU as the plan allows: video watermarking is CPU-bound (~3-4× clip duration per request).
+5. Give the service as much CPU as the plan allows: video watermarking is CPU-bound (~3× clip duration per request on a fast CPU). Tuning env vars: `WM_THREADS` (torch threads — set it to the service's actual vCPU count; auto-detected from the cgroup quota by default) and `WM_STEP_SIZE` (frames between watermarked key frames, default 4 — raising it trades a little robustness for a little speed).
 
 `watermark/Dockerfile` still exists if you ever want to split the watermark service out (set `WATERMARK_URL` on the Node service accordingly).
 
