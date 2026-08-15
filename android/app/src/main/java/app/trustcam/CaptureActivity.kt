@@ -34,6 +34,7 @@ class CaptureActivity : AppCompatActivity() {
     private lateinit var api: Api
     private lateinit var queue: ProofQueue
     private var engine: WatermarkEngine? = null
+    private var cameraProvider: ProcessCameraProvider? = null
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
@@ -71,19 +72,24 @@ class CaptureActivity : AppCompatActivity() {
     private fun startCamera() {
         val future = ProcessCameraProvider.getInstance(this)
         future.addListener({
-            val provider = future.get()
-            val preview = Preview.Builder().build()
-                .also { it.surfaceProvider = b.preview.surfaceProvider }
-            imageCapture = ImageCapture.Builder().build()
-            val recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.FHD))
-                .build()
-            videoCapture = VideoCapture.withOutput(recorder)
-
-            provider.unbindAll()
-            provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA,
-                preview, imageCapture, videoCapture)
+            cameraProvider = future.get()
+            bindCamera()
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun bindCamera() {
+        val provider = cameraProvider ?: return
+        val preview = Preview.Builder().build()
+            .also { it.surfaceProvider = b.preview.surfaceProvider }
+        imageCapture = ImageCapture.Builder().build()
+        val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.FHD))
+            .build()
+        videoCapture = VideoCapture.withOutput(recorder)
+
+        provider.unbindAll()
+        provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA,
+            preview, imageCapture, videoCapture)
     }
 
     private fun takePhoto() {
@@ -146,8 +152,13 @@ class CaptureActivity : AppCompatActivity() {
      */
     private fun sealCapture(uri: Uri, mediaType: String) {
         val capturedAt = Instant.now().toString()
-        b.status.visibility = View.VISIBLE
-        b.status.text = getString(R.string.watermarking)
+        // Hide camera + capture controls while sealing: free the camera (and its
+        // CPU share) for the ONNX pipeline and block any new capture attempt
+        cameraProvider?.unbindAll()
+        b.controls.visibility = View.GONE
+        b.status.visibility = View.GONE
+        b.sealingOverlay.visibility = View.VISIBLE
+        b.sealStatus.text = getString(R.string.watermarking)
         showProgress(indeterminate = true)
         thread {
             try {
@@ -164,7 +175,7 @@ class CaptureActivity : AppCompatActivity() {
                     VideoWatermarker.process(this, uri, tmp, eng, msg) { pct ->
                         runOnUiThread {
                             showProgress(indeterminate = false, percent = pct)
-                            b.status.text = getString(R.string.watermarking_pct, pct)
+                            b.sealStatus.text = getString(R.string.watermarking_pct, pct)
                         }
                     }
                     contentResolver.openOutputStream(uri, "wt")!!.use { out ->
@@ -175,7 +186,7 @@ class CaptureActivity : AppCompatActivity() {
 
                 runOnUiThread {
                     showProgress(indeterminate = true)
-                    b.status.text = getString(R.string.signing)
+                    b.sealStatus.text = getString(R.string.signing)
                 }
                 val digest = MessageDigest.getInstance("SHA-256")
                 var size = 0L
@@ -195,17 +206,22 @@ class CaptureActivity : AppCompatActivity() {
 
                 val synced = trySync()
                 runOnUiThread {
-                    b.progress.visibility = View.GONE
-                    b.status.text = getString(
-                        if (synced) R.string.sealed_synced else R.string.sealed_offline, payload)
+                    finishSealing(getString(
+                        if (synced) R.string.sealed_synced else R.string.sealed_offline, payload))
                 }
             } catch (e: Exception) {
-                runOnUiThread {
-                    b.progress.visibility = View.GONE
-                    b.status.text = "Sealing failed: ${e.message}"
-                }
+                runOnUiThread { finishSealing("Sealing failed: ${e.message}") }
             }
         }
+    }
+
+    /** Restore the capture UI (camera preview + controls) and show the outcome. */
+    private fun finishSealing(message: String) {
+        b.sealingOverlay.visibility = View.GONE
+        b.controls.visibility = View.VISIBLE
+        b.status.visibility = View.VISIBLE
+        b.status.text = message
+        bindCamera()
     }
 
     /** Best-effort sync of the offline queue; false when offline or on error. */
@@ -221,12 +237,12 @@ class CaptureActivity : AppCompatActivity() {
 
     /** Material progress indicators only allow mode switches while hidden. */
     private fun showProgress(indeterminate: Boolean, percent: Int = 0) {
-        if (b.progress.isIndeterminate != indeterminate) {
-            b.progress.visibility = View.GONE
-            b.progress.isIndeterminate = indeterminate
+        if (b.sealProgress.isIndeterminate != indeterminate) {
+            b.sealProgress.visibility = View.GONE
+            b.sealProgress.isIndeterminate = indeterminate
         }
-        if (!indeterminate) b.progress.progress = percent
-        b.progress.visibility = View.VISIBLE
+        if (!indeterminate) b.sealProgress.progress = percent
+        b.sealProgress.visibility = View.VISIBLE
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()

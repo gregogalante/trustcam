@@ -13,6 +13,8 @@
     <string name="photo">Photo</string>
     <string name="record">Record</string>
     <string name="stop">Stop</string>
+    <string name="sealing_title">Sealing your capture</string>
+    <string name="sealing_note">The file is watermarked and signed on this device.\nIt will appear in your gallery when done.</string>
     <string name="watermarking">Applying invisible watermark…</string>
     <string name="watermarking_pct">Applying invisible watermark… %1$d%%</string>
     <string name="signing">Signing in secure hardware…</string>

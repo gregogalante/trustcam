@@ -10,6 +10,8 @@
     <!-- cleartext only in debug builds (LAN development); release is HTTPS-only -->
     <application
         android:label="TrustCam"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.TrustCam"
         android:usesCleartextTraffic="${cleartext}">
 

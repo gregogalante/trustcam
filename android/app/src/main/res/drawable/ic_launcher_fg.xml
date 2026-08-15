@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher foreground: camera lens with a verification check (matches web favicon) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M54,54m-20,0a20,20 0 1,0 40,0a20,20 0 1,0 -40,0"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5.5"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M45.5,54.5l6.5,6.5l13,-14"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+</vector>
