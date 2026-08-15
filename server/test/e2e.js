@@ -1,4 +1,5 @@
 // End-to-end API test with a simulated device (P-256 key in software).
+// Covers the offline-first flow: enroll -> on-device proof -> batch sync -> verify.
 // Run: node test/e2e.js (expects server on :3000 with a throwaway DB)
 import crypto from 'crypto'
 import assert from 'assert'
@@ -17,7 +18,23 @@ async function api (path, opts = {}, token) {
   return { status: res.status, body: await res.json() }
 }
 
-// signup
+function syncBody (deviceId, entries) {
+  return JSON.stringify({ deviceId, proofs: entries })
+}
+
+function proofEntry (payload, media, privateKey) {
+  const sha = crypto.createHash('sha256').update(media).digest()
+  return {
+    payload,
+    sha256: sha.toString('hex'),
+    signature: crypto.sign('sha256', sha, privateKey).toString('base64'),
+    mediaType: 'video',
+    sizeBytes: media.length,
+    capturedAt: new Date().toISOString()
+  }
+}
+
+// signup + enroll
 const email = `test-${Date.now()}@example.com`
 const signup = await api('/api/auth/signup', {
   method: 'POST', body: JSON.stringify({ email, password: 'password123', name: 'Test User' })
@@ -25,7 +42,6 @@ const signup = await api('/api/auth/signup', {
 assert.equal(signup.status, 200, JSON.stringify(signup.body))
 const token = signup.body.token
 
-// enroll simulated device (software key, no attestation chain)
 const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' })
 const device = await api('/api/devices', {
   method: 'POST',
@@ -36,172 +52,51 @@ const device = await api('/api/devices', {
   })
 }, token)
 assert.equal(device.status, 200, JSON.stringify(device.body))
+const deviceId = device.body.id
 
-// fake media file + proof
+// on-device capture, synced later
 const media = crypto.randomBytes(1024 * 1024)
-const sha256 = crypto.createHash('sha256').update(media).digest()
-const signature = crypto.sign('sha256', sha256, privateKey).toString('base64')
-
-const proof = await api('/api/proofs', {
-  method: 'POST',
-  body: JSON.stringify({
-    deviceId: device.body.id,
-    sha256: sha256.toString('hex'),
-    signature,
-    mediaType: 'video',
-    sizeBytes: media.length,
-    capturedAt: new Date().toISOString()
-  })
+const payload = (deviceId << 14) | 1
+const sync = await api('/api/proofs/sync', {
+  method: 'POST', body: syncBody(deviceId, [proofEntry(payload, media, privateKey)])
 }, token)
-assert.equal(proof.status, 200, JSON.stringify(proof.body))
-assert.equal(proof.body.status, 'verified')
+assert.equal(sync.status, 200, JSON.stringify(sync.body))
+assert.equal(sync.body.results[0].status, 'synced')
 
-// tampered signature must be rejected
-const bad = await api('/api/proofs', {
-  method: 'POST',
-  body: JSON.stringify({
-    deviceId: device.body.id,
-    sha256: crypto.createHash('sha256').update('other').digest('hex'),
-    signature,
-    mediaType: 'video',
-    sizeBytes: 1,
-    capturedAt: new Date().toISOString()
-  })
+// idempotent retry
+const retry = await api('/api/proofs/sync', {
+  method: 'POST', body: syncBody(deviceId, [proofEntry(payload, media, privateKey)])
 }, token)
-assert.equal(bad.status, 400, 'tampered proof must be rejected')
+assert.equal(retry.body.results[0].status, 'already-synced')
 
-// public verify: matching file
+// forged signature rejected
+const forged = proofEntry((deviceId << 14) | 2, media, privateKey)
+forged.sha256 = crypto.createHash('sha256').update('other').digest('hex')
+const bad = await api('/api/proofs/sync', {
+  method: 'POST', body: syncBody(deviceId, [forged])
+}, token)
+assert.equal(bad.body.results[0].status, 'bad-signature')
+
+// payload outside the device namespace rejected
+const alien = await api('/api/proofs/sync', {
+  method: 'POST', body: syncBody(deviceId, [proofEntry(((deviceId + 1) << 14) | 1, media, privateKey)])
+}, token)
+assert.equal(alien.body.results[0].status, 'payload-device-mismatch')
+
+// public verify: exact match of the synced capture
 const form = new FormData()
 form.append('file', new Blob([media]), 'clip.mp4')
-const verify = await api('/api/verify', { method: 'POST', body: form })
-assert.equal(verify.status, 200)
-assert.equal(verify.body.found, true)
-assert.equal(verify.body.verified, true)
-assert.equal(verify.body.owner, 'Test User')
+const hit = await (await fetch(BASE + '/api/verify', { method: 'POST', body: form })).json()
+assert.equal(hit.found, true)
+assert.equal(hit.verified, true, JSON.stringify(hit))
+assert.equal(hit.owner, 'Test User')
 
-// public verify: modified file (1 byte flipped)
+// public verify: modified file must not match byte-exactly
 media[0] ^= 0xff
 const form2 = new FormData()
 form2.append('file', new Blob([media]), 'clip.mp4')
-const verify2 = await api('/api/verify', { method: 'POST', body: form2 })
-assert.equal(verify2.body.found, false, 'modified file must not match')
+const miss = await (await fetch(BASE + '/api/verify', { method: 'POST', body: form2 })).json()
+assert.equal(miss.found, false, 'modified file must not match')
 
-console.log('E2E OK: signup, enroll, proof, tamper-reject, verify-hit, verify-miss')
-
-// --- phase 2: watermark flow (runs only if the watermark service is up) ---
-const WM = process.env.WATERMARK_URL || 'http://localhost:8000'
-const wmUp = await fetch(WM + '/health').then(r => r.ok).catch(() => false)
-if (!wmUp) {
-  console.log('watermark service not running — phase 2 tests skipped')
-  process.exit(0)
-}
-
-const { execFileSync } = await import('child_process')
-const fs = await import('fs')
-const os = await import('os')
-const path = await import('path')
-
-const imgPath = process.env.TEST_IMAGE ||
-  new URL('../../spikes/videoseal/assets/imgs/1.jpg', import.meta.url).pathname
-const img = fs.readFileSync(imgPath)
-const imgSha = crypto.createHash('sha256').update(img).digest()
-
-// simulated capture upload
-const capForm = new FormData()
-capForm.append('file', new Blob([img]), 'capture.jpg')
-capForm.append('deviceId', String(device.body.id))
-capForm.append('sha256', imgSha.toString('hex'))
-capForm.append('signature', crypto.sign('sha256', imgSha, privateKey).toString('base64'))
-capForm.append('mediaType', 'photo')
-capForm.append('capturedAt', new Date().toISOString())
-const capRes = await fetch(BASE + '/api/capture', {
-  method: 'POST', body: capForm, headers: { authorization: `Bearer ${token}` }
-})
-assert.equal(capRes.status, 200, 'capture failed: ' + await capRes.clone().text())
-const proofId = capRes.headers.get('x-proof-id')
-const wmFile = Buffer.from(await capRes.arrayBuffer())
-assert.ok(wmFile.length > 1000)
-
-// exact match on the watermarked copy
-const vForm = new FormData()
-vForm.append('file', new Blob([wmFile]), 'wm.jpg')
-const v1 = await (await fetch(BASE + '/api/verify', { method: 'POST', body: vForm })).json()
-assert.equal(v1.match, 'watermarked', JSON.stringify(v1))
-assert.equal(v1.verified, true)
-
-// social-style degradation: re-encode + downscale, then recover via watermark
-const tmp = path.join(os.tmpdir(), 'tc-e2e')
-fs.mkdirSync(tmp, { recursive: true })
-const wmPath = path.join(tmp, 'wm.jpg')
-const degPath = path.join(tmp, 'deg.jpg')
-fs.writeFileSync(wmPath, wmFile)
-execFileSync('ffmpeg', ['-y', '-v', 'error', '-i', wmPath, '-q:v', '7', '-vf', 'scale=iw*0.8:ih*0.8', degPath])
-const deg = fs.readFileSync(degPath)
-const v2Form = new FormData()
-v2Form.append('file', new Blob([deg]), 'deg.jpg')
-const v2 = await (await fetch(BASE + '/api/verify', { method: 'POST', body: v2Form })).json()
-assert.equal(v2.match, 'watermark-recovered', JSON.stringify(v2))
-assert.equal(v2.owner, 'Test User')
-fs.rmSync(tmp, { recursive: true, force: true })
-
-console.log(`E2E phase 2 OK: capture #${proofId} watermarked, exact wm match, recovery after re-encode (conf ${v2.confidence})`)
-
-// --- phase 3: offline sync (on-device watermarking flow) ---
-const payload = (device.body.id << 14) | 7
-const offMedia = crypto.randomBytes(64 * 1024)
-const offSha = crypto.createHash('sha256').update(offMedia).digest()
-const sync = await api('/api/proofs/sync', {
-  method: 'POST',
-  body: JSON.stringify({
-    deviceId: device.body.id,
-    proofs: [{
-      payload,
-      sha256: offSha.toString('hex'),
-      signature: crypto.sign('sha256', offSha, privateKey).toString('base64'),
-      mediaType: 'video', sizeBytes: offMedia.length,
-      capturedAt: new Date().toISOString()
-    }]
-  })
-}, token)
-assert.equal(sync.status, 200, JSON.stringify(sync.body))
-assert.equal(sync.body.results[0].status, 'synced', JSON.stringify(sync.body))
-
-// idempotent retry
-const sync2 = await api('/api/proofs/sync', {
-  method: 'POST',
-  body: JSON.stringify({
-    deviceId: device.body.id,
-    proofs: [{
-      payload,
-      sha256: offSha.toString('hex'),
-      signature: crypto.sign('sha256', offSha, privateKey).toString('base64'),
-      mediaType: 'video', sizeBytes: offMedia.length,
-      capturedAt: new Date().toISOString()
-    }]
-  })
-}, token)
-assert.equal(sync2.body.results[0].status, 'already-synced')
-
-// wrong-namespace payload rejected
-const bad2 = await api('/api/proofs/sync', {
-  method: 'POST',
-  body: JSON.stringify({
-    deviceId: device.body.id,
-    proofs: [{
-      payload: ((device.body.id + 1) << 14) | 1,
-      sha256: offSha.toString('hex'),
-      signature: crypto.sign('sha256', offSha, privateKey).toString('base64'),
-      mediaType: 'video', sizeBytes: 1, capturedAt: new Date().toISOString()
-    }]
-  })
-}, token)
-assert.equal(bad2.body.results[0].status, 'payload-device-mismatch')
-
-// exact-match verify of a synced offline capture
-const offForm = new FormData()
-offForm.append('file', new Blob([offMedia]), 'offline.mp4')
-const v3 = await (await fetch(BASE + '/api/verify', { method: 'POST', body: offForm })).json()
-assert.equal(v3.found, true)
-assert.equal(v3.verified, true, JSON.stringify(v3))
-
-console.log('E2E phase 3 OK: offline sync, idempotent retry, namespace check, verify of synced proof')
+console.log('E2E OK: signup, enroll, sync, idempotent retry, forged-signature reject, namespace reject, verify hit/miss')
+console.log('(watermark extraction path is validated by spikes/sim_device_pipeline.py against the service)')

@@ -71,24 +71,6 @@ app.post('/api/devices', { preHandler: auth }, async (req, reply) => {
 
 // --- proofs ---
 
-app.post('/api/proofs', { preHandler: auth }, async (req, reply) => {
-  const { deviceId, sha256, signature, mediaType, sizeBytes, capturedAt } = req.body || {}
-  if (!deviceId || !sha256 || !signature || !mediaType || !sizeBytes || !capturedAt) {
-    return reply.code(400).send({ error: 'deviceId, sha256, signature, mediaType, sizeBytes, capturedAt required' })
-  }
-  const device = db.prepare('SELECT * FROM devices WHERE id = ? AND user_id = ?').get(deviceId, req.user.uid)
-  if (!device) return reply.code(404).send({ error: 'device not found' })
-
-  if (!verifyFileSignature(sha256.toLowerCase(), signature, device.public_key_pem)) {
-    return reply.code(400).send({ error: 'signature verification failed' })
-  }
-
-  const info = db.prepare(
-    'INSERT INTO proofs (user_id, device_id, sha256, signature, media_type, size_bytes, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(req.user.uid, deviceId, sha256.toLowerCase(), signature, mediaType, sizeBytes, capturedAt)
-  return { id: info.lastInsertRowid, status: 'verified' }
-})
-
 // Offline sync: the app embeds watermarks on-device (payload = deviceId<<14 | counter)
 // and uploads the signed proofs in batch when it gets connectivity.
 app.post('/api/proofs/sync', { preHandler: auth }, async (req, reply) => {
@@ -126,74 +108,9 @@ app.post('/api/proofs/sync', { preHandler: auth }, async (req, reply) => {
   return { results }
 })
 
-app.get('/api/proofs', { preHandler: auth }, async (req) => {
-  return db.prepare(`
-    SELECT p.id, p.sha256, p.media_type, p.size_bytes, p.captured_at, p.created_at, d.model
-    FROM proofs p JOIN devices d ON d.id = p.device_id
-    WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 100
-  `).all(req.user.uid)
-})
-
-// --- capture with watermarking (phase 2) ---
+// --- public verification ---
 
 const WATERMARK_URL = process.env.WATERMARK_URL || 'http://localhost:8000'
-
-// Multipart: file + fields (deviceId, sha256, signature, mediaType, capturedAt).
-// Verifies the device signature over the ORIGINAL bytes, registers the proof,
-// gets a watermarked copy from the watermark service (payload = proof id),
-// stores its hash and streams it back to the app.
-app.post('/api/capture', { preHandler: auth }, async (req, reply) => {
-  let fileBuf = null
-  let filename = 'capture.bin'
-  const fields = {}
-  for await (const part of req.parts()) {
-    if (part.type === 'file') {
-      filename = part.filename || filename
-      fileBuf = await part.toBuffer()
-    } else {
-      fields[part.fieldname] = part.value
-    }
-  }
-  const { deviceId, sha256, signature, mediaType, capturedAt } = fields
-  if (!fileBuf || !deviceId || !sha256 || !signature || !mediaType || !capturedAt) {
-    return reply.code(400).send({ error: 'file, deviceId, sha256, signature, mediaType, capturedAt required' })
-  }
-
-  const device = db.prepare('SELECT * FROM devices WHERE id = ? AND user_id = ?').get(deviceId, req.user.uid)
-  if (!device) return reply.code(404).send({ error: 'device not found' })
-
-  // The claimed hash must match the uploaded bytes AND the device signature
-  const actual = crypto.createHash('sha256').update(fileBuf).digest('hex')
-  if (actual !== sha256.toLowerCase()) return reply.code(400).send({ error: 'sha256 does not match file' })
-  if (!verifyFileSignature(actual, signature, device.public_key_pem)) {
-    return reply.code(400).send({ error: 'signature verification failed' })
-  }
-
-  const info = db.prepare(
-    'INSERT INTO proofs (user_id, device_id, sha256, signature, media_type, size_bytes, captured_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(req.user.uid, deviceId, actual, signature, mediaType, fileBuf.length, capturedAt)
-  const proofId = info.lastInsertRowid
-
-  const form = new FormData()
-  form.append('file', new Blob([fileBuf]), filename)
-  form.append('proof_id', String(proofId))
-  const wmRes = await fetch(`${WATERMARK_URL}/embed`, { method: 'POST', body: form })
-  if (!wmRes.ok) {
-    req.log.error(`watermark embed failed: ${wmRes.status}`)
-    // Proof of the original still stands; the app keeps the unwatermarked file
-    return reply.code(502).send({ error: 'watermarking failed', proofId })
-  }
-  const wmBuf = Buffer.from(await wmRes.arrayBuffer())
-  const wmSha = crypto.createHash('sha256').update(wmBuf).digest('hex')
-  db.prepare('UPDATE proofs SET wm_sha256 = ? WHERE id = ?').run(wmSha, proofId)
-
-  return reply
-    .header('content-type', wmRes.headers.get('content-type') || 'application/octet-stream')
-    .header('x-proof-id', String(proofId))
-    .send(wmBuf)
-})
-
-// --- public verification ---
 
 const PROOF_LOOKUP = `
   SELECT p.*, d.model, d.security_level, d.public_key_pem, d.attestation_chain, u.name AS owner_name
@@ -266,7 +183,7 @@ app.post('/api/verify', async (req, reply) => {
   }
 })
 
-app.get('/api/health', async () => ({ ok: true }))
+app.get('/api/health', async () => ({ ok: true, version: '0.5.0' }))
 
 const port = Number(process.env.PORT) || 3000
 app.listen({ port, host: '0.0.0.0' })

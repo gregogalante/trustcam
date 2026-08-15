@@ -8,7 +8,7 @@ Feasibility research and phase-0 experiment reports live in [docs/](docs/); spik
 
 ```
 server/    Fastify + SQLite: auth, device enrollment (Key Attestation), proofs, /api/verify
-watermark/ Python service: VideoSeal invisible watermark embed/extract (payload = proof id)
+watermark/ Python service: VideoSeal watermark extraction for the public verifier
 web/       Static site served by the server: landing, verify UI, paper pages
 android/   Kotlin app: sign-in, CameraX photo+video, StrongBox/TEE ECDSA P-256 signing
 docs/      Research findings, architecture, market analysis, phase-0 reports, device runbook
@@ -37,7 +37,7 @@ container (`start.sh` runs both; the watermark service is localhost-only).
 2. Add a **Volume** with mount path `/data` (SQLite lives there; without it the DB resets on every deploy).
 3. Set `JWT_SECRET` (e.g. `openssl rand -hex 32`); the server refuses to boot in production without it. Railway injects `PORT` and the server honors it.
 4. Attach the custom domain `trustcam.gregoriogalante.com` in Settings → Networking (then add the CNAME Railway shows you at your DNS provider). TLS is automatic.
-5. Give the service as much CPU as the plan allows: video watermarking is CPU-bound (~3× clip duration per request on a fast CPU). Tuning env vars: `WM_THREADS` (torch threads — set it to the service's actual vCPU count; auto-detected from the cgroup quota by default) and `WM_STEP_SIZE` (frames between watermarked key frames, default 4 — raising it trades a little robustness for a little speed).
+5. Give the service as much CPU as the plan allows: video watermark *extraction* on the verify page is CPU-bound. Tuning: `WM_THREADS` (torch threads for extraction — auto-detected from the cgroup quota).
 
 `watermark/Dockerfile` still exists if you ever want to split the watermark service out (set `WATERMARK_URL` on the Node service accordingly).
 
@@ -91,8 +91,7 @@ first sign-in:
 - `/api/verify` resolves: byte-exact match → watermark extraction → payload lookup
   (legacy server-embedded files resolve by proof id).
 
-The server-side watermark service remains for **extraction** (verify page) and as
-legacy `/api/capture` support.
+The server-side watermark service remains for **extraction only** (verify page).
 
 Known limits (by design, see roadmap): whole-file signature (per-GOP SEI pipeline is
 the validated next step), attestation checked for key match but not yet validated to
