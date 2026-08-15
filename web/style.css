@@ -18,6 +18,7 @@ body {
   margin: 0; background: var(--bg); color: var(--fg);
   font: 16px/1.65 system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip; /* the hero glow spans 100vw */
 }
 main { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem 4rem }
 
@@ -50,12 +51,58 @@ p.lead { font-size: 1.12rem; color: var(--muted) }
   padding: 1.4rem; box-shadow: var(--card-shadow);
 }
 .drop {
-  border: 2px dashed var(--line); border-radius: 16px; padding: 3.5rem 1rem;
+  border: 2px dashed var(--line); border-radius: 16px; padding: 3rem 1rem;
   background: var(--card); text-align: center; color: var(--muted); cursor: pointer;
-  transition: border-color .15s, background .15s;
+  transition: border-color .15s, background .15s, transform .15s;
 }
 .drop.hover, .drop:hover { border-color: var(--accent) }
+.drop.hover { transform: scale(1.01); background: color-mix(in srgb, var(--accent) 5%, var(--card)) }
+.drop.disabled { pointer-events: none; opacity: .5 }
+.drop-icon {
+  width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent) 12%, var(--card)),
+    color-mix(in srgb, var(--accent2) 12%, var(--card)));
+  border: 1px solid var(--line);
+}
+.drop-icon svg { width: 30px; height: 30px; stroke: var(--accent); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; fill: none }
 .result { margin-top: 1.5rem }
+
+/* verify progress states */
+@keyframes spin { to { transform: rotate(360deg) } }
+@keyframes fadeup { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.fadeup { animation: fadeup .3s ease both }
+.spinner {
+  width: 22px; height: 22px; flex: none; border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-top-color: var(--accent); animation: spin .8s linear infinite;
+}
+.check-row { display: flex; align-items: center; gap: .9rem }
+.check-row .file-name { font-weight: 600; word-break: break-all }
+.check-row .stage { color: var(--muted); font-size: .9rem; margin-top: .15rem }
+.upbar { height: 6px; border-radius: 99px; background: var(--line); margin-top: 1rem; overflow: hidden }
+.upbar > div {
+  height: 100%; width: 0; border-radius: 99px; transition: width .2s;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+.upbar.scan > div {
+  width: 40% !important; animation: scanmove 1.4s ease-in-out infinite alternate;
+}
+@keyframes scanmove { from { margin-left: -10% } to { margin-left: 70% } }
+
+/* verify result */
+.verdict { display: flex; align-items: center; gap: 1rem }
+.verdict-icon {
+  width: 48px; height: 48px; flex: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 700; color: #fff;
+}
+.verdict-icon.ok { background: var(--ok) }
+.verdict-icon.bad { background: var(--bad) }
+.verdict h3 { margin: 0; font-size: 1.15rem }
+.verdict p { margin: .15rem 0 0; color: var(--muted); font-size: .9rem }
 .badge { display: inline-block; padding: .25rem .7rem; border-radius: 99px; font-size: .85rem; font-weight: 600 }
 .badge.ok { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok) }
 .badge.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad) }
@@ -106,12 +153,14 @@ form.card button:disabled { opacity: .6; cursor: default; transform: none }
 
 /* hero */
 .hero { margin-top: 3rem !important; text-align: center; position: relative }
+/* Full-viewport glow so the gradient fades out before any box edge is visible */
 .hero::before {
-  content: ''; position: absolute; inset: -8rem -4rem auto;
-  height: 26rem; z-index: -1; pointer-events: none;
+  content: ''; position: absolute; left: 50%; top: -10rem;
+  width: 100vw; height: 32rem; transform: translateX(-50%);
+  z-index: -1; pointer-events: none;
   background:
-    radial-gradient(38rem 20rem at 30% 20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
-    radial-gradient(34rem 18rem at 72% 10%, color-mix(in srgb, var(--accent2) 12%, transparent), transparent 70%);
+    radial-gradient(40rem 20rem at 40% 30%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 62%),
+    radial-gradient(36rem 18rem at 62% 15%, color-mix(in srgb, var(--accent2) 11%, transparent), transparent 62%);
 }
 .eyebrow {
   color: var(--accent); font-weight: 600; font-size: .82rem;

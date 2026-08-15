@@ -16,11 +16,14 @@
   </nav>
   <main>
     <h1>Verify a photo or video</h1>
-    <p class="lead">The file is hashed and checked against registered proofs. It is not stored.</p>
+    <p class="lead">Drop any copy of a file — even one downloaded from social media —
+    and see who recorded it, when, and whether it was modified.</p>
 
     <div class="drop" id="drop">
-      <p><strong>Drop a file here</strong> or click to choose</p>
-      <input type="file" id="file" hidden>
+      <div class="drop-icon"><svg viewBox="0 0 48 48"><path d="M24 32V14m0 0l-8 8m8-8l8 8"/><path d="M10 34v4a4 4 0 004 4h20a4 4 0 004-4v-4"/></svg></div>
+      <p style="margin:0"><strong>Drop a photo or video here</strong><br>
+      <span class="note">or click to choose a file — it is only hashed and scanned, never stored</span></p>
+      <input type="file" id="file" accept="image/*,video/*" hidden>
     </div>
 
     <div class="result" id="result"></div>
@@ -34,67 +37,143 @@
     const drop = document.getElementById('drop')
     const input = document.getElementById('file')
     const result = document.getElementById('result')
+    let busy = false
 
     drop.addEventListener('click', () => input.click())
-    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hover') })
+    drop.addEventListener('dragover', e => { e.preventDefault(); if (!busy) drop.classList.add('hover') })
     drop.addEventListener('dragleave', () => drop.classList.remove('hover'))
     drop.addEventListener('drop', e => {
       e.preventDefault()
       drop.classList.remove('hover')
-      if (e.dataTransfer.files[0]) check(e.dataTransfer.files[0])
+      if (!busy && e.dataTransfer.files[0]) check(e.dataTransfer.files[0])
     })
-    input.addEventListener('change', () => { if (input.files[0]) check(input.files[0]) })
+    input.addEventListener('change', () => { if (!busy && input.files[0]) check(input.files[0]) })
 
-    async function check (file) {
-      result.innerHTML = '<div class="card">Checking <code>' + esc(file.name) +
-        '</code>… If no exact match is found, the file is scanned for the invisible watermark (up to a couple of minutes for video).</div>'
+    function fmtSize (n) {
+      if (n > 1e6) return (n / 1e6).toFixed(1) + ' MB'
+      if (n > 1e3) return (n / 1e3).toFixed(0) + ' KB'
+      return n + ' B'
+    }
+
+    function progressCard (file) {
+      result.innerHTML = `
+        <div class="card fadeup">
+          <div class="check-row">
+            <div class="spinner"></div>
+            <div>
+              <div class="file-name">${esc(file.name)} <span class="note">(${fmtSize(file.size)})</span></div>
+              <div class="stage" id="stage">Uploading… 0%</div>
+            </div>
+          </div>
+          <div class="upbar" id="upbar"><div></div></div>
+        </div>`
+      return {
+        stage: document.getElementById('stage'),
+        upbar: document.getElementById('upbar')
+      }
+    }
+
+    // Upload via XHR for real progress events; after upload completes the
+    // server hashes, then falls back to the watermark scan (slow for video).
+    function check (file) {
+      busy = true
+      drop.classList.add('disabled')
+      const ui = progressCard(file)
+      const isVideo = (file.type || '').startsWith('video')
+      const start = Date.now()
+      let scanTimer = null
+
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', '/api/verify')
+      xhr.upload.onprogress = e => {
+        if (!e.lengthComputable) return
+        const pct = Math.round(e.loaded / e.total * 100)
+        ui.upbar.firstElementChild.style.width = pct + '%'
+        ui.stage.textContent = pct < 100 ? `Uploading… ${pct}%` : 'Checking for an exact match…'
+        if (pct === 100 && !scanTimer) {
+          // After a moment with no answer, we are in the watermark scan phase
+          scanTimer = setInterval(() => {
+            const secs = Math.round((Date.now() - start) / 1000)
+            ui.upbar.classList.add('scan')
+            ui.stage.textContent = 'No exact match yet — scanning the pixels for the invisible watermark… ' +
+              (isVideo ? `(up to a couple of minutes for video, ${secs}s elapsed)` : `(${secs}s elapsed)`)
+          }, 1000)
+        }
+      }
+      xhr.onload = () => {
+        clearInterval(scanTimer)
+        try { render(JSON.parse(xhr.responseText)) } catch { fail() }
+        done()
+      }
+      xhr.onerror = () => { clearInterval(scanTimer); fail(); done() }
       const body = new FormData()
       body.append('file', file)
-      try {
-        const res = await fetch('/api/verify', { method: 'POST', body })
-        render(await res.json())
-      } catch {
-        result.innerHTML = '<div class="card"><span class="badge bad">Error</span> Could not reach the verification service.</div>'
-      }
+      xhr.send(body)
+    }
+
+    function done () {
+      busy = false
+      drop.classList.remove('disabled')
+      input.value = ''
+    }
+
+    function fail () {
+      result.innerHTML = `
+        <div class="card fadeup">
+          <div class="verdict">
+            <div class="verdict-icon bad">✕</div>
+            <div><h3>Could not verify</h3><p>The verification service is unreachable. Try again in a moment.</p></div>
+          </div>
+        </div>`
+    }
+
+    function verdictCard (icon, cls, title, sub, details) {
+      result.innerHTML = `
+        <div class="card fadeup">
+          <div class="verdict">
+            <div class="verdict-icon ${cls}">${icon}</div>
+            <div><h3>${title}</h3><p>${sub}</p></div>
+          </div>
+          ${details}
+          <p style="margin-bottom:0"><a href="#" id="again">Verify another file</a></p>
+        </div>`
+      document.getElementById('again').addEventListener('click', e => {
+        e.preventDefault()
+        result.innerHTML = ''
+        input.click()
+      })
     }
 
     function render (r) {
       if (!r.found) {
-        result.innerHTML = `
-          <div class="card">
-            <span class="badge bad">No proof found</span>
-            <p>${esc(r.message || '')}</p>
-            <dl><dt>SHA-256</dt><dd><code>${esc(r.sha256)}</code></dd></dl>
-          </div>`
+        verdictCard('✕', 'bad', 'No proof found',
+          'This file was not captured with a registered TrustCam device, or was modified beyond watermark survival.',
+          `<dl><dt>SHA-256</dt><dd><code>${esc(r.sha256)}</code></dd></dl>`)
         return
       }
-      let badge, note
+      const details = `
+        <dl>
+          <dt>Recorded by</dt><dd>${esc(r.owner)}</dd>
+          <dt>Device</dt><dd>${esc(r.device.model)} (${esc(r.device.securityLevel)}${r.device.attested ? ', hardware-attested' : ''})</dd>
+          <dt>Captured at</dt><dd>${esc(r.capturedAt)}</dd>
+          <dt>Registered at</dt><dd>${esc(r.registeredAt)} (UTC)</dd>
+          <dt>Media</dt><dd>${esc(r.mediaType)}, ${Number(r.sizeBytes).toLocaleString()} bytes</dd>
+          <dt>SHA-256</dt><dd><code>${esc(r.sha256)}</code></dd>
+        </dl>`
       if (r.match === 'watermark-recovered') {
-        badge = '<span class="badge ok">Provenance recovered via watermark</span>'
-        note = `<p>${esc(r.message || '')} (signal confidence ${Math.round(r.confidence * 100)}%)</p>`
+        verdictCard('✓', 'ok', 'Provenance recovered via watermark',
+          `This copy was re-encoded (bytes differ from the original), but the invisible watermark identifies the capture — signal confidence ${Math.round(r.confidence * 100)}%. Byte-level integrity cannot be verified on this copy.`,
+          details)
       } else if (r.match === 'watermarked') {
-        badge = '<span class="badge ok">Verified ✓ (watermarked copy)</span>'
-        note = '<p class="note">Byte-exact watermarked copy, derived from a hardware-signed capture.</p>'
+        verdictCard('✓', 'ok', 'Verified — watermarked copy',
+          'Byte-exact watermarked copy, derived from a hardware-signed capture.', details)
       } else if (r.verified) {
-        badge = '<span class="badge ok">Verified ✓ (original)</span>'
-        note = ''
+        verdictCard('✓', 'ok', 'Verified — original file',
+          'Byte-for-byte identical to the capture, hardware signature valid. Unmodified since capture.', details)
       } else {
-        badge = '<span class="badge bad">Proof found but signature INVALID</span>'
-        note = ''
+        verdictCard('✕', 'bad', 'Proof found but signature INVALID',
+          'A proof exists for this file but the cryptographic signature does not check out.', details)
       }
-      result.innerHTML = `
-        <div class="card">
-          ${badge}
-          ${note}
-          <dl>
-            <dt>Recorded by</dt><dd>${esc(r.owner)}</dd>
-            <dt>Device</dt><dd>${esc(r.device.model)} (${esc(r.device.securityLevel)}${r.device.attested ? ', hardware-attested' : ''})</dd>
-            <dt>Captured at</dt><dd>${esc(r.capturedAt)}</dd>
-            <dt>Registered at</dt><dd>${esc(r.registeredAt)} (UTC)</dd>
-            <dt>Media</dt><dd>${esc(r.mediaType)}, ${Number(r.sizeBytes).toLocaleString()} bytes</dd>
-            <dt>SHA-256</dt><dd><code>${esc(r.sha256)}</code></dd>
-          </dl>
-        </div>`
     }
 
     function esc (s) {
