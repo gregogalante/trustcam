@@ -22,7 +22,7 @@
     <table>
       <tr><th>Layer</th><th>Proves</th><th>Survives re-encoding?</th></tr>
       <tr><td>Cryptographic signature over content hashes</td><td>Exact integrity, device identity, capture time</td><td>No — any transcode invalidates it, by design</td></tr>
-      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the registered proof (payload = proof id)</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
+      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the registered proof (payload = device id + capture counter)</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
     </table>
 
     <svg class="layers-diagram" viewBox="0 0 760 240" role="img" aria-label="The signature verifies exact files; the watermark survives social platforms and recovers provenance">
@@ -86,16 +86,23 @@
     <ol>
       <li><strong>Device enrollment</strong>: an ECDSA P-256 key pair is generated inside StrongBox
         (dedicated secure element; TEE fallback on devices without it — the level is
-        recorded in every proof). Android Key Attestation produces an X.509 chain,
-        rooted at Google's hardware attestation root, proving the key lives in
-        hardware and the device passed verified boot.</li>
-      <li><strong>Capture</strong>: photo or video; the file's SHA-256 is computed over the final bytes.</li>
-      <li><strong>Signing</strong>: the 32 hash bytes are signed in the secure element
-        (<code>SHA256withECDSA</code>). The private key never exists in application memory.</li>
-      <li><strong>Watermarking</strong>: the signed original is uploaded once; the watermark service
-        embeds the proof id into the pixels and the watermarked copy replaces the file in the
-        gallery. <strong>Media transits the service for embedding but is never stored</strong> —
-        the registry keeps only hashes, signatures and metadata (~200 bytes per proof).</li>
+        recorded in every proof). Android Key Attestation produces an X.509 chain
+        binding the key to hardware; the chain is recorded at enrollment and the
+        registry verifies its leaf matches the enrolled key (full validation up to
+        Google's attestation root is on the roadmap). Enrollment also assigns the
+        device its watermark payload namespace, so it can seal captures offline
+        from then on.</li>
+      <li><strong>Capture</strong>: photo or video from the app, saved to the gallery.</li>
+      <li><strong>Watermarking — on the device</strong>: the payload (device id, 10 bit +
+        local capture counter, 14 bit) is encoded and embedded into the pixels by the
+        on-device VideoSeal pipeline (ONNX). Fully offline;
+        <strong>media never leaves the phone</strong>.</li>
+      <li><strong>Signing</strong>: the SHA-256 of the final watermarked bytes is signed in the
+        secure element (<code>SHA256withECDSA</code>). The private key never exists in
+        application memory.</li>
+      <li><strong>Proof sync</strong>: proofs (hash + signature + payload + timestamps,
+        ~200 bytes — never the media) queue on the device and batch-sync to the
+        registry whenever connectivity allows.</li>
     </ol>
 
     <h2>Signature convention</h2>
@@ -118,7 +125,7 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
       <!-- one block -->
       <rect class="pl-id" x="40" y="16" width="330" height="34" rx="6"/>
       <rect class="pl-crc" x="374" y="16" width="110" height="34" rx="6"/>
-      <text x="205" y="38" class="flow-label" text-anchor="middle">proof id — 24 bit</text>
+      <text x="205" y="38" class="flow-label" text-anchor="middle">payload — 24 bit (device id + counter)</text>
       <text x="429" y="38" class="flow-label" text-anchor="middle">CRC-8</text>
       <text x="500" y="38" class="flow-sub" text-anchor="start">= one 32-bit block</text>
       <!-- braces / arrow -->
@@ -163,8 +170,11 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
     <p>Given any file, the verifier resolves in order — each level is weaker than the
     previous and the UI says so explicitly:</p>
     <ol>
-      <li><strong>Byte-exact original</strong> → hardware signature re-verified → <em>Verified (original)</em>.</li>
-      <li><strong>Byte-exact watermarked copy</strong> → derived server-side from a signed original → <em>Verified (watermarked copy)</em>.</li>
+      <li><strong>Byte-exact original</strong> → hardware signature re-verified → <em>Verified (original)</em>.
+        Current captures are watermarked on the device before signing, so the file in the
+        gallery <em>is</em> the signed original.</li>
+      <li><strong>Byte-exact watermarked copy</strong> (legacy files from the earlier
+        server-side embedding flow) → derived from a signed original → <em>Verified (watermarked copy)</em>.</li>
       <li><strong>Watermark extraction</strong> on re-encoded copies → proof id recovered from the pixels → <em>Provenance recovered</em>: owner, device and capture time are known, but byte integrity of this specific copy is not verifiable.</li>
     </ol>
     <p>Uploaded files are hashed and scanned in a stream and never stored.</p>

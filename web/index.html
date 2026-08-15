@@ -116,28 +116,29 @@
         <div class="step">
           <div class="step-icon"><svg viewBox="0 0 48 48"><path d="M10 16h6l3-4h10l3 4h6a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V19a3 3 0 0 1 3-3z" fill="none"/><circle cx="24" cy="27" r="6" fill="none"/></svg></div>
           <h3>1 · Capture</h3>
-          <p>Photo or video, from the TrustCam app. The file's cryptographic
-          fingerprint (SHA-256) is computed as it's written.</p>
-        </div>
-        <div class="step">
-          <div class="step-icon"><svg viewBox="0 0 48 48"><rect x="12" y="12" width="24" height="24" rx="4" fill="none"/><rect x="20" y="20" width="8" height="8" fill="none"/><path d="M17 6v6M24 6v6M31 6v6M17 36v6M24 36v6M31 36v6M6 17h6M6 24h6M6 31h6M36 17h6M36 24h6M36 31h6" fill="none"/></svg></div>
-          <h3>2 · Sign in silicon</h3>
-          <p>The fingerprint is signed by a key generated <em>inside</em> the phone's
-          secure element. The key physically cannot leave the chip — no malware,
-          no cloud breach can steal it.</p>
+          <p>Photo or video, from the TrustCam app — saved to your gallery like
+          any camera. Everything that follows happens on the phone, even offline.</p>
         </div>
         <div class="step">
           <div class="step-icon"><svg viewBox="0 0 48 48"><path d="M24 6l14 6v10c0 9-6 15-14 20-8-5-14-11-14-20V12z" fill="none"/><path d="M18 24l4 4 8-8" fill="none"/></svg></div>
-          <h3>3 · Watermark</h3>
+          <h3>2 · Watermark</h3>
           <p>An invisible signal carrying the proof's identity is woven into the
           pixels themselves. Re-encoding, scaling, compressing — it survives what
           social platforms do to files.</p>
         </div>
         <div class="step">
+          <div class="step-icon"><svg viewBox="0 0 48 48"><rect x="12" y="12" width="24" height="24" rx="4" fill="none"/><rect x="20" y="20" width="8" height="8" fill="none"/><path d="M17 6v6M24 6v6M31 6v6M17 36v6M24 36v6M31 36v6M6 17h6M6 24h6M6 31h6M36 17h6M36 24h6M36 31h6" fill="none"/></svg></div>
+          <h3>3 · Sign in silicon</h3>
+          <p>The file's SHA-256 fingerprint is signed by a key generated
+          <em>inside</em> the phone's secure element. The key physically cannot
+          leave the chip — no malware, no cloud breach can steal it.</p>
+        </div>
+        <div class="step">
           <div class="step-icon"><svg viewBox="0 0 48 48"><circle cx="21" cy="21" r="12" fill="none"/><path d="M30 30l11 11" fill="none"/><path d="M16 21l4 4 7-7" fill="none"/></svg></div>
           <h3>4 · Anyone verifies</h3>
           <p>Drop any copy of the file on the public verifier: owner, device,
-          hardware security level and capture time — or proof that it was tampered with.</p>
+          hardware security level and capture time — and whether that exact copy
+          is byte-for-byte untouched.</p>
         </div>
       </div>
     </section>
@@ -182,9 +183,10 @@
       <div class="grid2">
         <div class="card">
           <h3><span class="dot"></span> Layer 1 — Hardware signature</h3>
-          <p>ECDSA P-256 in the secure element, with Android Key Attestation proving
-          the key lives in tamper-resistant silicon. Byte-exact files verify against
-          it — <strong>any single-bit change is detected</strong>.</p>
+          <p>ECDSA P-256 in the secure element; the Android Key Attestation chain is
+          recorded at enrollment, binding the key to tamper-resistant silicon.
+          Byte-exact files verify against it — <strong>any single-bit change is
+          detected</strong>.</p>
         </div>
         <div class="card">
           <h3><span class="dot dot2"></span> Layer 2 — Invisible watermark</h3>

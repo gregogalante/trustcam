@@ -23,20 +23,21 @@
       As generative models make fabricated photos and videos indistinguishable
       from real captures, "detecting fakes" is a losing race. TrustCam takes the
       complementary approach: <strong>proving authentic media authentic</strong>
-      at the moment of capture. The mobile app hashes media as it is recorded and
-      signs it with an ECDSA P-256 key generated inside the phone's secure
-      hardware (StrongBox / TEE), whose attestation chain proves both the key's
-      hardware protection and the device's integrity. The signed proof is
-      registered with the user's account; a public verifier then lets anyone
-      confirm <em>who</em> recorded a file, <em>when</em>, and that it is
-      byte-for-byte unmodified.
+      at the moment of capture. The mobile app embeds a robust invisible
+      watermark (Meta VideoSeal) into the pixels <strong>on the device</strong>,
+      then hashes the final file and signs it with an ECDSA P-256 key generated
+      inside the phone's secure hardware (StrongBox / TEE), whose attestation
+      chain binds the key to hardware. The signed proof is registered with the
+      user's account; a public verifier then lets anyone confirm <em>who</em>
+      recorded a file, <em>when</em>, and that it is byte-for-byte unmodified —
+      and, because the watermark survives social-media re-encoding, provenance
+      can be recovered even after platforms strip metadata (validated in our
+      feasibility experiments).
     </p>
     <p>
       The roadmap extends this to per-segment rolling signatures carried in the
-      video bitstream (ONVIF Media Signing) and a robust invisible watermark
-      (Meta VideoSeal) that survives social-media re-encoding, so provenance can
-      be recovered even after platforms strip metadata — validated in our
-      feasibility experiments below.
+      video bitstream (ONVIF Media Signing), validated on consumer hardware in
+      our phase-0 tests.
     </p>
 
     <h2>Documents</h2>
