@@ -1,85 +1,153 @@
 :root {
-  --bg: #ffffff; --fg: #16181d; --muted: #5c6470; --line: #e3e6ea;
-  --accent: #2456d6; --ok: #0f7b3f; --bad: #b3261e; --card: #f6f7f9;
+  --bg: #fafbfd; --fg: #14171c; --muted: #5b6572; --line: #e5e8ee;
+  --accent: #2563eb; --accent2: #7c3aed; --ok: #0e8a46; --bad: #c22a20;
+  --card: #ffffff; --card-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 8px 24px -12px rgba(15, 23, 42, .12);
+  --nav-bg: rgba(250, 251, 253, .8);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #101318; --fg: #e8eaee; --muted: #98a0ac; --line: #2a2f38;
-    --accent: #6d95ff; --ok: #4ccb84; --bad: #ff7a70; --card: #191d24;
+    --bg: #0b0e14; --fg: #e9ebf0; --muted: #96a0ad; --line: #232936;
+    --accent: #6d95ff; --accent2: #a78bfa; --ok: #4ccb84; --bad: #ff7a70;
+    --card: #131824; --card-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px -12px rgba(0, 0, 0, .5);
+    --nav-bg: rgba(11, 14, 20, .8);
   }
 }
 * { box-sizing: border-box }
+html { scroll-behavior: smooth }
 body {
   margin: 0; background: var(--bg); color: var(--fg);
-  font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font: 16px/1.65 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
-main { max-width: 860px; margin: 0 auto; padding: 2rem 1.25rem 4rem }
+main { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem 4rem }
+
+/* ---------- nav ---------- */
 nav {
-  display: flex; gap: 1.25rem; align-items: baseline;
-  padding: 1rem 1.25rem; border-bottom: 1px solid var(--line);
-  max-width: 860px; margin: 0 auto;
+  position: sticky; top: 0; z-index: 10;
+  display: flex; gap: 1.5rem; align-items: center;
+  padding: .9rem 1.25rem; border-bottom: 1px solid var(--line);
+  background: var(--nav-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
-nav .brand { font-weight: 700; margin-right: auto; text-decoration: none; color: var(--fg) }
-nav a { color: var(--muted); text-decoration: none }
+nav .brand {
+  display: flex; align-items: center; gap: .5rem;
+  font-weight: 700; font-size: 1.05rem; margin-right: auto;
+  text-decoration: none; color: var(--fg); letter-spacing: -.01em;
+}
+nav .brand::before {
+  content: ''; width: 22px; height: 22px;
+  background: url('/favicon.svg') center/contain no-repeat;
+}
+nav a { color: var(--muted); text-decoration: none; font-size: .95rem; font-weight: 500 }
 nav a:hover { color: var(--accent) }
-h1 { font-size: 1.7rem; line-height: 1.25 }
-h2 { font-size: 1.2rem; margin-top: 2.2rem }
+
+/* ---------- base ---------- */
+h1 { font-size: 1.8rem; line-height: 1.2; letter-spacing: -.02em }
+h2 { font-size: 1.45rem; margin-top: 0; letter-spacing: -.015em }
 a { color: var(--accent) }
-p.lead { font-size: 1.1rem; color: var(--muted) }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem }
+p.lead { font-size: 1.12rem; color: var(--muted) }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 1.4rem; box-shadow: var(--card-shadow);
+}
 .drop {
-  border: 2px dashed var(--line); border-radius: 12px; padding: 3rem 1rem;
-  text-align: center; color: var(--muted); cursor: pointer; transition: border-color .15s;
+  border: 2px dashed var(--line); border-radius: 16px; padding: 3.5rem 1rem;
+  background: var(--card); text-align: center; color: var(--muted); cursor: pointer;
+  transition: border-color .15s, background .15s;
 }
 .drop.hover, .drop:hover { border-color: var(--accent) }
 .result { margin-top: 1.5rem }
-.badge { display: inline-block; padding: .2rem .6rem; border-radius: 99px; font-size: .85rem; font-weight: 600 }
-.badge.ok { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok) }
-.badge.bad { background: color-mix(in srgb, var(--bad) 15%, transparent); color: var(--bad) }
+.badge { display: inline-block; padding: .25rem .7rem; border-radius: 99px; font-size: .85rem; font-weight: 600 }
+.badge.ok { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok) }
+.badge.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad) }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.2rem; margin: 1rem 0 0 }
 dt { color: var(--muted) }
 dd { margin: 0; word-break: break-all }
 table { border-collapse: collapse; width: 100%; font-size: .95rem }
 th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--line) }
 code, pre { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: .9em }
-pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem; overflow-x: auto }
-footer { color: var(--muted); font-size: .85rem; margin-top: 4rem; border-top: 1px solid var(--line); padding-top: 1rem }
+pre { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; overflow-x: auto }
+footer { color: var(--muted); font-size: .85rem; margin-top: 4rem; border-top: 1px solid var(--line); padding-top: 1.2rem }
+.note { color: var(--muted); font-size: .85rem }
+.error { color: var(--bad); margin: 1rem 0 0 }
+
+/* ---------- forms & buttons ---------- */
 form.card label { display: block; margin: 1rem 0 .3rem; color: var(--muted); font-size: .9rem }
 form.card label:first-child { margin-top: 0 }
 form.card input {
-  width: 100%; padding: .65rem .8rem; border: 1px solid var(--line); border-radius: 8px;
+  width: 100%; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: 10px;
   background: var(--bg); color: var(--fg); font: inherit;
 }
 form.card input:focus { outline: 2px solid var(--accent); border-color: transparent }
 form.card button, .btn {
-  display: inline-block; margin-top: 1.4rem; padding: .7rem 1.4rem; border: 0; border-radius: 8px;
-  background: var(--accent); color: #fff; font: inherit; font-weight: 600;
-  cursor: pointer; text-decoration: none;
+  display: inline-block; margin-top: 1.4rem; padding: .75rem 1.5rem; border: 0; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none;
+  box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--accent) 55%, transparent);
+  transition: transform .12s, box-shadow .12s;
 }
-form.card button:disabled { opacity: .6; cursor: default }
-.btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent) }
-.error { color: var(--bad); margin: 1rem 0 0 }
-.note { color: var(--muted); font-size: .85rem }
+form.card button:hover, .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+form.card button:disabled { opacity: .6; cursor: default; transform: none }
+.btn.secondary {
+  background: var(--card); color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: none;
+}
+.btn.secondary:hover { border-color: var(--accent); box-shadow: none }
+.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); box-shadow: none }
+.btn.ghost:hover { color: var(--accent); border-color: var(--accent); box-shadow: none }
 .cta-row { display: flex; gap: .8rem; flex-wrap: wrap; margin: 1.5rem 0 }
+.cta-row .btn { margin-top: 0 }
 
 /* ---------- landing ---------- */
-.landing section { margin-top: 4.5rem }
-.hero { margin-top: 2.5rem !important; text-align: left }
-.eyebrow {
-  color: var(--accent); font-weight: 600; font-size: .85rem;
-  letter-spacing: .08em; text-transform: uppercase; margin-bottom: .4rem;
-}
-.hero h1 { font-size: clamp(2rem, 5.5vw, 3rem); line-height: 1.12; margin: .2rem 0 1rem }
-.section-lead { color: var(--muted); max-width: 620px }
-.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line) }
-.btn.ghost:hover { color: var(--accent); border-color: var(--accent) }
+.landing section { margin-top: 5.5rem }
+.landing h2 { font-size: 1.6rem; margin-bottom: .4rem }
 
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.2rem }
-.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.2rem }
-.card h3 { margin-top: 0; font-size: 1rem }
+/* hero */
+.hero { margin-top: 3rem !important; text-align: center; position: relative }
+.hero::before {
+  content: ''; position: absolute; inset: -8rem -4rem auto;
+  height: 26rem; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38rem 20rem at 30% 20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+    radial-gradient(34rem 18rem at 72% 10%, color-mix(in srgb, var(--accent2) 12%, transparent), transparent 70%);
+}
+.eyebrow {
+  color: var(--accent); font-weight: 600; font-size: .82rem;
+  letter-spacing: .1em; text-transform: uppercase; margin-bottom: .4rem;
+}
+.hero h1 {
+  font-size: clamp(2.3rem, 6vw, 3.6rem); line-height: 1.08;
+  letter-spacing: -.03em; margin: .3rem 0 1.1rem;
+}
+.hero h1 .grad {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero .lead { max-width: 640px; margin-left: auto; margin-right: auto }
+.hero .cta-row { justify-content: center }
+.section-lead { color: var(--muted); max-width: 640px }
+
+/* plain-words strip */
+.plain { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.6rem }
+.plain .card { text-align: left }
+.plain .num {
+  display: inline-flex; width: 28px; height: 28px; border-radius: 50%;
+  align-items: center; justify-content: center; margin-bottom: .6rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; font-weight: 700; font-size: .9rem;
+}
+.plain p { margin: 0; color: var(--muted); font-size: .92rem }
+.plain h3 { margin: 0 0 .3rem; font-size: 1rem }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.4rem }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.4rem }
+.card h3 { margin-top: 0; font-size: 1.02rem }
+.card p:last-child { margin-bottom: 0 }
 
 /* hero flow + layers diagram */
-.hero-flow, .layers-diagram { width: 100%; height: auto; margin-top: 2.2rem }
+.hero-flow, .layers-diagram { width: 100%; height: auto; margin-top: 2.4rem }
 .flow-node rect { fill: var(--card); stroke: var(--line); stroke-width: 1.5 }
 .flow-node.ok rect { stroke: var(--ok) }
 .flow-node.warn rect { stroke: var(--bad); stroke-dasharray: 5 4 }
@@ -87,23 +155,24 @@ form.card button:disabled { opacity: .6; cursor: default }
 .flow-node.ok .icon { stroke: var(--ok); stroke-width: 3.5 }
 .flow-label { fill: var(--fg); font: 600 13px system-ui, sans-serif }
 .flow-sub { fill: var(--muted); font: 400 11px system-ui, sans-serif }
-.flow-arrow {
-  fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 6 5;
-  marker-end: none;
-}
+.flow-arrow { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 6 5 }
 
 /* steps */
-.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.4rem }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.6rem }
 .step h3 { font-size: .95rem; margin: .8rem 0 .3rem }
 .step p { font-size: .88rem; color: var(--muted); margin: 0 }
 .step-icon {
-  width: 56px; height: 56px; border-radius: 14px; background: var(--card);
-  border: 1px solid var(--line); display: flex; align-items: center; justify-content: center;
+  width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent) 12%, var(--card)),
+    color-mix(in srgb, var(--accent2) 12%, var(--card)));
+  border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
 }
 .step-icon svg { width: 32px; height: 32px; stroke: var(--accent); stroke-width: 2.4;
   stroke-linecap: round; stroke-linejoin: round; fill: none }
 
-/* payload layout diagram */
+/* payload layout diagram (paper) */
 .pl-id { fill: color-mix(in srgb, var(--accent) 22%, transparent); stroke: var(--accent); stroke-width: 1.5 }
 .pl-crc { fill: color-mix(in srgb, var(--ok) 22%, transparent); stroke: var(--ok); stroke-width: 1.5 }
 .pl-rep { fill: var(--card); stroke: var(--line); stroke-width: 1.5 }
@@ -114,16 +183,23 @@ form.card button:disabled { opacity: .6; cursor: default }
 .dot2 { background: var(--ok) }
 
 /* KPI tiles */
-.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.4rem 0 }
-.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem }
-.kpi-value { font-size: 2rem; font-weight: 700; letter-spacing: -.02em }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.6rem 0 }
+.kpi {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 1.2rem; box-shadow: var(--card-shadow);
+}
+.kpi-value {
+  font-size: 2.1rem; font-weight: 750; letter-spacing: -.03em;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
 .kpi-label { color: var(--muted); font-size: .82rem; margin-top: .3rem; line-height: 1.4 }
 
 /* survival matrix */
 .survival { margin-top: .4rem }
 .matrix { list-style: none; padding: 0; margin: .8rem 0 0 }
 .matrix li {
-  display: flex; align-items: baseline; gap: .6rem; padding: .45rem 0;
+  display: flex; align-items: baseline; gap: .6rem; padding: .5rem 0;
   border-bottom: 1px solid var(--line); font-size: .95rem;
 }
 .matrix li:last-child { border-bottom: 0 }
@@ -131,7 +207,7 @@ form.card button:disabled { opacity: .6; cursor: default }
 .matrix .val { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600 }
 
 /* timeline */
-.timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.4rem 0 }
+.timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.6rem 0 }
 .tl-item { border-top: 3px solid var(--line); padding-top: .8rem }
 .tl-item.done { border-top-color: var(--muted) }
 .tl-item.now { border-top-color: var(--accent) }
@@ -139,12 +215,20 @@ form.card button:disabled { opacity: .6; cursor: default }
 .tl-date { font-weight: 700; font-size: .9rem }
 .tl-item.now .tl-date { color: var(--accent) }
 
-.final-cta { text-align: center; padding: 2.5rem 0 0 }
-.final-cta .cta-row { justify-content: center }
+/* final CTA */
+.final-cta {
+  text-align: center; border: 1px solid var(--line); border-radius: 20px;
+  padding: 3rem 1.5rem; box-shadow: var(--card-shadow);
+  background:
+    radial-gradient(30rem 14rem at 50% -20%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    var(--card);
+}
+.final-cta .cta-row { justify-content: center; margin-bottom: 0 }
 .final-cta .section-lead { margin-left: auto; margin-right: auto }
 
 @media (max-width: 720px) {
   .grid2, .grid3, .steps, .kpis, .timeline { grid-template-columns: 1fr 1fr }
+  .plain { grid-template-columns: 1fr }
 }
 @media (max-width: 480px) {
   .grid2, .grid3, .steps { grid-template-columns: 1fr }
