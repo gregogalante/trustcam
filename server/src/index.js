@@ -89,6 +89,43 @@ app.post('/api/proofs', { preHandler: auth }, async (req, reply) => {
   return { id: info.lastInsertRowid, status: 'verified' }
 })
 
+// Offline sync: the app embeds watermarks on-device (payload = deviceId<<14 | counter)
+// and uploads the signed proofs in batch when it gets connectivity.
+app.post('/api/proofs/sync', { preHandler: auth }, async (req, reply) => {
+  const { deviceId, proofs } = req.body || {}
+  if (!deviceId || !Array.isArray(proofs) || proofs.length === 0 || proofs.length > 500) {
+    return reply.code(400).send({ error: 'deviceId and proofs[] (1-500) required' })
+  }
+  const device = db.prepare('SELECT * FROM devices WHERE id = ? AND user_id = ?').get(deviceId, req.user.uid)
+  if (!device) return reply.code(404).send({ error: 'device not found' })
+
+  const insert = db.prepare(
+    'INSERT INTO proofs (user_id, device_id, sha256, signature, media_type, size_bytes, captured_at, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  )
+  const results = proofs.map(p => {
+    const { payload, sha256, signature, mediaType, sizeBytes, capturedAt } = p || {}
+    if (!payload || !sha256 || !signature || !mediaType || !sizeBytes || !capturedAt) {
+      return { payload, status: 'invalid' }
+    }
+    // Payload namespace is per-device: reject payloads outside this device's range
+    if (Math.floor(payload / 16384) !== Number(deviceId)) {
+      return { payload, status: 'payload-device-mismatch' }
+    }
+    if (!verifyFileSignature(sha256.toLowerCase(), signature, device.public_key_pem)) {
+      return { payload, status: 'bad-signature' }
+    }
+    try {
+      insert.run(req.user.uid, deviceId, sha256.toLowerCase(), signature,
+        mediaType, sizeBytes, capturedAt, payload)
+      return { payload, status: 'synced' }
+    } catch {
+      // unique payload violation -> already synced earlier (idempotent retry)
+      return { payload, status: 'already-synced' }
+    }
+  })
+  return { results }
+})
+
 app.get('/api/proofs', { preHandler: auth }, async (req) => {
   return db.prepare(`
     SELECT p.id, p.sha256, p.media_type, p.size_bytes, p.captured_at, p.created_at, d.model
@@ -207,7 +244,10 @@ app.post('/api/verify', async (req, reply) => {
     if (res.ok) {
       const { proofId, confidence } = await res.json()
       if (proofId != null && confidence >= 0.7) {
-        proof = db.prepare(`${PROOF_LOOKUP} WHERE p.id = ? LIMIT 1`).get(proofId)
+        // on-device proofs match by payload; legacy server-embedded files
+        // used the row id as payload
+        proof = db.prepare(`${PROOF_LOOKUP} WHERE p.payload = ? LIMIT 1`).get(proofId) ||
+          db.prepare(`${PROOF_LOOKUP} WHERE p.payload IS NULL AND p.id = ? LIMIT 1`).get(proofId)
         if (proof) {
           return proofResponse(proof, {
             verified: false, match: 'watermark-recovered', confidence, sha256, sizeBytes: size,

@@ -24,7 +24,7 @@ Milestone: a clip that triggers YouTube's "Captured with a camera" label.
 - [x] Capture flow: app uploads signed original → server embeds proof id → watermarked copy replaces the gallery file
 - [x] Verifier recovery: exact match → else watermark extraction → proof lookup; honest UX distinguishing "verified" from "provenance recovered"
 - [x] E2E automated test incl. re-encode recovery (conf 1.0); service-level tests: image survives JPEG q8+70% scale, video survives 720p/2M re-encode
-- [ ] On-device embedding (needs int8+QNN + Kotlin port of the embed pipeline) — removes the media-transits-server trade-off
+- [x] On-device embedding (photo+video, ONNX graphs + Kotlin pipeline, offline queue + sync) — media no longer transits the server; fp32 speed on mid-range is the remaining gap (int8/NPU tracked)
 - [ ] The demo that sells: record → post to TikTok → verify the TikTok copy (real-platform validation of the full loop)
 
 ## Phase 3 — Monetization + iOS

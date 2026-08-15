@@ -30,7 +30,8 @@ The e2e includes the watermark flow (capture → embed → recovery after re-enc
 - SQLite via better-sqlite3, schema auto-created in `server/src/db.js`. Local DB — safe to delete for a reset.
 - Web pages are plain static HTML/CSS/JS in `web/`, served by @fastify/static. No framework, keep it that way for the MVP.
 - Attestation: MVP checks leaf-cert key == enrolled key. Full chain validation to Google hardware attestation roots (incl. post-2026-04 RKP root) is a tracked TODO in `server/src/crypto.js`.
-- Watermark payload codec lives in `watermark/codec.py` (24-bit proof id + CRC8, 8 reps, copies 32 apart). Changing it desyncs every already-embedded file — never change the layout without a versioning strategy.
+- Watermark payload codec exists in TWO implementations that must stay bit-identical: `watermark/codec.py` (server) and `android/.../PayloadCodec.kt` (app, unit-tested against vectors generated from the python one). 24-bit payload (`deviceId<<14 | counter`) + CRC8, 8 reps, copies 32 apart. Changing the layout desyncs every already-embedded file — never change it without a versioning strategy.
+- On-device graphs are exported by `spikes/export_frame_graphs.py` (parity-asserted); tiny ones live in `android/app/src/main/assets/`, the 90MB embedder in `web/models/` (downloaded by the app at sign-in). `spikes/sim_device_pipeline.py` simulates the exact Android pipeline for end-to-end validation against the extractor.
 - The watermark service is internal-only (Node reaches it via `WATERMARK_URL`); it must never be exposed publicly.
 - When testing locally, the service runs from `spikes/videoseal/` because VideoSeal resolves configs/ckpts relative to cwd; the three .py files are copied there (copies are gitignored implicitly — canonical sources are in `watermark/`).
 

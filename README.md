@@ -70,10 +70,31 @@ SQLite data persists in the `trustcam-data` volume.
 - At capture the app computes the file's SHA-256 and signs the 32 hash bytes in hardware (`SHA256withECDSA`); the proof (hash+signature+timestamps, ~200 bytes — never the media) is registered.
 - `/api/verify` recomputes the hash from an uploaded file, finds the proof, re-verifies the signature against the enrolled key.
 
-## Watermark layer (phase 2)
+## On-device watermarking (phase 3 — fully offline capture)
 
-At capture the app uploads the hardware-signed original; the server registers the proof, has the watermark service embed the **proof id as an invisible VideoSeal watermark** (256-bit message: 24-bit id + CRC8, 8× repetition-coded), and returns the watermarked copy, which replaces the gallery file. `/api/verify` then resolves, in order: byte-exact original → byte-exact watermarked copy → **watermark extraction on re-encoded copies** (survives social-media transcodes; measured 100% recovery after YouTube/WhatsApp round-trips and 720p/2Mbps re-encodes).
+The app embeds the invisible watermark **on the phone** and works offline after the
+first sign-in:
 
-Trade-offs: media transits the server for embedding (it is not stored — only hashes are); watermarked verification of re-encoded copies proves provenance, not byte integrity; proof ids are capped at 16.7M by the 24-bit payload.
+- **Graphs**: the VideoSeal pipeline is exported as three ONNX graphs
+  (`spikes/export_frame_graphs.py`): `frame_prep` (resize) and `frame_apply`
+  (JND attenuation + upscale + blend) ship in the APK; the 90MB `embedder_key`
+  is served at `/models/embedder_key.onnx` (file: `web/models/`) and downloaded
+  once at sign-in. Numerical parity vs the server pipeline is asserted at export.
+- **Video**: MediaCodec decode → Y-plane-only embedding (limited↔full range, coded↔display
+  rotation) → re-encode, audio passthrough. Key frame every 4 frames, delta propagated.
+- **Payload namespace**: `deviceId (10 bit) << 14 | local counter (14 bit)` — assigned
+  implicitly at enrollment, so the phone never needs the server again to capture.
+  The Kotlin codec (`PayloadCodec.kt`) is bit-identical to `watermark/codec.py`
+  (unit-tested against generated vectors).
+- **Offline queue**: proofs (hash + hardware signature + payload, ~200B) queue in
+  the app and batch-sync via `POST /api/proofs/sync` (idempotent) when online.
+- `/api/verify` resolves: byte-exact match → watermark extraction → payload lookup
+  (legacy server-embedded files resolve by proof id).
 
-Known MVP limits (by design, see roadmap): whole-file signature (per-GOP SEI pipeline is the validated next step), attestation chain checked for key match but not yet validated to the Google root, capture time is device-claimed, on-device embedding deferred until int8+QNN work lands.
+The server-side watermark service remains for **extraction** (verify page) and as
+legacy `/api/capture` support.
+
+Known limits (by design, see roadmap): whole-file signature (per-GOP SEI pipeline is
+the validated next step), attestation checked for key match but not yet validated to
+the Google root, capture time is device-claimed, video sealing takes ~1-2 min per
+10s clip on mid-range phones at fp32 (int8/NPU is the tracked speed-up).

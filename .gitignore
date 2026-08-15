@@ -28,3 +28,6 @@ android/keystore.properties
 
 # Regenerable via spikes/spike_export.py (see seitest/README.md)
 seitest/app/src/androidTest/assets/embedder.onnx
+
+# Big embedder graph lives in web/models/ (served to the app at sign-in);
+# the tiny prep/apply graphs stay in the APK assets and are committed.

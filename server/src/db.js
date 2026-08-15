@@ -43,4 +43,11 @@ try {
 } catch { /* column already exists */ }
 db.exec('CREATE INDEX IF NOT EXISTS idx_proofs_wm_sha256 ON proofs(wm_sha256)')
 
+// payload: 24-bit watermark payload for on-device embedding (deviceId<<14 | counter).
+// Legacy server-embedded files used the proof id as payload (payload NULL here).
+try {
+  db.exec('ALTER TABLE proofs ADD COLUMN payload INTEGER')
+} catch { /* column already exists */ }
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_proofs_payload ON proofs(payload) WHERE payload IS NOT NULL')
+
 export default db

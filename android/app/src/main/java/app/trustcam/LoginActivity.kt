@@ -54,11 +54,20 @@ class LoginActivity : AppCompatActivity() {
                     val key = DeviceKey.ensure()
                     api.enrollDevice("${Build.MANUFACTURER} ${Build.MODEL}", key)
                 }
+                // After this download the app is fully offline-capable
+                if (!WatermarkEngine.isReady(this)) {
+                    api.downloadModel(WatermarkEngine.modelFile(this)) { pct ->
+                        runOnUiThread {
+                            b.loginBtn.text = getString(R.string.downloading_model, pct)
+                        }
+                    }
+                }
                 runOnUiThread { goCapture() }
             } catch (e: Exception) {
                 runOnUiThread {
                     toast(e.message ?: getString(R.string.generic_error))
                     b.loginBtn.isEnabled = true
+                    b.loginBtn.text = getString(R.string.login)
                     b.progress.visibility = View.GONE
                 }
             }

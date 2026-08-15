@@ -145,3 +145,63 @@ assert.equal(v2.owner, 'Test User')
 fs.rmSync(tmp, { recursive: true, force: true })
 
 console.log(`E2E phase 2 OK: capture #${proofId} watermarked, exact wm match, recovery after re-encode (conf ${v2.confidence})`)
+
+// --- phase 3: offline sync (on-device watermarking flow) ---
+const payload = (device.body.id << 14) | 7
+const offMedia = crypto.randomBytes(64 * 1024)
+const offSha = crypto.createHash('sha256').update(offMedia).digest()
+const sync = await api('/api/proofs/sync', {
+  method: 'POST',
+  body: JSON.stringify({
+    deviceId: device.body.id,
+    proofs: [{
+      payload,
+      sha256: offSha.toString('hex'),
+      signature: crypto.sign('sha256', offSha, privateKey).toString('base64'),
+      mediaType: 'video', sizeBytes: offMedia.length,
+      capturedAt: new Date().toISOString()
+    }]
+  })
+}, token)
+assert.equal(sync.status, 200, JSON.stringify(sync.body))
+assert.equal(sync.body.results[0].status, 'synced', JSON.stringify(sync.body))
+
+// idempotent retry
+const sync2 = await api('/api/proofs/sync', {
+  method: 'POST',
+  body: JSON.stringify({
+    deviceId: device.body.id,
+    proofs: [{
+      payload,
+      sha256: offSha.toString('hex'),
+      signature: crypto.sign('sha256', offSha, privateKey).toString('base64'),
+      mediaType: 'video', sizeBytes: offMedia.length,
+      capturedAt: new Date().toISOString()
+    }]
+  })
+}, token)
+assert.equal(sync2.body.results[0].status, 'already-synced')
+
+// wrong-namespace payload rejected
+const bad2 = await api('/api/proofs/sync', {
+  method: 'POST',
+  body: JSON.stringify({
+    deviceId: device.body.id,
+    proofs: [{
+      payload: ((device.body.id + 1) << 14) | 1,
+      sha256: offSha.toString('hex'),
+      signature: crypto.sign('sha256', offSha, privateKey).toString('base64'),
+      mediaType: 'video', sizeBytes: 1, capturedAt: new Date().toISOString()
+    }]
+  })
+}, token)
+assert.equal(bad2.body.results[0].status, 'payload-device-mismatch')
+
+// exact-match verify of a synced offline capture
+const offForm = new FormData()
+offForm.append('file', new Blob([offMedia]), 'offline.mp4')
+const v3 = await (await fetch(BASE + '/api/verify', { method: 'POST', body: offForm })).json()
+assert.equal(v3.found, true)
+assert.equal(v3.verified, true, JSON.stringify(v3))
+
+console.log('E2E phase 3 OK: offline sync, idempotent retry, namespace check, verify of synced proof')

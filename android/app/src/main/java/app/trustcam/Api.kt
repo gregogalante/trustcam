@@ -1,18 +1,12 @@
 package app.trustcam
 
-import android.content.ContentResolver
 import android.content.Context
-import android.net.Uri
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import okio.BufferedSink
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.InputStream
 import java.util.concurrent.TimeUnit
 
 /** Thin client for the TrustCam registry API. All calls are blocking — use off the main thread. */
@@ -20,9 +14,6 @@ class Api(context: Context) {
     private val prefs = context.getSharedPreferences("trustcam", Context.MODE_PRIVATE)
     private val http = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
-        // Server-side video watermarking takes minutes for long clips
-        .writeTimeout(15, TimeUnit.MINUTES)
-        .readTimeout(15, TimeUnit.MINUTES)
         .build()
     private val json = "application/json".toMediaType()
 
@@ -71,83 +62,52 @@ class Api(context: Context) {
         ).getLong("id")
     }
 
-    fun registerProof(sha256Hex: String, signatureB64: String, mediaType: String,
-                      sizeBytes: Long, capturedAtIso: String): Long {
-        return post("/api/proofs", JSONObject()
-            .put("deviceId", deviceId)
-            .put("sha256", sha256Hex)
-            .put("signature", signatureB64)
-            .put("mediaType", mediaType)
-            .put("sizeBytes", sizeBytes)
-            .put("capturedAt", capturedAtIso), auth = true
-        ).getLong("id")
-    }
-
     /**
-     * Uploads the signed capture; the server registers the proof, embeds the
-     * invisible watermark and returns the watermarked file. On success the
-     * callback receives the watermarked stream to persist; on watermark-service
-     * failure the proof still exists and `watermarked` is false.
+     * Batch-syncs offline proofs. Returns the payloads the server acknowledged
+     * (newly synced or already known). Throws on network failure — caller retries later.
      */
-    data class CaptureResult(val proofId: Long, val watermarked: Boolean)
-
-    /** Progress stages: "upload" (0-100), "processing" (-1, server-side embedding). */
-    fun capture(resolver: ContentResolver, uri: Uri, filename: String,
-                sha256Hex: String, signatureB64: String, mediaType: String,
-                capturedAtIso: String, sizeBytes: Long,
-                onProgress: (stage: String, percent: Int) -> Unit,
-                writeWatermarked: (InputStream, Long) -> Unit): CaptureResult {
-        val fileBody = object : RequestBody() {
-            override fun contentType() =
-                (if (mediaType == "video") "video/mp4" else "image/jpeg").toMediaType()
-            override fun contentLength() = sizeBytes
-            override fun writeTo(sink: BufferedSink) {
-                resolver.openInputStream(uri)!!.use { ins ->
+    /** One-time download of the embedder graph after sign-in (~90MB). */
+    fun downloadModel(dest: java.io.File, onProgress: (Int) -> Unit) {
+        val req = Request.Builder().url("$baseUrl/models/embedder_key.onnx").build()
+        http.newCall(req).execute().use { res ->
+            if (!res.isSuccessful) throw ApiException("model download failed: HTTP ${res.code}")
+            val total = res.body!!.contentLength()
+            val tmp = java.io.File(dest.parentFile, dest.name + ".part")
+            res.body!!.byteStream().use { ins ->
+                tmp.outputStream().use { out ->
                     val buf = ByteArray(1 shl 16)
-                    var sent = 0L
-                    var lastPct = -1
+                    var done = 0L
+                    var last = -1
                     while (true) {
                         val n = ins.read(buf)
                         if (n < 0) break
-                        sink.write(buf, 0, n)
-                        sent += n
-                        val pct = (sent * 100 / sizeBytes).toInt()
-                        if (pct != lastPct) {
-                            lastPct = pct
-                            onProgress("upload", pct)
+                        out.write(buf, 0, n)
+                        done += n
+                        if (total > 0) {
+                            val pct = (done * 100 / total).toInt()
+                            if (pct != last) { last = pct; onProgress(pct) }
                         }
                     }
                 }
-                // Upload complete: the server is now verifying + embedding
-                onProgress("processing", -1)
+            }
+            if (!tmp.renameTo(dest)) throw ApiException("model save failed")
+        }
+    }
+
+    fun syncProofs(pending: JSONArray): Set<Int> {
+        if (pending.length() == 0) return emptySet()
+        val res = post("/api/proofs/sync", JSONObject()
+            .put("deviceId", deviceId)
+            .put("proofs", pending), auth = true)
+        val acked = mutableSetOf<Int>()
+        val results = res.getJSONArray("results")
+        for (i in 0 until results.length()) {
+            val r = results.getJSONObject(i)
+            if (r.getString("status") in setOf("synced", "already-synced")) {
+                acked.add(r.getInt("payload"))
             }
         }
-        val body = MultipartBody.Builder().setType(MultipartBody.FORM)
-            .addFormDataPart("file", filename, fileBody)
-            .addFormDataPart("deviceId", deviceId.toString())
-            .addFormDataPart("sha256", sha256Hex)
-            .addFormDataPart("signature", signatureB64)
-            .addFormDataPart("mediaType", mediaType)
-            .addFormDataPart("capturedAt", capturedAtIso)
-            .build()
-        val req = Request.Builder()
-            .url("$baseUrl/api/capture")
-            .post(body)
-            .header("Authorization", "Bearer $token")
-            .build()
-        http.newCall(req).execute().use { res ->
-            if (res.code == 502) {
-                // Watermarking failed but the proof of the original is registered
-                val parsed = JSONObject(res.body!!.string())
-                return CaptureResult(parsed.optLong("proofId", -1), watermarked = false)
-            }
-            if (!res.isSuccessful) {
-                throw ApiException(JSONObject(res.body!!.string()).optString("error", "HTTP ${res.code}"))
-            }
-            val proofId = res.header("x-proof-id")?.toLong() ?: -1
-            res.body!!.byteStream().use { writeWatermarked(it, res.body!!.contentLength()) }
-            return CaptureResult(proofId, watermarked = true)
-        }
+        return acked
     }
 }
 

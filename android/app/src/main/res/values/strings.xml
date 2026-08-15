@@ -8,14 +8,14 @@
     <string name="login">Sign in</string>
     <string name="register_cta">No account? Register on the website</string>
     <string name="fill_credentials">Enter email and password</string>
+    <string name="downloading_model">Downloading watermark engine… %1$d%%</string>
     <string name="generic_error">Something went wrong</string>
     <string name="photo">Photo</string>
     <string name="record">Record</string>
     <string name="stop">Stop</string>
-    <string name="registering">Signing and registering proof…</string>
-    <string name="uploading">Uploading capture… %1$d%%</string>
-    <string name="watermarking">Applying invisible watermark… (can take a while for video)</string>
-    <string name="downloading">Saving watermarked copy… %1$d%%</string>
-    <string name="registered_watermarked">Proof #%1$d ✓ — watermarked copy saved to gallery</string>
-    <string name="registered_no_watermark">Proof #%1$d registered (watermark unavailable, original kept)</string>
+    <string name="watermarking">Applying invisible watermark…</string>
+    <string name="watermarking_pct">Applying invisible watermark… %1$d%%</string>
+    <string name="signing">Signing in secure hardware…</string>
+    <string name="sealed_synced">Capture #%1$d sealed ✓ — proof synced</string>
+    <string name="sealed_offline">Capture #%1$d sealed ✓ — proof queued, will sync when online</string>
 </resources>
