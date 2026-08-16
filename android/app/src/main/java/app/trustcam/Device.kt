@@ -27,14 +27,16 @@ class Device(context: Context) {
         get() = prefs.getString("deviceName", null)
         set(v) { prefs.edit().putString("deviceName", v).apply() }
 
-    val ready get() = !name.isNullOrEmpty() && prefs.getInt("deviceId", 0) > 0
+    // key is NOT "deviceId": 0.5.x stored a Long there (server-assigned id) and
+    // reusing it would ClassCastException on update installs
+    val ready get() = !name.isNullOrEmpty() && prefs.getInt("localDeviceId", 0) > 0
 
     val deviceId: Int
         get() {
-            var id = prefs.getInt("deviceId", 0)
+            var id = prefs.getInt("localDeviceId", 0)
             if (id == 0) {
                 id = SecureRandom().nextInt(1023) + 1 // 1..1023 (10-bit, 0 reserved)
-                prefs.edit().putInt("deviceId", id).apply()
+                prefs.edit().putInt("localDeviceId", id).apply()
             }
             return id
         }
