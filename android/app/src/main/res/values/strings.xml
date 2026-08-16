@@ -2,12 +2,14 @@
 <resources>
     <string name="app_name">TrustCam</string>
     <string name="tagline">Every capture, cryptographically yours.</string>
-    <string name="server_url_hint">Server URL (dev override)</string>
-    <string name="email_hint">Email</string>
-    <string name="password_hint">Password</string>
-    <string name="login">Sign in</string>
-    <string name="register_cta">No account? Register on the website</string>
-    <string name="fill_credentials">Enter email and password</string>
+    <string name="name_hint">Your display name</string>
+    <string name="setup_note">No account needed. Your name is shown by the public verifier next to what you capture. A signing key is created inside this phone\'s secure hardware and never leaves it.</string>
+    <string name="setup_start">Set up this device</string>
+    <string name="setup_continue">Start capturing</string>
+    <string name="fill_name">Enter a display name</string>
+    <string name="enroll_title">Device ready — one last step</string>
+    <string name="enroll_note">Add this entry to the public registry (registry.json in the site repository) so verifiers can show your name for social-media copies. Exact copies verify even without it.</string>
+    <string name="share_enrollment">Share registry entry</string>
     <string name="downloading_model">Downloading watermark engine… %1$d%%</string>
     <string name="generic_error">Something went wrong</string>
     <string name="photo">Photo</string>
@@ -18,6 +20,5 @@
     <string name="watermarking">Applying invisible watermark…</string>
     <string name="watermarking_pct">Applying invisible watermark… %1$d%%</string>
     <string name="signing">Signing in secure hardware…</string>
-    <string name="sealed_synced">Capture #%1$d sealed ✓ — proof synced</string>
-    <string name="sealed_offline">Capture #%1$d sealed ✓ — proof queued, will sync when online</string>
+    <string name="sealed">Capture #%1$d sealed ✓ — the proof travels inside the file</string>
 </resources>

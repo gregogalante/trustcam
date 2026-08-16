@@ -37,8 +37,8 @@ def probe(path):
 
 
 def main(src, dst):
-    # message from the payload codec (canonical source: watermark/codec.py)
-    sys.path.insert(0, os.path.join(os.path.dirname(RESULTS), '..', 'watermark'))
+    # message from the payload codec (canonical source: spikes/codec.py)
+    sys.path.insert(0, os.path.dirname(RESULTS))
     import codec
     msg = codec.encode(PAYLOAD).numpy()
 

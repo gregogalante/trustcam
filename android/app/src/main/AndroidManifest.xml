@@ -15,7 +15,7 @@
         android:theme="@style/Theme.TrustCam"
         android:usesCleartextTraffic="${cleartext}">
 
-        <activity android:name=".LoginActivity" android:exported="true">
+        <activity android:name=".SetupActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -12,7 +12,6 @@
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
     <a href="/paper/">Paper</a>
-    <a href="/register.html">Register</a>
   </nav>
   <main>
     <h1>System architecture</h1>
@@ -84,35 +83,41 @@
     </svg>
 
     <ol>
-      <li><strong>Device enrollment</strong>: an ECDSA P-256 key pair is generated inside StrongBox
-        (dedicated secure element; TEE fallback on devices without it — the level is
-        recorded in every proof). Android Key Attestation produces an X.509 chain
-        binding the key to hardware; the chain is recorded at enrollment and the
-        registry verifies its leaf matches the enrolled key (full validation up to
-        Google's attestation root is on the roadmap). Enrollment also assigns the
-        device its watermark payload namespace, so it can seal captures offline
-        from then on.</li>
+      <li><strong>Device setup — no account</strong>: an ECDSA P-256 key pair is generated
+        inside StrongBox (dedicated secure element; TEE fallback on devices without it —
+        the level is recorded in every proof). Android Key Attestation produces an X.509
+        chain binding the key to hardware; the chain travels inside every proof. The app
+        picks a random 10-bit device id (the watermark namespace) and a display name;
+        adding the device's entry to the public <a href="/registry.json">registry.json</a>
+        (a pull request) lets verifiers name it for re-encoded copies.</li>
       <li><strong>Capture</strong>: photo or video from the app, saved to the gallery.</li>
       <li><strong>Watermarking — on the device</strong>: the payload (device id, 10 bit +
         local capture counter, 14 bit) is encoded and embedded into the pixels by the
         on-device VideoSeal pipeline (ONNX). Fully offline;
         <strong>media never leaves the phone</strong>.</li>
-      <li><strong>Signing</strong>: the SHA-256 of the final watermarked bytes is signed in the
+      <li><strong>Signing</strong>: the SHA-256 of the watermarked bytes is signed in the
         secure element (<code>SHA256withECDSA</code>). The private key never exists in
         application memory.</li>
-      <li><strong>Proof sync</strong>: proofs (hash + signature + payload + timestamps,
-        ~200 bytes — never the media) queue on the device and batch-sync to the
-        registry whenever connectivity allows.</li>
+      <li><strong>Proof-in-file</strong>: the proof (payload, timestamps, public key,
+        attestation chain, signature) is appended to the file itself as a trailer that
+        is also a valid MP4 <code>free</code> box, so players and JPEG decoders ignore
+        it. <strong>There is no server and nothing to sync</strong> — the file carries
+        its own proof wherever it goes.</li>
     </ol>
 
-    <h2>Signature convention</h2>
-    <pre>H   = SHA-256(file bytes)                    // 32 bytes
-sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</pre>
+    <h2>Proof trailer &amp; signature convention</h2>
+    <pre>trailer   = [4B box size]["free"][proof JSON][4B json length]["TCPROOF1"]
+canonical = file bytes without the trailer
+H         = SHA-256(canonical)               // 32 bytes
+sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</pre>
     <p>
-      The verifier recomputes <code>H</code> from the uploaded file and checks
-      <code>sig</code> against the device's enrolled public key — the stored proof
-      row is a claim, the signature is the evidence, and it is re-checked on every
-      verification.
+      The verifier (a static page — WebCrypto, no backend) strips the trailer,
+      recomputes <code>H</code> and checks <code>sig</code> against the public key
+      carried in the proof; it also checks that the attestation leaf certificate
+      certifies that same key (validation up to Google's attestation root is on the
+      roadmap). The proof is a claim, the signature is the evidence, and it is
+      re-checked from scratch on every verification — by <em>your</em> browser,
+      not by a service you must trust.
     </p>
 
     <h2>Watermark payload encoding</h2>
@@ -166,16 +171,24 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
       Qualcomm <code>c2.qti.avc.encoder</code>).
     </p>
 
-    <h2>Verification service</h2>
-    <p>Given any file, the verifier resolves in order — each level is weaker than the
-    previous and the UI says so explicitly:</p>
+    <h2>Verification — fully client-side</h2>
+    <p>The verifier is a static web page: nothing is uploaded, ever. Given any file it
+    resolves in order — each level is weaker than the previous and the UI says so
+    explicitly:</p>
     <ol>
-      <li><strong>Byte-exact original</strong> → hardware signature re-verified → <em>Verified (original)</em>.
-        Captures are watermarked on the device before signing, so the file in the
-        gallery <em>is</em> the signed original.</li>
-      <li><strong>Watermark extraction</strong> on re-encoded copies → payload recovered from the pixels → <em>Origin traced</em>: owner, device and capture time are known, but byte integrity of this specific copy is not verifiable.</li>
+      <li><strong>Proof trailer present</strong> → strip, hash the canonical bytes,
+        verify the signature with WebCrypto against the key in the proof (attestation
+        leaf cross-checked) → <em>Verified (original)</em>. Works offline; survives any
+        byte-exact transfer (email, Drive, file transfer).</li>
+      <li><strong>No trailer</strong> (platforms strip it — but they also change the
+        bytes, so the signature was lost either way) → watermark extraction
+        <strong>in the browser</strong> (int8 ONNX detector, ~34 MB, WASM) → payload →
+        device looked up in the public <a href="/registry.json">registry.json</a> →
+        <em>Origin traced</em>: the device is known, byte integrity of this copy is not
+        verifiable.</li>
     </ol>
-    <p>Uploaded files are hashed and scanned in a stream and never stored.</p>
+    <p>Re-encoded videos currently require the command-line verifier for the
+    watermark scan; exact video files verify in the browser via their trailer.</p>
 
     <h2>Watermark recovery: semantics and measured limits</h2>
     <p>
@@ -200,12 +213,13 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
 
     <h2>Trust model and standards alignment</h2>
     <p>
-      The design maps onto C2PA concepts (hard binding = content hash + signature;
-      soft binding = watermark) and is built to become C2PA-conformant: proofs can
-      be re-expressed as C2PA manifests, and the device keys/attestation flow
-      matches the requirements of C2PA Conformance Level 2 (hardware-backed keys).
-      Timestamping today relies on the registry's clock plus the device-claimed
-      capture time; RFC 3161 tokens are the planned upgrade.
+      The design maps onto C2PA concepts (hard binding = content hash + signature,
+      carried in the file exactly like a C2PA manifest; soft binding = watermark) and
+      is built to become C2PA-conformant: the trailer can be re-expressed as a C2PA
+      manifest, and the device keys/attestation flow matches the requirements of C2PA
+      Conformance Level 2 (hardware-backed keys). With no server anywhere, capture
+      time is device-claimed only; RFC 3161 timestamp tokens (fetched at capture when
+      online) are the planned upgrade.
     </p>
 
     <footer><a href="/paper/">← Paper index</a></footer>

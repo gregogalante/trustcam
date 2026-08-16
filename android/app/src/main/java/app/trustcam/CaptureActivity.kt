@@ -31,8 +31,7 @@ import kotlin.concurrent.thread
 
 class CaptureActivity : AppCompatActivity() {
     private lateinit var b: ActivityCaptureBinding
-    private lateinit var api: Api
-    private lateinit var queue: ProofQueue
+    private lateinit var device: Device
     private var engine: WatermarkEngine? = null
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageCapture: ImageCapture? = null
@@ -41,19 +40,15 @@ class CaptureActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        api = Api(this)
-        queue = ProofQueue(this)
+        device = Device(this)
         b = ActivityCaptureBinding.inflate(layoutInflater)
         setContentView(b.root)
 
         b.photoBtn.setOnClickListener { takePhoto() }
         b.videoBtn.setOnClickListener { toggleRecording() }
 
-        // Warm up the 90MB embedder in the background; sync any queued proofs
-        thread {
-            engine = WatermarkEngine(this)
-            trySync()
-        }
+        // Warm up the 90MB embedder in the background
+        thread { engine = WatermarkEngine(this) }
 
         val perms = arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
         if (perms.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }) {
@@ -146,9 +141,10 @@ class CaptureActivity : AppCompatActivity() {
     }
 
     /**
-     * Fully offline sealing: embed the invisible watermark (payload =
-     * deviceId + local counter), hash + hardware-sign the watermarked file,
-     * queue the proof. Sync happens whenever connectivity allows.
+     * Fully offline, fully self-contained sealing: embed the invisible
+     * watermark (payload = deviceId + local counter), hash the canonical
+     * bytes, hardware-sign, then append the proof trailer to the file itself.
+     * There is nothing to sync — the file carries its own proof.
      */
     private fun sealCapture(uri: Uri, mediaType: String) {
         val capturedAt = Instant.now().toString()
@@ -165,7 +161,7 @@ class CaptureActivity : AppCompatActivity() {
                 // wait for the engine warm-up if needed
                 while (engine == null) Thread.sleep(100)
                 val eng = engine!!
-                val payload = PayloadCodec.payloadOf(api.deviceId, queue.nextCounter())
+                val payload = PayloadCodec.payloadOf(device.deviceId.toLong(), device.nextCounter())
                 val msg = PayloadCodec.encode(payload)
 
                 if (mediaType == "photo") {
@@ -188,27 +184,34 @@ class CaptureActivity : AppCompatActivity() {
                     showProgress(indeterminate = true)
                     b.sealStatus.text = getString(R.string.signing)
                 }
+                // canonical hash = the file WITHOUT the proof trailer (not yet appended)
                 val digest = MessageDigest.getInstance("SHA-256")
-                var size = 0L
                 contentResolver.openInputStream(uri)!!.use { ins ->
                     val buf = ByteArray(1 shl 16)
                     while (true) {
                         val n = ins.read(buf)
                         if (n < 0) break
                         digest.update(buf, 0, n)
-                        size += n
                     }
                 }
                 val hash = digest.digest()
-                val signature = DeviceKey.signHash(hash)
-                val hex = hash.joinToString("") { "%02x".format(it) }
-                queue.enqueue(payload, hex, signature, mediaType, size, capturedAt)
-
-                val synced = trySync()
-                runOnUiThread {
-                    finishSealing(getString(
-                        if (synced) R.string.sealed_synced else R.string.sealed_offline, payload))
+                val key = DeviceKey.ensure()
+                val proof = org.json.JSONObject()
+                    .put("v", 1)
+                    .put("payload", payload)
+                    .put("name", device.name)
+                    .put("model", "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+                    .put("capturedAt", capturedAt)
+                    .put("mediaType", mediaType)
+                    .put("securityLevel", key.securityLevel)
+                    .put("pubkey", key.publicKeySpkiB64)
+                    .put("attestation", org.json.JSONArray(key.attestationChainB64))
+                    .put("sig", DeviceKey.signHash(hash))
+                contentResolver.openOutputStream(uri, "wa")!!.use {
+                    it.write(ProofTrailer.build(proof))
                 }
+
+                runOnUiThread { finishSealing(getString(R.string.sealed, payload)) }
             } catch (e: Exception) {
                 runOnUiThread { finishSealing("Sealing failed: ${e.message}") }
             }
@@ -222,17 +225,6 @@ class CaptureActivity : AppCompatActivity() {
         b.status.visibility = View.VISIBLE
         b.status.text = message
         bindCamera()
-    }
-
-    /** Best-effort sync of the offline queue; false when offline or on error. */
-    private fun trySync(): Boolean {
-        return try {
-            val acked = api.syncProofs(queue.pending())
-            if (acked.isNotEmpty()) queue.removeAcked(acked)
-            queue.pending().length() == 0
-        } catch (e: Exception) {
-            false
-        }
     }
 
     /** Material progress indicators only allow mode switches while hidden. */

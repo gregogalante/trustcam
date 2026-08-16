@@ -18,7 +18,7 @@ import videoseal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RESULTS = os.path.join(HERE, 'results')
-sys.path.insert(0, os.path.join(HERE, '..', 'watermark'))
+sys.path.insert(0, HERE)
 import codec  # noqa: E402
 
 PAYLOAD = (5 << 14) | 123

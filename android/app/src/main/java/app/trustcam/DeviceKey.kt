@@ -18,7 +18,7 @@ object DeviceKey {
     private const val ALIAS = "trustcam_device_key"
 
     data class Info(
-        val publicKeyPem: String,
+        val publicKeySpkiB64: String,
         val attestationChainB64: List<String>,
         val securityLevel: String
     )
@@ -62,11 +62,9 @@ object DeviceKey {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val chain = ks.getCertificateChain(ALIAS) ?: emptyArray()
         val pub = ks.getCertificate(ALIAS).publicKey
-        val pem = "-----BEGIN PUBLIC KEY-----\n" +
-            Base64.encodeToString(pub.encoded, Base64.NO_WRAP).chunked(64).joinToString("\n") +
-            "\n-----END PUBLIC KEY-----"
         return Info(
-            publicKeyPem = pem,
+            // raw SPKI DER, base64: what WebCrypto importKey('spki') expects
+            publicKeySpkiB64 = Base64.encodeToString(pub.encoded, Base64.NO_WRAP),
             attestationChainB64 = chain.map { Base64.encodeToString(it.encoded, Base64.NO_WRAP) },
             securityLevel = if (level != "unknown") level else "tee"
         )
