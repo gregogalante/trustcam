@@ -171,10 +171,8 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
     previous and the UI says so explicitly:</p>
     <ol>
       <li><strong>Byte-exact original</strong> → hardware signature re-verified → <em>Verified (original)</em>.
-        Current captures are watermarked on the device before signing, so the file in the
+        Captures are watermarked on the device before signing, so the file in the
         gallery <em>is</em> the signed original.</li>
-      <li><strong>Byte-exact watermarked copy</strong> (legacy files from the earlier
-        server-side embedding flow) → derived from a signed original → <em>Verified (watermarked copy)</em>.</li>
       <li><strong>Watermark extraction</strong> on re-encoded copies → payload recovered from the pixels → <em>Origin traced</em>: owner, device and capture time are known, but byte integrity of this specific copy is not verifiable.</li>
     </ol>
     <p>Uploaded files are hashed and scanned in a stream and never stored.</p>

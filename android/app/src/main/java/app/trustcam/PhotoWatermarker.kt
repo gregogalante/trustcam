@@ -3,7 +3,9 @@ package app.trustcam
 import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
+import androidx.exifinterface.media.ExifInterface
 
 /**
  * Photo watermarking: luma delta computed by the graphs, added equally to
@@ -19,7 +21,18 @@ object PhotoWatermarker {
 
     fun watermarkInPlace(resolver: ContentResolver, uri: Uri,
                          engine: WatermarkEngine, msg: FloatArray) {
-        val src = resolver.openInputStream(uri)!!.use { BitmapFactory.decodeStream(it) }
+        // CameraX saves unrotated pixels + an EXIF orientation tag; re-saving via
+        // Bitmap.compress drops the tag, so bake the rotation into the pixels first
+        // (also puts the watermark in display orientation, like the video path)
+        val exifRotation = resolver.openInputStream(uri)!!.use {
+            ExifInterface(it).rotationDegrees
+        }
+        val decoded = resolver.openInputStream(uri)!!.use { BitmapFactory.decodeStream(it) }
+        val src = if (exifRotation != 0) {
+            val m = Matrix().apply { postRotate(exifRotation.toFloat()) }
+            Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, m, true)
+                .also { decoded.recycle() }
+        } else decoded
         val w = src.width
         val h = src.height
         val pixels = IntArray(w * h)

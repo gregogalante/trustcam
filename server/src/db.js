@@ -37,17 +37,11 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_proofs_sha256 ON proofs(sha256);
 `)
 
-// wm_sha256: hash of the watermarked copy returned to the app (phase 2)
-try {
-  db.exec('ALTER TABLE proofs ADD COLUMN wm_sha256 TEXT')
-} catch { /* column already exists */ }
-db.exec('CREATE INDEX IF NOT EXISTS idx_proofs_wm_sha256 ON proofs(wm_sha256)')
-
-// payload: 24-bit watermark payload for on-device embedding (deviceId<<14 | counter).
-// Legacy server-embedded files used the proof id as payload (payload NULL here).
+// payload: 24-bit watermark payload embedded on-device (deviceId<<14 | counter)
 try {
   db.exec('ALTER TABLE proofs ADD COLUMN payload INTEGER')
 } catch { /* column already exists */ }
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_proofs_payload ON proofs(payload) WHERE payload IS NOT NULL')
+db.exec('DROP INDEX IF EXISTS idx_proofs_wm_sha256')
 
 export default db

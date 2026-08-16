@@ -88,8 +88,7 @@ first sign-in:
   (unit-tested against generated vectors).
 - **Offline queue**: proofs (hash + hardware signature + payload, ~200B) queue in
   the app and batch-sync via `POST /api/proofs/sync` (idempotent) when online.
-- `/api/verify` resolves: byte-exact match → watermark extraction → payload lookup
-  (legacy server-embedded files resolve by proof id).
+- `/api/verify` resolves: byte-exact match → watermark extraction → payload lookup.
 
 The server-side watermark service remains for **extraction only** (verify page).
 

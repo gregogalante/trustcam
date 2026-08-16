@@ -208,9 +208,6 @@
         verdictCard('!', 'warn', 'Origin traced — content NOT verified',
           `The invisible watermark identifies which capture these pixels derive from, but this copy has been modified since: it could be a harmless platform re-encode or a deliberate edit — the watermark cannot tell the difference. Do not treat this copy as authentic; only its origin is known. (Watermark signal strength: ${Math.round(r.confidence * 100)}% — this is decoding confidence, not a measure of authenticity.)`,
           details)
-      } else if (r.match === 'watermarked') {
-        verdictCard('✓', 'ok', 'Verified — watermarked copy',
-          'Byte-exact watermarked copy, derived from a hardware-signed capture.', details)
       } else if (r.verified) {
         verdictCard('✓', 'ok', 'Verified — original file',
           'Byte-for-byte identical to the capture, hardware signature valid. Unmodified since capture.', details)

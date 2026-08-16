@@ -136,7 +136,7 @@ app.post('/api/verify', async (req, reply) => {
   const sha256 = crypto.createHash('sha256').update(fileBuf).digest('hex')
   const size = fileBuf.length
 
-  // 1. Exact match: original bytes (hardware-signed) or watermarked copy
+  // 1. Exact match: the watermarked, hardware-signed original
   let proof = db.prepare(`${PROOF_LOOKUP} WHERE p.sha256 = ? ORDER BY p.id LIMIT 1`).get(sha256)
   if (proof) {
     const signatureValid = verifyFileSignature(sha256, proof.signature, proof.public_key_pem)
@@ -144,16 +144,8 @@ app.post('/api/verify', async (req, reply) => {
       verified: signatureValid, match: 'original', sha256, sizeBytes: size
     })
   }
-  proof = db.prepare(`${PROOF_LOOKUP} WHERE p.wm_sha256 = ? ORDER BY p.id LIMIT 1`).get(sha256)
-  if (proof) {
-    // Byte-exact watermarked copy: derived server-side from a hardware-signed
-    // original, so integrity holds even though the device signed the original
-    return proofResponse(proof, {
-      verified: true, match: 'watermarked', sha256, sizeBytes: size
-    })
-  }
 
-  // 2. No exact match: try to recover the proof id from the invisible watermark
+  // 2. No exact match: try to recover the payload from the invisible watermark
   try {
     const form = new FormData()
     form.append('file', new Blob([fileBuf]), file.filename || 'upload.bin')
@@ -161,10 +153,7 @@ app.post('/api/verify', async (req, reply) => {
     if (res.ok) {
       const { proofId, confidence } = await res.json()
       if (proofId != null && confidence >= 0.7) {
-        // on-device proofs match by payload; legacy server-embedded files
-        // used the row id as payload
-        proof = db.prepare(`${PROOF_LOOKUP} WHERE p.payload = ? LIMIT 1`).get(proofId) ||
-          db.prepare(`${PROOF_LOOKUP} WHERE p.payload IS NULL AND p.id = ? LIMIT 1`).get(proofId)
+        proof = db.prepare(`${PROOF_LOOKUP} WHERE p.payload = ? LIMIT 1`).get(proofId)
         if (proof) {
           return proofResponse(proof, {
             verified: false, match: 'watermark-recovered', confidence, sha256, sizeBytes: size,
@@ -183,7 +172,7 @@ app.post('/api/verify', async (req, reply) => {
   }
 })
 
-app.get('/api/health', async () => ({ ok: true, version: '0.5.2' }))
+app.get('/api/health', async () => ({ ok: true, version: '0.5.3' }))
 
 const port = Number(process.env.PORT) || 3000
 app.listen({ port, host: '0.0.0.0' })
