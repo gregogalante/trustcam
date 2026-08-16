@@ -12,6 +12,7 @@
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
     <a href="/paper/">Paper</a>
+    <a href="https://github.com/gregogalante/trustcam-monolith">GitHub</a>
   </nav>
   <main>
     <h1>Research background &amp; feasibility</h1>
@@ -86,10 +87,15 @@
         verified boot raise the bar; sensor-level signing (see literature) is where
         the industry is heading.</li>
       <li><strong>Key compromise</strong> — hardware-backed, non-exportable per-device
-        keys limit blast radius to one device; attestation lets the registry refuse
-        unattested keys.</li>
-      <li><strong>Clock trust</strong> — capture time is device-claimed in the MVP;
-        registration time is server-attested. RFC 3161 timestamping closes the gap.</li>
+        keys limit blast radius to one device; the attestation chain travels inside
+        every proof, so verifiers can weigh unattested keys accordingly.</li>
+      <li><strong>Clock trust</strong> — capture time is device-claimed (there is no
+        server to attest anything). RFC 3161 timestamp tokens, fetched at capture when
+        online, close the gap.</li>
+      <li><strong>Mark forgery</strong> — the watermark model is open source, so the
+        24-bit mark is forgeable by construction. This is why the verifier renders
+        mark-only recovery as an amber <em>origin claim</em>, never as authentication:
+        the only cryptographic proof is the signed trailer.</li>
     </ul>
 
     <footer><a href="/paper/">← Paper index</a></footer>

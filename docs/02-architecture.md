@@ -1,5 +1,7 @@
 # Architecture
 
+> **Historical note (2026-08-16):** this document describes the phase-1 server-based design. The shipped architecture is zero-server ("proof-in-file"): see the [current architecture paper](../web/paper/architecture.html) and the root README.
+
 Target: Android-first mobile capture app + server-side verification/recovery service. C2PA-conformant.
 
 ## Design principle

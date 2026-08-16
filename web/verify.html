@@ -12,6 +12,7 @@
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
     <a href="/paper/">Paper</a>
+    <a href="https://github.com/gregogalante/trustcam-monolith">GitHub</a>
   </nav>
   <main>
     <h1>Verify a photo or video</h1>
@@ -61,17 +62,14 @@
     </div>
 
     <div class="card" style="margin-top:1rem">
-      <h3>What to expect, case by case</h3>
-      <table>
-        <tr><th>You upload…</th><th>Result</th></tr>
-        <tr><td>The exact file from the phone (shared via email, Drive, file transfer)</td><td><span class="badge ok">Verified</span></td></tr>
-        <tr><td>A copy shared on WhatsApp, YouTube or social media</td><td><span class="badge" style="background:color-mix(in srgb,#c77d0a 14%,transparent);color:#c77d0a">Origin traced</span></td></tr>
-        <tr><td>An edited or AI-altered copy that still keeps most of the original image</td><td><span class="badge" style="background:color-mix(in srgb,#c77d0a 14%,transparent);color:#c77d0a">Origin traced</span> — this is exactly why amber never means authentic</td></tr>
-        <tr><td>A heavy crop, a zoomed screenshot, a small preview (less than about half the image left)</td><td><span class="badge bad">No proof found</span></td></tr>
-        <tr><td>Anything not captured with TrustCam</td><td><span class="badge bad">No proof found</span></td></tr>
-      </table>
-      <p class="note">Re-encoded <strong>videos</strong> (social copies) currently need the
-      command-line verifier for the invisible-mark scan; exact video files verify right here.</p>
+      <h3>Prefer your terminal?</h3>
+      <p class="note">Same verification from the command line, fully local. It also scans
+      re-encoded <strong>videos</strong> for the invisible mark (needs
+      <code>onnxruntime</code>, <code>pillow</code> and <code>ffmpeg</code> for that part —
+      the seal check needs only <code>openssl</code>):</p>
+      <pre>curl -sO https://trustcam.gregoriogalante.com/verify.py
+python3 verify.py photo.jpg          # proof-trailer check
+python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
     </div>
 
     <footer>The proof travels inside the file itself; the public
@@ -305,18 +303,20 @@
       const entry = reg.devices?.[String(deviceId)]
 
       const pct = Math.round(confidence * 100)
-      const details = detailRows({
-        name: entry ? entry.name : `unknown (device #${deviceId} not in the registry)`,
-        registered: !!entry,
-        model: entry ? entry.model : '—',
-        securityLevel: entry ? entry.securityLevel : '—',
-        attested: false,
-        capturedAt: '— (metadata stripped by re-encoding)',
-        mediaType: 'photo',
-        sizeBytes: file.size,
-        payload,
-        fingerprint: null
-      })
+      // only rows we actually know — re-encoding stripped everything but the mark
+      const details = entry
+        ? `<dl>
+            <dt>Recorded by</dt><dd>${esc(entry.name)} <span class="badge ok">registered device</span></dd>
+            <dt>Device</dt><dd>${esc(entry.model)} (${esc(entry.securityLevel)})</dd>
+            <dt>Mark id</dt><dd>device #${deviceId} · capture #${payload % 16384}</dd>
+          </dl>`
+        : `<dl>
+            <dt>Mark id</dt><dd>device #${deviceId} · capture #${payload % 16384}</dd>
+          </dl>
+          <p class="note">Device #${deviceId} is not in the <a href="/registry.json">public
+          registry</a>, so no name can be shown — the mark still proves these pixels come
+          from a TrustCam capture. Names appear when the device's owner publishes their
+          registry entry.</p>`
       verdictCard('!', 'warn', 'Origin traced — content NOT verified',
         'This copy comes from a TrustCam capture, but it has been changed since — maybe just social-media compression, maybe a deliberate edit: the mark cannot tell the difference. We can say where it comes from, not that it is authentic.',
         details, `

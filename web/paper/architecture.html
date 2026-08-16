@@ -12,6 +12,7 @@
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
     <a href="/paper/">Paper</a>
+    <a href="https://github.com/gregogalante/trustcam-monolith">GitHub</a>
   </nav>
   <main>
     <h1>System architecture</h1>
@@ -21,7 +22,7 @@
     <table>
       <tr><th>Layer</th><th>Proves</th><th>Survives re-encoding?</th></tr>
       <tr><td>Cryptographic signature over content hashes</td><td>Exact integrity, device identity, capture time</td><td>No — any transcode invalidates it, by design</td></tr>
-      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the registered proof (payload = device id + capture counter)</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
+      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the sealing device (payload = device id + capture counter)</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
     </table>
 
     <svg class="layers-diagram" viewBox="0 0 760 240" role="img" aria-label="The signature verifies exact files; the watermark survives social platforms and recovers provenance">
@@ -76,8 +77,8 @@
       <path class="flow-arrow" d="M562 65h34"/>
       <g class="flow-node ok">
         <rect x="600" y="20" width="156" height="90" rx="12"/>
-        <text x="678" y="52" class="flow-label" text-anchor="middle">Proof registered</text>
-        <text x="678" y="72" class="flow-sub" text-anchor="middle">hash + signature +</text>
+        <text x="678" y="52" class="flow-label" text-anchor="middle">Proof sealed in file</text>
+        <text x="678" y="72" class="flow-sub" text-anchor="middle">signature + key +</text>
         <text x="678" y="86" class="flow-sub" text-anchor="middle">attestation + timestamp</text>
       </g>
     </svg>
