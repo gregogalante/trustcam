@@ -11,6 +11,12 @@ import android.net.Uri
  */
 object PhotoWatermarker {
 
+    // Photos get a stronger embed than video: no temporal accumulation at
+    // extraction, and social flows (screenshot + crop) are harsher on stills.
+    // x1.5 keeps PSNR ~43.7dB (imperceptible) and survives ~40% content loss
+    // (measured in spikes/sim_screenshot.py).
+    private const val STRENGTH = 1.5f
+
     fun watermarkInPlace(resolver: ContentResolver, uri: Uri,
                          engine: WatermarkEngine, msg: FloatArray) {
         val src = resolver.openInputStream(uri)!!.use { BitmapFactory.decodeStream(it) }
@@ -30,6 +36,7 @@ object PhotoWatermarker {
         }
 
         val delta = engine.keyDelta(y, w, h, msg)
+        for (i in delta.indices) delta[i] *= STRENGTH
         val yW = engine.applyDelta(y, w, h, delta)
 
         for (i in pixels.indices) {

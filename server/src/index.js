@@ -183,7 +183,7 @@ app.post('/api/verify', async (req, reply) => {
   }
 })
 
-app.get('/api/health', async () => ({ ok: true, version: '0.5.1' }))
+app.get('/api/health', async () => ({ ok: true, version: '0.5.2' }))
 
 const port = Number(process.env.PORT) || 3000
 app.listen({ port, host: '0.0.0.0' })

@@ -175,9 +175,30 @@ sig = ECDSA-P256( SHA-256(H) )               // Android SHA256withECDSA over H</
         gallery <em>is</em> the signed original.</li>
       <li><strong>Byte-exact watermarked copy</strong> (legacy files from the earlier
         server-side embedding flow) → derived from a signed original → <em>Verified (watermarked copy)</em>.</li>
-      <li><strong>Watermark extraction</strong> on re-encoded copies → proof id recovered from the pixels → <em>Provenance recovered</em>: owner, device and capture time are known, but byte integrity of this specific copy is not verifiable.</li>
+      <li><strong>Watermark extraction</strong> on re-encoded copies → payload recovered from the pixels → <em>Origin traced</em>: owner, device and capture time are known, but byte integrity of this specific copy is not verifiable.</li>
     </ol>
     <p>Uploaded files are hashed and scanned in a stream and never stored.</p>
+
+    <h2>Watermark recovery: semantics and measured limits</h2>
+    <p>
+      Recovery via watermark identifies <strong>origin only, never integrity</strong>.
+      The watermark survives whatever preserves most of the pixels — platform re-encoding,
+      moderate crops, screenshots of the full image — which by the same token includes
+      <em>edits</em> that keep most of the original: an AI-altered copy can still carry a
+      readable watermark. This is why the verifier renders recovery as an amber
+      "content NOT verified" verdict, never as authentication.
+    </p>
+    <p>
+      The binding constraint is <strong>surviving content area</strong>, not the transform
+      chain. Measured on the production photo pipeline (simulation in
+      <code>spikes/sim_screenshot.py</code>): a 4080px capture re-encoded by an
+      Instagram-class pipeline (1080px, quality 60), screenshotted and manually cropped
+      still decodes at ≥0.97 confidence; a zoomed view keeping ~60% of the area decodes at
+      the raised photo embed strength (×1.5, PSNR 43.7 dB); below roughly half of the
+      original area, decoding fails at any embed strength — the verifier then reports
+      <em>No proof found</em>, deliberately indistinguishable from "never captured with
+      TrustCam", because claiming anything from an unreadable signal would be guessing.
+    </p>
 
     <h2>Trust model and standards alignment</h2>
     <p>
