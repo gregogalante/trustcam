@@ -94,6 +94,27 @@ p.lead { font-size: 1.12rem; color: var(--muted) }
 
 /* verify result */
 .verdict { display: flex; align-items: center; gap: 1rem }
+.signal {
+  display: flex; align-items: center; gap: 1.2rem; margin-top: 1.2rem;
+  padding: 1rem 1.2rem; border-radius: 12px;
+  border: 1px solid color-mix(in srgb, #c77d0a 35%, transparent);
+  background: color-mix(in srgb, #c77d0a 8%, transparent);
+}
+.signal-value {
+  font-size: 2.4rem; font-weight: 750; line-height: 1;
+  color: #c77d0a; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.signal-body { flex: 1 }
+.signal-label { font-weight: 600; font-size: .95rem }
+.signal-meter {
+  height: 8px; border-radius: 99px; background: var(--line);
+  overflow: hidden; margin: .45rem 0 .35rem;
+}
+.signal-meter > div {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #c77d0a, #e5a733);
+}
+.signal-caption { color: var(--muted); font-size: .8rem }
 .verdict-icon {
   width: 48px; height: 48px; flex: none; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;

@@ -22,7 +22,7 @@
     <div class="drop" id="drop">
       <div class="drop-icon"><svg viewBox="0 0 48 48"><path d="M24 32V14m0 0l-8 8m8-8l8 8"/><path d="M10 34v4a4 4 0 004 4h20a4 4 0 004-4v-4"/></svg></div>
       <p style="margin:0"><strong>Drop a photo or video here</strong><br>
-      <span class="note">or click to choose a file — it is only hashed and scanned, never stored</span></p>
+      <span class="note">or click to choose a file — it is only checked, never stored</span></p>
       <input type="file" id="file" accept="image/*,video/*" hidden>
     </div>
 
@@ -35,18 +35,17 @@
           <div class="verdict-icon ok" style="width:32px;height:32px;font-size:1rem">✓</div>
           <h3 style="margin:0">Verified</h3>
         </div>
-        <p class="note">The file is byte-for-byte identical to the registered capture and
-        the hardware signature checks out. <strong>Authentic and unmodified</strong> — the
-        strongest claim we make.</p>
+        <p class="note">This is the exact file that came out of the camera, and its seal
+        checks out. <strong>Authentic and untouched</strong> — the strongest claim we make.</p>
       </div>
       <div class="card">
         <div class="verdict" style="margin-bottom:.6rem">
           <div class="verdict-icon warn" style="width:32px;height:32px;font-size:1rem">!</div>
           <h3 style="margin:0">Origin traced</h3>
         </div>
-        <p class="note">The invisible watermark identifies which capture the pixels derive
-        from, but the copy was <strong>modified since</strong> — a harmless platform
-        re-encode or a deliberate edit look the same to a watermark.
+        <p class="note">The invisible mark tells us which capture this image comes from,
+        but the copy was <strong>changed since</strong> — social-media compression and a
+        deliberate edit look the same to the mark.
         <strong>Never proof of authenticity</strong>, only of origin.</p>
       </div>
       <div class="card">
@@ -55,8 +54,8 @@
           <h3 style="margin:0">No proof found</h3>
         </div>
         <p class="note">Either the file was never captured with TrustCam, or too little of
-        the original survives — e.g. a crop keeping less than about half of the image, or a
-        screenshot of a small preview. We can't tell these two cases apart, so we claim nothing.</p>
+        the original is left — say a crop that keeps less than half of the image, or a
+        screenshot of a small preview. We can't tell these two apart, so we claim nothing.</p>
       </div>
     </div>
 
@@ -65,16 +64,15 @@
       <table>
         <tr><th>You upload…</th><th>Result</th></tr>
         <tr><td>The exact file from the phone (shared via email, Drive, file transfer)</td><td><span class="badge ok">Verified</span></td></tr>
-        <tr><td>A copy that went through WhatsApp / YouTube / social re-encoding</td><td><span class="badge" style="background:color-mix(in srgb,#c77d0a 14%,transparent);color:#c77d0a">Origin traced</span></td></tr>
-        <tr><td>An edited or AI-altered copy that keeps most of the original pixels</td><td><span class="badge" style="background:color-mix(in srgb,#c77d0a 14%,transparent);color:#c77d0a">Origin traced</span> — this is exactly why amber never means authentic</td></tr>
-        <tr><td>A heavy crop, a zoomed screenshot, a small preview (less than ~half the image left)</td><td><span class="badge bad">No proof found</span></td></tr>
+        <tr><td>A copy shared on WhatsApp, YouTube or social media</td><td><span class="badge" style="background:color-mix(in srgb,#c77d0a 14%,transparent);color:#c77d0a">Origin traced</span></td></tr>
+        <tr><td>An edited or AI-altered copy that still keeps most of the original image</td><td><span class="badge" style="background:color-mix(in srgb,#c77d0a 14%,transparent);color:#c77d0a">Origin traced</span> — this is exactly why amber never means authentic</td></tr>
+        <tr><td>A heavy crop, a zoomed screenshot, a small preview (less than about half the image left)</td><td><span class="badge bad">No proof found</span></td></tr>
         <tr><td>Anything not captured with TrustCam</td><td><span class="badge bad">No proof found</span></td></tr>
       </table>
     </div>
 
-    <footer>Exact files verify byte-for-byte against the hardware signature. Re-encoded
-    copies (e.g. downloaded from social media) are scanned for the invisible watermark —
-    for videos this can take a minute or two.</footer>
+    <footer>Exact files are checked against their seal instantly. Copies from social
+    media are scanned for the invisible mark — for videos this can take a minute or two.</footer>
   </main>
 
   <script>
@@ -171,13 +169,14 @@
         </div>`
     }
 
-    function verdictCard (icon, cls, title, sub, details) {
+    function verdictCard (icon, cls, title, sub, details, extra = '') {
       result.innerHTML = `
         <div class="card fadeup">
           <div class="verdict">
             <div class="verdict-icon ${cls}">${icon}</div>
             <div><h3>${title}</h3><p>${sub}</p></div>
           </div>
+          ${extra}
           ${details}
           <p style="margin-bottom:0"><a href="#" id="again">Verify another file</a></p>
         </div>`
@@ -191,8 +190,8 @@
     function render (r) {
       if (!r.found) {
         verdictCard('✕', 'bad', 'No proof found',
-          'This file was not captured with a registered TrustCam device, or was modified beyond watermark survival.',
-          `<dl><dt>SHA-256</dt><dd><code>${esc(r.sha256)}</code></dd></dl>`)
+          'This file was not captured with TrustCam, or too little of the original is left to find the invisible mark.',
+          `<dl><dt>Fingerprint</dt><dd><code>${esc(r.sha256)}</code></dd></dl>`)
         return
       }
       const details = `
@@ -202,18 +201,28 @@
           <dt>Captured at</dt><dd>${esc(r.capturedAt)}</dd>
           <dt>Registered at</dt><dd>${esc(r.registeredAt)} (UTC)</dd>
           <dt>Media</dt><dd>${esc(r.mediaType)}, ${Number(r.sizeBytes).toLocaleString()} bytes</dd>
-          <dt>SHA-256</dt><dd><code>${esc(r.sha256)}</code></dd>
+          <dt>Fingerprint</dt><dd><code>${esc(r.sha256)}</code></dd>
         </dl>`
       if (r.match === 'watermark-recovered') {
+        const pct = Math.round(r.confidence * 100)
         verdictCard('!', 'warn', 'Origin traced — content NOT verified',
-          `The invisible watermark identifies which capture these pixels derive from, but this copy has been modified since: it could be a harmless platform re-encode or a deliberate edit — the watermark cannot tell the difference. Do not treat this copy as authentic; only its origin is known. (Watermark signal strength: ${Math.round(r.confidence * 100)}% — this is decoding confidence, not a measure of authenticity.)`,
-          details)
+          'This copy comes from the capture below, but it has been changed since — maybe just social-media compression, maybe a deliberate edit: the mark cannot tell the difference. We can say where it comes from, not that it is authentic.',
+          details, `
+          <div class="signal">
+            <div class="signal-value">${pct}%</div>
+            <div class="signal-body">
+              <div class="signal-label">Watermark signal match</div>
+              <div class="signal-meter"><div style="width:${pct}%"></div></div>
+              <div class="signal-caption">How reliably the watermark was decoded from the pixels —
+              a measure of the match with the registered capture, <strong>not</strong> of authenticity.</div>
+            </div>
+          </div>`)
       } else if (r.verified) {
         verdictCard('✓', 'ok', 'Verified — original file',
-          'Byte-for-byte identical to the capture, hardware signature valid. Unmodified since capture.', details)
+          'This is the exact file that was recorded, and its seal checks out. Untouched since capture.', details)
       } else {
-        verdictCard('✕', 'bad', 'Proof found but signature INVALID',
-          'A proof exists for this file but the cryptographic signature does not check out.', details)
+        verdictCard('✕', 'bad', 'Proof found but seal INVALID',
+          'A proof exists for this file but its seal does not check out. Treat it as untrusted.', details)
       }
     }
 
