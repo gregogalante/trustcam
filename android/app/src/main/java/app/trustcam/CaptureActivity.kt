@@ -46,6 +46,9 @@ class CaptureActivity : AppCompatActivity() {
 
         b.photoBtn.setOnClickListener { takePhoto() }
         b.videoBtn.setOnClickListener { toggleRecording() }
+        b.identityBtn.setOnClickListener {
+            startActivity(android.content.Intent(this, IdentityActivity::class.java))
+        }
 
         // Warm up the 90MB embedder in the background
         thread { engine = WatermarkEngine(this) }

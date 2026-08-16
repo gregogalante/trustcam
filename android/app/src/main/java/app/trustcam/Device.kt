@@ -41,6 +41,14 @@ class Device(context: Context) {
             return id
         }
 
+    /** Picks a fresh random id — only for registry collisions. Files already
+     *  sealed keep the old id in their watermark. */
+    fun regenerateDeviceId() {
+        prefs.edit()
+            .putInt("localDeviceId", SecureRandom().nextInt(1023) + 1)
+            .apply()
+    }
+
     fun nextCounter(): Int {
         val n = prefs.getInt("captureCounter", 0)
         prefs.edit().putInt("captureCounter", n + 1).apply()
