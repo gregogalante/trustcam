@@ -129,6 +129,18 @@ function proofResponse (proof, extra) {
   }
 }
 
+// Client-side verification: the browser (or any tool) hashes the file locally
+// and looks the fingerprint up here — the media never leaves the device unless
+// the watermark scan is needed
+app.get('/api/verify/hash/:sha256', async (req, reply) => {
+  const sha256 = String(req.params.sha256 || '').toLowerCase()
+  if (!/^[0-9a-f]{64}$/.test(sha256)) return reply.code(400).send({ error: 'invalid sha256' })
+  const proof = db.prepare(`${PROOF_LOOKUP} WHERE p.sha256 = ? ORDER BY p.id LIMIT 1`).get(sha256)
+  if (!proof) return { found: false }
+  const signatureValid = verifyFileSignature(sha256, proof.signature, proof.public_key_pem)
+  return proofResponse(proof, { verified: signatureValid, match: 'original', sha256 })
+})
+
 app.post('/api/verify', async (req, reply) => {
   const file = await req.file()
   if (!file) return reply.code(400).send({ error: 'file required' })

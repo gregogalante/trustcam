@@ -83,6 +83,14 @@ const alien = await api('/api/proofs/sync', {
 }, token)
 assert.equal(alien.body.results[0].status, 'payload-device-mismatch')
 
+// client-side verify: fingerprint lookup without uploading the file
+const sha = crypto.createHash('sha256').update(media).digest('hex')
+const byHash = await api(`/api/verify/hash/${sha}`)
+assert.equal(byHash.body.found, true)
+assert.equal(byHash.body.verified, true, JSON.stringify(byHash.body))
+const byHashMiss = await api(`/api/verify/hash/${'0'.repeat(64)}`)
+assert.equal(byHashMiss.body.found, false)
+
 // public verify: exact match of the synced capture
 const form = new FormData()
 form.append('file', new Blob([media]), 'clip.mp4')
@@ -98,5 +106,5 @@ form2.append('file', new Blob([media]), 'clip.mp4')
 const miss = await (await fetch(BASE + '/api/verify', { method: 'POST', body: form2 })).json()
 assert.equal(miss.found, false, 'modified file must not match')
 
-console.log('E2E OK: signup, enroll, sync, idempotent retry, forged-signature reject, namespace reject, verify hit/miss')
+console.log('E2E OK: signup, enroll, sync, idempotent retry, forged-signature reject, namespace reject, hash-lookup hit/miss, verify hit/miss')
 console.log('(watermark extraction path is validated by spikes/sim_device_pipeline.py against the service)')

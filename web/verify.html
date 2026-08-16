@@ -22,7 +22,8 @@
     <div class="drop" id="drop">
       <div class="drop-icon"><svg viewBox="0 0 48 48"><path d="M24 32V14m0 0l-8 8m8-8l8 8"/><path d="M10 34v4a4 4 0 004 4h20a4 4 0 004-4v-4"/></svg></div>
       <p style="margin:0"><strong>Drop a photo or video here</strong><br>
-      <span class="note">or click to choose a file — it is only checked, never stored</span></p>
+      <span class="note">or click to choose a file — exact copies are verified without leaving
+      your device; the file is uploaded only if the invisible-mark scan is needed, and never stored</span></p>
       <input type="file" id="file" accept="image/*,video/*" hidden>
     </div>
 
@@ -30,7 +31,7 @@
 
     <h2 style="margin-top:3rem">The three possible results</h2>
     <div class="grid3">
-      <div class="card">
+      <div class="card tint-ok">
         <div class="verdict" style="margin-bottom:.6rem">
           <div class="verdict-icon ok" style="width:32px;height:32px;font-size:1rem">✓</div>
           <h3 style="margin:0">Verified</h3>
@@ -38,7 +39,7 @@
         <p class="note">This is the exact file that came out of the camera, and its seal
         checks out. <strong>Authentic and untouched</strong> — the strongest claim we make.</p>
       </div>
-      <div class="card">
+      <div class="card tint-warn">
         <div class="verdict" style="margin-bottom:.6rem">
           <div class="verdict-icon warn" style="width:32px;height:32px;font-size:1rem">!</div>
           <h3 style="margin:0">Origin traced</h3>
@@ -48,7 +49,7 @@
         deliberate edit look the same to the mark.
         <strong>Never proof of authenticity</strong>, only of origin.</p>
       </div>
-      <div class="card">
+      <div class="card tint-bad">
         <div class="verdict" style="margin-bottom:.6rem">
           <div class="verdict-icon bad" style="width:32px;height:32px;font-size:1rem">✕</div>
           <h3 style="margin:0">No proof found</h3>
@@ -69,6 +70,15 @@
         <tr><td>A heavy crop, a zoomed screenshot, a small preview (less than about half the image left)</td><td><span class="badge bad">No proof found</span></td></tr>
         <tr><td>Anything not captured with TrustCam</td><td><span class="badge bad">No proof found</span></td></tr>
       </table>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <h3>Prefer your terminal?</h3>
+      <p class="note">Same verification from the command line — the file is hashed locally
+      and uploaded only if you ask for the invisible-mark scan:</p>
+      <pre>curl -sO https://trustcam.gregoriogalante.com/verify.sh
+bash verify.sh photo.jpg          # fingerprint check, file never leaves your machine
+bash verify.sh --scan video.mp4   # also scan the pixels for the invisible mark</pre>
     </div>
 
     <footer>Exact files are checked against their seal instantly. Copies from social
@@ -115,12 +125,34 @@
       }
     }
 
-    // Upload via XHR for real progress events; after upload completes the
-    // server hashes, then falls back to the watermark scan (slow for video).
-    function check (file) {
+    // Exact-match verification happens on this device: the file is hashed
+    // locally (WebCrypto) and only the fingerprint is sent. The file itself is
+    // uploaded only when the invisible-mark scan is needed.
+    async function check (file) {
       busy = true
       drop.classList.add('disabled')
       const ui = progressCard(file)
+      try {
+        ui.stage.textContent = 'Computing the fingerprint on your device…'
+        const buf = await file.arrayBuffer()
+        const digest = await crypto.subtle.digest('SHA-256', buf)
+        const hex = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('')
+        ui.stage.textContent = 'Checking the fingerprint against the registry…'
+        const res = await fetch('/api/verify/hash/' + hex)
+        if (res.ok) {
+          const json = await res.json()
+          if (json.found) {
+            render({ ...json, sizeBytes: file.size })
+            done()
+            return
+          }
+        }
+      } catch { /* local hashing unavailable: fall back to a full upload */ }
+      upload(file, ui)
+    }
+
+    // Fallback: upload for the invisible-mark scan (slow for video)
+    function upload (file, ui) {
       const isVideo = (file.type || '').startsWith('video')
       const start = Date.now()
       let scanTimer = null
@@ -131,13 +163,14 @@
         if (!e.lengthComputable) return
         const pct = Math.round(e.loaded / e.total * 100)
         ui.upbar.firstElementChild.style.width = pct + '%'
-        ui.stage.textContent = pct < 100 ? `Uploading… ${pct}%` : 'Checking for an exact match…'
+        ui.stage.textContent = pct < 100
+          ? `No exact match — uploading for the invisible-mark scan… ${pct}%`
+          : 'Scanning for the invisible mark…'
         if (pct === 100 && !scanTimer) {
-          // After a moment with no answer, we are in the watermark scan phase
           scanTimer = setInterval(() => {
             const secs = Math.round((Date.now() - start) / 1000)
             ui.upbar.classList.add('scan')
-            ui.stage.textContent = 'No exact match yet — scanning the pixels for the invisible watermark… ' +
+            ui.stage.textContent = 'Scanning the image for the invisible mark… ' +
               (isVideo ? `(up to a couple of minutes for video, ${secs}s elapsed)` : `(${secs}s elapsed)`)
           }, 1000)
         }
