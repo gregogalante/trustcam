@@ -43,7 +43,10 @@ nav a:hover { color: var(--accent) }
 
 /* ---------- base ---------- */
 h1 { font-size: 1.8rem; line-height: 1.2; letter-spacing: -.02em }
-h2 { font-size: 1.45rem; margin-top: 0; letter-spacing: -.015em }
+/* text pages (paper, verify) need breathing room above headings;
+   the landing zeroes it via its own section spacing */
+h2 { font-size: 1.45rem; margin-top: 2.6rem; letter-spacing: -.015em }
+.landing h2 { margin-top: 0 }
 a { color: var(--accent) }
 p.lead { font-size: 1.12rem; color: var(--muted) }
 .card {
