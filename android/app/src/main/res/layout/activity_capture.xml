@@ -15,19 +15,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <ImageButton
-        android:id="@+id/identityBtn"
-        android:layout_width="44dp"
-        android:layout_height="44dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:background="@drawable/status_chip"
-        android:contentDescription="@string/identity"
-        android:padding="10dp"
-        android:src="@drawable/ic_identity"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
     <TextView
         android:id="@+id/status"
         android:layout_width="wrap_content"
@@ -73,6 +60,16 @@
             android:contentDescription="@string/record"
             app:srcCompat="@drawable/ic_record"
             app:fabSize="normal" />
+
+        <ImageButton
+            android:id="@+id/identityBtn"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="48dp"
+            android:background="@drawable/status_chip"
+            android:contentDescription="@string/identity"
+            android:padding="10dp"
+            android:src="@drawable/ic_identity" />
     </LinearLayout>
 
     <!-- Fullscreen sealing overlay: hides the camera preview and the capture

@@ -18,6 +18,9 @@
     <string name="regen_warning">Only do this if your current id is already taken in the public registry. Captures you already took keep the old id in their invisible mark — if the old id was published, leave its registry entry in place and add the new one too.</string>
     <string name="regen_confirm">Regenerate</string>
     <string name="identity">Device identity</string>
+    <string name="save_name">Save name</string>
+    <string name="name_saved">Name updated — republish your registry entry if it was already public</string>
+    <string name="rec_elapsed">● REC %1$d:%2$02d</string>
     <string name="downloading_model">Downloading watermark engine… %1$d%%</string>
     <string name="generic_error">Something went wrong</string>
     <string name="photo">Photo</string>

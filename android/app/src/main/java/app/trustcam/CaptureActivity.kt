@@ -135,10 +135,21 @@ class CaptureActivity : AppCompatActivity() {
                 }
             }
             .start(ContextCompat.getMainExecutor(this)) { event ->
-                if (event is VideoRecordEvent.Finalize) {
-                    b.videoBtn.setImageResource(R.drawable.ic_record)
-                    if (event.hasError()) toast("Recording failed: ${event.error}")
-                    else sealCapture(event.outputResults.outputUri, "video")
+                when (event) {
+                    is VideoRecordEvent.Start -> {
+                        b.status.visibility = View.VISIBLE
+                        b.status.text = getString(R.string.rec_elapsed, 0L, 0L)
+                    }
+                    is VideoRecordEvent.Status -> {
+                        val secs = event.recordingStats.recordedDurationNanos / 1_000_000_000L
+                        b.status.text = getString(R.string.rec_elapsed, secs / 60, secs % 60)
+                    }
+                    is VideoRecordEvent.Finalize -> {
+                        b.videoBtn.setImageResource(R.drawable.ic_record)
+                        b.status.visibility = View.GONE
+                        if (event.hasError()) toast("Recording failed: ${event.error}")
+                        else sealCapture(event.outputResults.outputUri, "video")
+                    }
                 }
             }
     }
