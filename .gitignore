@@ -31,3 +31,5 @@ seitest/app/src/androidTest/assets/embedder.onnx
 
 # Big embedder graph lives in web/models/ (served to the app at sign-in);
 # the tiny prep/apply graphs stay in the APK assets and are committed.
+spikes/results/pdq_frames/
+__pycache__/

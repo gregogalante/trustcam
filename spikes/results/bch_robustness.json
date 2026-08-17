@@ -1,0 +1,42 @@
+{
+  "baseline_no_transcode": {
+    "decoded": true,
+    "wrong_bits_of_256": 0,
+    "bch_corrected": 0
+  },
+  "youtube_1080p_8M": {
+    "decoded": true,
+    "wrong_bits_of_256": 0,
+    "bch_corrected": 0
+  },
+  "tiktok_1080p_3M": {
+    "decoded": true,
+    "wrong_bits_of_256": 0,
+    "bch_corrected": 0
+  },
+  "twitter_720p_2M": {
+    "decoded": true,
+    "wrong_bits_of_256": 0,
+    "bch_corrected": 0
+  },
+  "whatsapp_480p_1M": {
+    "decoded": true,
+    "wrong_bits_of_256": 3,
+    "bch_corrected": 3
+  },
+  "h265_crf28": {
+    "decoded": true,
+    "wrong_bits_of_256": 2,
+    "bch_corrected": 2
+  },
+  "crop10_rescale": {
+    "decoded": true,
+    "wrong_bits_of_256": 0,
+    "bch_corrected": 0
+  },
+  "stress_360p_500k": {
+    "decoded": true,
+    "wrong_bits_of_256": 17,
+    "bch_corrected": 15
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "seg16": {
+    "segments": 16,
+    "baseline": {
+      "whole_avg_decodes": false,
+      "known_bounds": "16/16",
+      "blind_segments_found": "16/16",
+      "blind_wrong_payloads": 0
+    },
+    "whatsapp_480p_1M": {
+      "whole_avg_decodes": false,
+      "known_bounds": "10/16",
+      "blind_segments_found": "10/16",
+      "blind_wrong_payloads": 0
+    },
+    "trim_misaligned": {
+      "whole_avg_decodes": false,
+      "known_bounds": "0/7",
+      "blind_segments_found": "7/6",
+      "blind_wrong_payloads": 0
+    }
+  },
+  "seg32": {
+    "segments": 8,
+    "baseline": {
+      "whole_avg_decodes": false,
+      "known_bounds": "8/8",
+      "blind_segments_found": "8/8",
+      "blind_wrong_payloads": 0
+    },
+    "whatsapp_480p_1M": {
+      "whole_avg_decodes": false,
+      "known_bounds": "8/8",
+      "blind_segments_found": "8/8",
+      "blind_wrong_payloads": 0
+    },
+    "trim_misaligned": {
+      "whole_avg_decodes": false,
+      "known_bounds": "3/3",
+      "blind_segments_found": "4/2",
+      "blind_wrong_payloads": 0
+    }
+  },
+  "seg48": {
+    "segments": 6,
+    "baseline": {
+      "whole_avg_decodes": false,
+      "known_bounds": "5/5",
+      "blind_segments_found": "5/5",
+      "blind_wrong_payloads": 0
+    },
+    "whatsapp_480p_1M": {
+      "whole_avg_decodes": false,
+      "known_bounds": "4/5",
+      "blind_segments_found": "4/5",
+      "blind_wrong_payloads": 0
+    },
+    "trim_misaligned": {
+      "whole_avg_decodes": false,
+      "known_bounds": "0/2",
+      "blind_segments_found": "2/1",
+      "blind_wrong_payloads": 0
+    }
+  }
+}
