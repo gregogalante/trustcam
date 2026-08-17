@@ -162,7 +162,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
 
     <h2>Bitstream signatures for video (next iteration)</h2>
     <p>
-      Whole-file signing is the MVP baseline. The validated upgrade path embeds a
+      Whole-file signing is the current baseline. The validated upgrade path embeds a
       <strong>rolling signature per GOP</strong> (group of pictures) directly in the
       H.264/H.265 bitstream as SEI NAL units in the ONVIF Media Signing format:
       each GOP's hash chains the previous one, proving continuous, ordered,

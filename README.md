@@ -1,4 +1,4 @@
-# TrustCam (working name)
+# TrustCam
 
 Verifiable capture with **zero infrastructure**: an Android camera app that seals
 photos and videos at the moment of capture, and a fully static, client-side
