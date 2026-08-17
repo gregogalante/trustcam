@@ -1,6 +1,8 @@
 # 07 — Content checksum inside the watermark (exploration)
 
-Date: 2026-08-17. Status: research, no implementation. Branch: `feature/watermark-content-checksum`.
+Date: 2026-08-17. Status: **implemented for photos** (app 1.1.0 + web verifier);
+video stays on the v1 pointer payload until the 32-frame segment contract is
+validated on more clips. Branch: `feature/watermark-content-checksum`.
 
 Goal: put a checksum of the captured pixels *inside* the VideoSeal payload so that a
 re-encoded copy (trailer stripped, C2PA-style metadata gone) can still be checked for
@@ -182,12 +184,28 @@ Findings:
   false-positive risk.
 - Blind recovery on trimmed clips works with no boundary info — clip-resistance holds.
 
+## Implementation (photos, app 1.1.0)
+
+- Capture: `PhotoWatermarker` computes PDQ-104 on the pre-embed luma, embeds a
+  v2 payload (`PayloadCodecV2.kt` — BCH encode via a 128×124 basis matrix, XOR of
+  rows, bit-parity with bchlib guaranteed by construction). Proof trailer gains
+  additive fields `pv: 2` + `phash`.
+- Verify: `web/js/codec_v2.js` (full BCH decode: syndromes, Berlekamp-Massey,
+  Chien) + `web/js/pdq.js`; verifier tries v2 first (false-accept ~2^-124),
+  falls back to v1. Verdict tiers on Hamming @104: ≤6 content intact, 7–11
+  inconclusive, ≥12 modified.
+- Parity: all ports tested against `spikes/results/checksum_vectors.json`
+  (`spikes/export_checksum_vectors.py`). Note: the `pdqhash` python binding
+  returns bits in reverse order vs the C++ `setBit` convention — canonical
+  order (and the embedded 104 bits = lowest DCT frequencies) is
+  `spikes/pdq_ref.py`.
+
 ### Remaining work
 
-4. Port: PDQ on-device (Android — PDQ is simple DCT math) + `web/js` verifier-side
-   reimpl, parity-tested like the codec (three-implementation rule).
-5. Validate PDQ separation on real phone photos + real-model inpainting (spike A
+4. Validate PDQ separation on real phone photos + real-model inpainting (spike A
    caveat); re-run sweep on more clips before freezing the video contract.
+5. Video v2: per-segment payloads (32-frame contract, spike C) + CLI verifier
+   (`web/verify.py`) BCH/PDQ support.
 
 ## Sources
 

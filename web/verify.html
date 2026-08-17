@@ -45,10 +45,11 @@
           <div class="verdict-icon warn" style="width:32px;height:32px;font-size:1rem">!</div>
           <h3 style="margin:0">Origin traced</h3>
         </div>
-        <p class="note">The invisible mark tells us which device this image comes from,
-        but the copy was <strong>changed since</strong> — social-media compression and a
-        deliberate edit look the same to the mark.
-        <strong>Never proof of authenticity</strong>, only of origin.</p>
+        <p class="note">The invisible mark tells us which device this image comes from.
+        Photos sealed by recent app versions also carry a <strong>content checksum</strong>
+        inside the mark: it survives compression but breaks when what the image
+        <em>shows</em> is changed — so we can usually tell a re-shared copy from an
+        edited one. <strong>Never proof of authenticity</strong>, only of origin.</p>
       </div>
       <div class="card tint-bad">
         <div class="verdict" style="margin-bottom:.6rem">
@@ -79,6 +80,8 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
 
   <script src="/ort/ort.min.js"></script>
   <script src="/js/codec.js"></script>
+  <script src="/js/codec_v2.js"></script>
+  <script src="/js/pdq.js"></script>
   <script>
     const drop = document.getElementById('drop')
     const input = document.getElementById('file')
@@ -295,7 +298,17 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
       const out = await session.run({
         image: new window.ort.Tensor('float32', chw, [1, 3, h, w])
       })
-      const { payload, confidence } = window.TrustCamCodec.decode(out.preds.data.subarray(1))
+      const preds = out.preds.data.subarray(1)
+
+      // v2 payloads (BCH, ~2^-124 false-accept) carry a PDQ content checksum:
+      // recompute the hash on the received pixels and compare. Try v2 first,
+      // fall back to the v1 repetition codec for pre-checksum captures.
+      const v2 = window.TrustCamCodecV2.decode(preds)
+      if (v2) {
+        await v2Verdict(v2, data, w, h)
+        return true
+      }
+      const { payload, confidence } = window.TrustCamCodec.decode(preds)
       if (payload == null || confidence < 0.7) return false
 
       const reg = await registry()
@@ -330,6 +343,55 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
           </div>
         </div>`)
       return true
+    }
+
+    // v2 tiers, from spikes/results/pdq_separation.json: benign transcodes
+    // measured 0-3 bits @104 (same implementation); cross-implementation float
+    // noise adds ~2 → accept ≤6. Edits measured ≥8; 7-11 stays inconclusive.
+    const PDQ_MATCH = 6
+    const PDQ_INCONCLUSIVE = 11
+
+    function hexToBytes (hex) {
+      const out = new Uint8Array(hex.length / 2)
+      for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16)
+      return out
+    }
+
+    async function v2Verdict (v2, rgba, w, h) {
+      const recomputed = window.TrustCamPdq.fromImageData(rgba, w, h)
+      const dist = window.TrustCamPdq.hamming104(recomputed, hexToBytes(v2.phashHex))
+
+      const reg = await registry()
+      const deviceId = Math.floor(v2.proofId / 16384)
+      const entry = reg.devices?.[String(deviceId)]
+      const details = (entry
+        ? `<dl>
+            <dt>Recorded by</dt><dd>${esc(entry.name)} <span class="badge ok">registered device</span></dd>
+            <dt>Device</dt><dd>${esc(entry.model)} (${esc(entry.securityLevel)})</dd>
+            <dt>Mark id</dt><dd>device #${deviceId} · capture #${v2.proofId % 16384}</dd>
+          </dl>`
+        : `<dl><dt>Mark id</dt><dd>device #${deviceId} · capture #${v2.proofId % 16384}</dd></dl>`) + `
+        <div class="signal">
+          <div class="signal-value">${dist}</div>
+          <div class="signal-body">
+            <div class="signal-label">Content distance (0 = identical, ≤${PDQ_MATCH} = intact)</div>
+            <div class="signal-meter"><div style="width:${Math.max(4, 100 - dist * 2)}%"></div></div>
+            <div class="signal-caption">Distance between the content checksum sealed inside the
+            invisible mark at capture and the same checksum recomputed on these pixels.
+            Compression barely moves it; changing what the image shows moves it a lot.</div>
+          </div>
+        </div>`
+
+      if (dist <= PDQ_MATCH) {
+        verdictCard('✓', 'ok', 'Origin traced — content intact',
+          'This copy was recompressed (the exact-file seal is gone), but the content checksum sealed inside the invisible mark still matches these pixels: what the image shows is what the camera captured. Not the bit-exact original, but nothing depicted has changed.', details)
+      } else if (dist <= PDQ_INCONCLUSIVE) {
+        verdictCard('!', 'warn', 'Origin traced — content check inconclusive',
+          'The invisible mark identifies the capture, but the content checksum lands in the gray zone between heavy compression and a small edit. Treat with care.', details)
+      } else {
+        verdictCard('✕', 'bad', 'Origin traced — content MODIFIED',
+          'The invisible mark identifies the capture, but the content checksum sealed at capture no longer matches these pixels: what the image shows was changed after it left the camera — an AI edit, a splice, or a crop.', details)
+      }
     }
 
     // ---------- rendering ----------

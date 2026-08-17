@@ -176,11 +176,16 @@ class CaptureActivity : AppCompatActivity() {
                 while (engine == null) Thread.sleep(100)
                 val eng = engine!!
                 val payload = PayloadCodec.payloadOf(device.deviceId.toLong(), device.nextCounter())
-                val msg = PayloadCodec.encode(payload)
 
+                // photos carry a v2 payload (id + PDQ content checksum) so a
+                // transcoded copy can still be checked for semantic edits;
+                // video stays on the v1 pointer payload until the per-segment
+                // contract is validated (docs/07)
+                var phash: ByteArray? = null
                 if (mediaType == "photo") {
-                    PhotoWatermarker.watermarkInPlace(contentResolver, uri, eng, msg)
+                    phash = PhotoWatermarker.watermarkInPlace(contentResolver, uri, eng, payload)
                 } else {
+                    val msg = PayloadCodec.encode(payload)
                     val tmp = File(cacheDir, "wm_$payload.mp4")
                     VideoWatermarker.process(this, uri, tmp, eng, msg) { pct ->
                         runOnUiThread {
@@ -213,6 +218,13 @@ class CaptureActivity : AppCompatActivity() {
                 val proof = org.json.JSONObject()
                     .put("v", 1)
                     .put("payload", payload)
+                    .apply {
+                        // additive fields: v2 watermark payload carries the content hash
+                        if (phash != null) {
+                            put("pv", 2)
+                            put("phash", phash.joinToString("") { "%02x".format(it) })
+                        }
+                    }
                     .put("name", device.name)
                     .put("model", "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
                     .put("capturedAt", capturedAt)

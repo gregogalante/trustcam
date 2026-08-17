@@ -35,6 +35,13 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   (unit-tested against python vectors), `web/js/codec.js`. 24-bit payload
   (`deviceId<<14 | counter`) + CRC8, 8 reps, copies 32 apart. Changing the layout
   desyncs every already-embedded file — never change it without versioning.
+- **Payload v2 (photos since 1.1.0)**: proofId 24 | PDQ pHash 104 | BCH(255,131)
+  parity 124 | pad 4. Canonical `spikes/codec_v2.py` + `spikes/pdq_ref.py`;
+  ports `android/.../PayloadCodecV2.kt` + `Pdq.kt` (encode) and
+  `web/js/codec_v2.js` + `web/js/pdq.js` (decode), parity-tested against
+  `spikes/results/checksum_vectors.json` (regen: `spikes/export_checksum_vectors.py`).
+  Verifier tries v2 (BCH) first, falls back to v1 (CRC8). Video still embeds v1.
+  Same versioning rule: never change layouts, add a v3.
 - Device ids are random 10-bit values chosen at app setup; `web/registry.json`
   maps them to names/keys (enrollment = pull request). Exact-file verification
   does not need the registry.
