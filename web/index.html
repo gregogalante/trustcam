@@ -214,10 +214,10 @@
       hardware and real platforms — methodology in the <a href="/paper/research.html">paper</a>.</p>
 
       <div class="kpis">
-        <div class="kpi"><div class="kpi-value">100%</div><div class="kpi-label">of the mark recovered after a real WhatsApp round-trip</div></div>
+        <div class="kpi"><div class="kpi-value">98–100%</div><div class="kpi-label">of the mark intact after real WhatsApp round-trips — full proof recovered every time</div></div>
         <div class="kpi"><div class="kpi-value">99.6%</div><div class="kpi-label">of the mark intact after a real YouTube upload &amp; re-download</div></div>
         <div class="kpi"><div class="kpi-value">46.8 dB</div><div class="kpi-label">measured video quality with the mark — invisible to the eye (photos: 43.7 dB)</div></div>
-        <div class="kpi"><div class="kpi-value">60/60</div><div class="kpi-label">signing tests passed through a real phone's video hardware</div></div>
+        <div class="kpi"><div class="kpi-value">60/60</div><div class="kpi-label">signature-carrying units preserved through a real phone's video encoder</div></div>
       </div>
 
       <div class="card survival">
@@ -225,10 +225,16 @@
         <ul class="matrix">
           <li><span class="check">✓</span> YouTube-style recompression (1080p) <span class="val">100%</span></li>
           <li><span class="check">✓</span> TikTok-style recompression <span class="val">100%</span></li>
-          <li><span class="check">✓</span> Cropped and resized <span class="val">100%</span></li>
+          <li><span class="check">✓</span> Cropped (10%) and rescaled <span class="val">100%</span></li>
           <li><span class="check">✓</span> Heavy video compression <span class="val">99.2%</span></li>
           <li><span class="check">✓</span> WhatsApp-style compression (480p) <span class="val">98.1%</span></li>
           <li><span class="check">✓</span> Extreme stress test (360p, minimum quality) <span class="val">94.9%</span></li>
+        </ul>
+        <h3 style="margin-top:1.4rem">And the photo content checksum holds its ground</h3>
+        <ul class="matrix">
+          <li><span class="check">✓</span> Benign sharing (JPEG q50–85, resize to 0.5×) moves the checksum <span class="val">0–3 bits</span></li>
+          <li><span class="check">✓</span> Edits (splices 10–30%, inpainting, crops) move it <span class="val">8–60 bits</span></li>
+          <li><span class="check">✓</span> No overlap between the two — verdict threshold sits in the gap <span class="val">≤6 / ≥12</span></li>
         </ul>
         <p class="note">In every case above the surviving share is enough to recover the
         full proof. Test methodology in the <a href="/paper/research.html">paper</a>.</p>
