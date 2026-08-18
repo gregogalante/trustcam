@@ -79,8 +79,9 @@ Full details in the [architecture paper](web/paper/architecture.html).
 ## Known limits (by design — see the paper)
 
 - Watermark recovery needs roughly half of the original image area to survive.
-- Re-encoded videos need the CLI ([web/verify.py](web/verify.py), served at
-  `/verify.py`) for the watermark scan — the browser scan is photo-only.
+- The browser scans photos and videos; the CLI ([web/verify.mjs](web/verify.mjs),
+  served at `/verify.mjs`) runs the same site modules and wasm in node — one
+  verification source, ffmpeg only for pixel decode.
 - Capture time is device-claimed (RFC 3161 tokens are the tracked upgrade).
 - Attestation chain is checked leaf-against-key; validation up to Google's root
   is on the roadmap.

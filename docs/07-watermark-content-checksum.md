@@ -204,8 +204,10 @@ Findings:
 
 4. Validate PDQ separation on real phone photos + real-model inpainting (spike A
    caveat); re-run sweep on more clips before freezing the video contract.
-5. Video v2: per-segment payloads (32-frame contract, spike C) + CLI verifier
-   (`web/verify.py`) BCH/PDQ support.
+5. Video v2: per-segment payloads (32-frame contract, spike C). The verifier is
+   now single-source (`web/js/verifycore.js` shared by `verify.html` and the
+   node CLI `web/verify.mjs`, which downloads the site's own modules + wasm),
+   so v2 video lands in one place.
 
 ## Sources
 

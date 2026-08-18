@@ -64,13 +64,13 @@
 
     <div class="card" style="margin-top:1rem">
       <h3>Prefer your terminal?</h3>
-      <p class="note">Same verification from the command line, fully local. It also scans
-      re-encoded <strong>videos</strong> for the invisible mark (needs
-      <code>onnxruntime</code>, <code>pillow</code> and <code>ffmpeg</code> for that part —
-      the seal check needs only <code>openssl</code>):</p>
-      <pre>curl -sO https://trustcam.gregoriogalante.com/verify.py
-python3 verify.py photo.jpg          # proof-trailer check
-python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
+      <p class="note">Same verification from the command line, fully local — and literally
+      the <strong>same code</strong>: the CLI downloads this site's own verification modules
+      and wasm scanner, so there is one implementation, not two. Needs
+      <code>node</code> ≥ 18; the scan also needs <code>ffmpeg</code> to decode pixels:</p>
+      <pre>curl -sO https://trustcam.gregoriogalante.com/verify.mjs
+node verify.mjs photo.jpg           # proof-trailer check
+node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)</pre>
     </div>
 
     <footer>The proof travels inside the file itself; the public
@@ -82,6 +82,7 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
   <script src="/js/codec.js"></script>
   <script src="/js/codec_v2.js"></script>
   <script src="/js/pdq.js"></script>
+  <script src="/js/verifycore.js"></script>
   <script>
     const drop = document.getElementById('drop')
     const input = document.getElementById('file')
@@ -119,64 +120,8 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
       return { stage: document.getElementById('stage') }
     }
 
-    // ---------- byte helpers ----------
-    function b64ToBytes (b64) {
-      const bin = atob(b64)
-      const out = new Uint8Array(bin.length)
-      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
-      return out
-    }
-
-    function toHex (bytes) {
-      return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('')
-    }
-
-    function findSubarray (hay, needle) {
-      outer: for (let i = 0; i <= hay.length - needle.length; i++) {
-        for (let j = 0; j < needle.length; j++) {
-          if (hay[i + j] !== needle[j]) continue outer
-        }
-        return i
-      }
-      return -1
-    }
-
-    // ECDSA signatures from Android are DER; WebCrypto wants raw r||s (P1363)
-    function derSigToP1363 (der) {
-      let i = 2 // SEQUENCE header (assume short-form length; P-256 sigs are < 128 bytes)
-      function readInt () {
-        if (der[i++] !== 0x02) throw new Error('bad DER signature')
-        let len = der[i++]
-        let start = i
-        i += len
-        while (len > 32) { start++; len-- } // strip leading zero padding
-        const out = new Uint8Array(32)
-        out.set(der.subarray(start, start + len), 32 - len)
-        return out
-      }
-      const r = readInt()
-      const s = readInt()
-      const sig = new Uint8Array(64)
-      sig.set(r, 0)
-      sig.set(s, 32)
-      return sig
-    }
-
-    // ---------- proof trailer ----------
-    const MAGIC = 'TCPROOF1'
-    function parseTrailer (bytes) {
-      const n = bytes.length
-      if (n < 20) return null
-      const magic = new TextDecoder().decode(bytes.subarray(n - 8))
-      if (magic !== MAGIC) return null
-      const dv = new DataView(bytes.buffer, bytes.byteOffset + n - 12, 4)
-      const jsonLen = dv.getUint32(0)
-      if (jsonLen <= 0 || jsonLen > n - 20) return null
-      try {
-        const json = JSON.parse(new TextDecoder().decode(bytes.subarray(n - 12 - jsonLen, n - 12)))
-        return { proof: json, canonicalEnd: n - 20 - jsonLen }
-      } catch { return null }
-    }
+    // shared verification logic (also used verbatim by the node CLI verify.mjs)
+    const core = window.TrustCamVerifyCore
 
     // ---------- registry ----------
     let registryPromise = null
@@ -195,16 +140,16 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
       try {
         const bytes = new Uint8Array(await file.arrayBuffer())
 
-        const t = parseTrailer(bytes)
+        const t = core.parseTrailer(bytes)
         if (t) return await verifyTrailer(bytes, t, file, ui)
 
         if ((file.type || '').startsWith('image')) {
-          const found = await wasmScan(file, ui)
+          const found = await imageScan(file, ui)
           if (found) return
           return noProof('No invisible mark could be recovered from this image.')
         }
-        noProof('This video carries no proof trailer. If it was re-encoded by a platform, ' +
-          'scan it for the invisible mark with the command-line verifier.')
+        const found = await videoScan(file, ui)
+        if (!found) noProof('No invisible mark could be recovered from this video.')
       } catch (e) {
         console.warn(e)
         noProof('The file could not be analyzed in this browser.')
@@ -218,25 +163,10 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
     async function verifyTrailer (bytes, t, file, ui) {
       ui.stage.textContent = 'Proof found in the file — verifying the seal on your device…'
       const p = t.proof
-      const canonical = bytes.subarray(0, t.canonicalEnd)
-      const hash = await crypto.subtle.digest('SHA-256', canonical)
-
-      let sigValid = false
-      let attested = false
-      try {
-        const spki = b64ToBytes(p.pubkey)
-        const key = await crypto.subtle.importKey('spki', spki,
-          { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
-        sigValid = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key,
-          derSigToP1363(b64ToBytes(p.sig)), hash)
-        // the attestation leaf must certify the very key that signed
-        if (Array.isArray(p.attestation) && p.attestation.length > 0) {
-          attested = findSubarray(b64ToBytes(p.attestation[0]), spki) >= 0
-        }
-      } catch (e) { console.warn('seal check failed', e) }
+      const { sigValid, attested, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
 
       const reg = await registry()
-      const deviceId = Math.floor((p.payload || 0) / 16384)
+      const deviceId = core.deviceIdOf(p.payload || 0)
       const entry = reg.devices?.[String(deviceId)]
       const registered = !!entry && entry.pubkey === p.pubkey
 
@@ -250,7 +180,7 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
         mediaType: p.mediaType,
         sizeBytes: file.size,
         payload: p.payload,
-        fingerprint: toHex(hash)
+        fingerprint
       })
 
       if (sigValid) {
@@ -274,65 +204,106 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
       return detectorPromise
     }
 
-    async function wasmScan (file, ui) {
-      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~34 MB)…'
-      const session = await detector()
-      ui.stage.textContent = 'Scanning for the invisible mark on your device…'
-
-      const bmp = await createImageBitmap(file)
-      const scale = Math.min(1, 1536 / Math.max(bmp.width, bmp.height))
-      const w = Math.round(bmp.width * scale)
-      const h = Math.round(bmp.height * scale)
+    // draw a bitmap/video frame on a canvas capped at the detector input size
+    function grabPixels (source, sw, sh) {
+      const scale = Math.min(1, core.SCAN_MAX_DIM / Math.max(sw, sh))
+      const w = Math.round(sw * scale)
+      const h = Math.round(sh * scale)
       const canvas = document.createElement('canvas')
       canvas.width = w
       canvas.height = h
-      canvas.getContext('2d').drawImage(bmp, 0, 0, w, h)
-      const { data } = canvas.getContext('2d').getImageData(0, 0, w, h)
+      canvas.getContext('2d').drawImage(source, 0, 0, w, h)
+      return { data: canvas.getContext('2d').getImageData(0, 0, w, h).data, w, h }
+    }
 
-      const chw = new Float32Array(3 * w * h)
-      for (let i = 0, n = w * h; i < n; i++) {
-        chw[i] = data[i * 4] / 255
-        chw[n + i] = data[i * 4 + 1] / 255
-        chw[2 * n + i] = data[i * 4 + 2] / 255
-      }
+    async function runDetector (rgba, w, h) {
+      const session = await detector()
       const out = await session.run({
-        image: new window.ort.Tensor('float32', chw, [1, 3, h, w])
+        image: new window.ort.Tensor('float32', core.toDetectorInput(rgba, w, h), [1, 3, h, w])
       })
-      const preds = out.preds.data.subarray(1)
+      return out.preds.data.subarray(1)
+    }
 
-      // v2 payloads (BCH, ~2^-124 false-accept) carry a PDQ content checksum:
-      // recompute the hash on the received pixels and compare. Try v2 first,
-      // fall back to the v1 repetition codec for pre-checksum captures.
-      const v2 = window.TrustCamCodecV2.decode(preds)
-      if (v2) {
-        await v2Verdict(v2, data, w, h)
+    async function imageScan (file, ui) {
+      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~34 MB)…'
+      await detector()
+      ui.stage.textContent = 'Scanning for the invisible mark on your device…'
+
+      const bmp = await createImageBitmap(file)
+      const { data, w, h } = grabPixels(bmp, bmp.width, bmp.height)
+      const decoded = core.decodePayload(await runDetector(data, w, h))
+      if (!decoded) return false
+      // v2 carries a content checksum — verify it against the received pixels
+      if (decoded.v === 2) await v2Verdict(decoded, data, w, h)
+      else await originTracedVerdict(decoded)
+      return true
+    }
+
+    // Video scan: sample frames evenly, average the soft bits across frames
+    // (same flow as the CLI), then decode. Videos carry v1 payloads today, so
+    // no content check — a v2 hit still resolves to origin-traced.
+    async function videoScan (file, ui) {
+      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~34 MB)…'
+      await detector()
+
+      const video = document.createElement('video')
+      video.muted = true
+      video.playsInline = true
+      video.src = URL.createObjectURL(file)
+      try {
+        await new Promise((resolve, reject) => {
+          video.onloadedmetadata = resolve
+          video.onerror = () => reject(new Error('video not decodable in this browser'))
+        })
+        const n = core.VIDEO_SCAN_FRAMES
+        const acc = new Float64Array(256)
+        for (let i = 0; i < n; i++) {
+          ui.stage.textContent = `Scanning for the invisible mark — frame ${i + 1}/${n}…`
+          video.currentTime = (i + 0.5) * video.duration / n
+          await new Promise((resolve, reject) => {
+            video.onseeked = resolve
+            video.onerror = () => reject(new Error('seek failed'))
+          })
+          const { data, w, h } = grabPixels(video, video.videoWidth, video.videoHeight)
+          const preds = await runDetector(data, w, h)
+          for (let b = 0; b < 256; b++) acc[b] += preds[b]
+        }
+        const avg = new Float32Array(256)
+        for (let b = 0; b < 256; b++) avg[b] = acc[b] / n
+        const decoded = core.decodePayload(avg)
+        if (!decoded) return false
+        await originTracedVerdict(decoded)
         return true
+      } finally {
+        URL.revokeObjectURL(video.src)
       }
-      const { payload, confidence } = window.TrustCamCodec.decode(preds)
-      if (payload == null || confidence < 0.7) return false
+    }
 
+    // Origin-only verdict: the mark identifies the capture but carries no
+    // verifiable content checksum (v1 payloads, and all videos for now).
+    async function originTracedVerdict (decoded) {
       const reg = await registry()
-      const deviceId = Math.floor(payload / 16384)
+      const deviceId = core.deviceIdOf(decoded.proofId)
       const entry = reg.devices?.[String(deviceId)]
 
-      const pct = Math.round(confidence * 100)
       // only rows we actually know — re-encoding stripped everything but the mark
       const details = entry
         ? `<dl>
             <dt>Recorded by</dt><dd>${esc(entry.name)} <span class="badge ok">registered device</span></dd>
             <dt>Device</dt><dd>${esc(entry.model)} (${esc(entry.securityLevel)})</dd>
-            <dt>Mark id</dt><dd>device #${deviceId} · capture #${payload % 16384}</dd>
+            <dt>Mark id</dt><dd>device #${deviceId} · capture #${core.captureOf(decoded.proofId)}</dd>
           </dl>`
         : `<dl>
-            <dt>Mark id</dt><dd>device #${deviceId} · capture #${payload % 16384}</dd>
+            <dt>Mark id</dt><dd>device #${deviceId} · capture #${core.captureOf(decoded.proofId)}</dd>
           </dl>
           <p class="note">Device #${deviceId} is not in the <a href="/registry.json">public
           registry</a>, so no name can be shown — the mark still proves these pixels come
           from a TrustCam capture. Names appear when the device's owner publishes their
           registry entry.</p>`
+      const pct = decoded.v === 1 ? Math.round(decoded.confidence * 100) : null
       verdictCard('!', 'warn', 'Origin traced — content NOT verified',
         'This copy comes from a TrustCam capture, but it has been changed since — maybe just social-media compression, maybe a deliberate edit: the mark cannot tell the difference. We can say where it comes from, not that it is authentic.',
-        details, `
+        details, pct == null ? '' : `
         <div class="signal">
           <div class="signal-value">${pct}%</div>
           <div class="signal-body">
@@ -342,27 +313,13 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
             a measure of the match with the original capture, <strong>not</strong> of authenticity.</div>
           </div>
         </div>`)
-      return true
-    }
-
-    // v2 tiers, from spikes/results/pdq_separation.json: benign transcodes
-    // measured 0-3 bits @104 (same implementation); cross-implementation float
-    // noise adds ~2 → accept ≤6. Edits measured ≥8; 7-11 stays inconclusive.
-    const PDQ_MATCH = 6
-    const PDQ_INCONCLUSIVE = 11
-
-    function hexToBytes (hex) {
-      const out = new Uint8Array(hex.length / 2)
-      for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16)
-      return out
     }
 
     async function v2Verdict (v2, rgba, w, h) {
-      const recomputed = window.TrustCamPdq.fromImageData(rgba, w, h)
-      const dist = window.TrustCamPdq.hamming104(recomputed, hexToBytes(v2.phashHex))
+      const dist = core.contentDistance(rgba, w, h, v2.phashHex)
 
       const reg = await registry()
-      const deviceId = Math.floor(v2.proofId / 16384)
+      const deviceId = core.deviceIdOf(v2.proofId)
       const entry = reg.devices?.[String(deviceId)]
       const details = (entry
         ? `<dl>
@@ -374,7 +331,7 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
         <div class="signal">
           <div class="signal-value">${dist}</div>
           <div class="signal-body">
-            <div class="signal-label">Content distance (0 = identical, ≤${PDQ_MATCH} = intact)</div>
+            <div class="signal-label">Content distance (0 = identical, ≤${core.PDQ_MATCH} = intact)</div>
             <div class="signal-meter"><div style="width:${Math.max(4, 100 - dist * 2)}%"></div></div>
             <div class="signal-caption">Distance between the content checksum sealed inside the
             invisible mark at capture and the same checksum recomputed on these pixels.
@@ -382,10 +339,10 @@ python3 verify.py --scan video.mp4   # + invisible-mark scan</pre>
           </div>
         </div>`
 
-      if (dist <= PDQ_MATCH) {
+      if (core.contentVerdict(dist) === 'intact') {
         verdictCard('✓', 'ok', 'Origin traced — content intact',
           'This copy was recompressed (the exact-file seal is gone), but the content checksum sealed inside the invisible mark still matches these pixels: what the image shows is what the camera captured. Not the bit-exact original, but nothing depicted has changed.', details)
-      } else if (dist <= PDQ_INCONCLUSIVE) {
+      } else if (core.contentVerdict(dist) === 'inconclusive') {
         verdictCard('!', 'warn', 'Origin traced — content check inconclusive',
           'The invisible mark identifies the capture, but the content checksum lands in the gray zone between heavy compression and a small edit. Treat with care.', details)
       } else {
