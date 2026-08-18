@@ -124,6 +124,36 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       not by a service you must trust.
     </p>
 
+    <h2>The algorithms</h2>
+    <p>
+      Every layer is built on published, battle-tested primitives — nothing bespoke
+      guards anything important:
+    </p>
+    <ul>
+      <li><strong>Neural watermark — <a href="https://arxiv.org/abs/2412.09492">VideoSeal</a>
+        (Meta AI)</strong>: an encoder/decoder network pair trained adversarially against
+        simulated compression, resizing and cropping. The encoder learns <em>where</em> in
+        the image a 256-bit message can hide below visual threshold yet survive platform
+        processing; the decoder returns per-bit confidence ("soft bits") that can be
+        averaged across video frames, so evidence accumulates over time.</li>
+      <li><strong>Perceptual hash — <a href="https://github.com/facebook/ThreatExchange/tree/main/pdq">PDQ</a>
+        (Meta)</strong>, the hash family built to match content at Facebook scale: the
+        image is reduced to luminance, downsampled through Jarosz box filters to 64×64,
+        and transformed with a 16×16 low-frequency DCT; each output bit says whether one
+        frequency coefficient exceeds the median. The logic: <em>low spatial frequencies
+        encode composition — what the image shows; compression noise lives in the high
+        frequencies that PDQ discards</em>. That is why re-encoding moves the hash 0–3
+        bits while a splice moves it 8–60. We embed the 104 lowest-frequency bits.</li>
+      <li><strong>Error correction — BCH(255,131)</strong>: the algebraic code family that
+        keeps QR codes and deep-space telemetry readable. It <em>guarantees</em> exact
+        payload recovery with up to 18 corrupted bits — and beyond that it fails
+        <em>clean</em>: a verdict is either exactly right or explicitly absent, never
+        silently wrong (0 miscorrections in 31,000 adversarial trials).</li>
+      <li><strong>Signature — ECDSA P-256</strong> on a key generated inside the phone's
+        secure element and physically unable to leave it, with Android Key Attestation
+        binding the key to hardware in every proof.</li>
+    </ul>
+
     <h2>Watermark payload encoding</h2>
     <p>
       The watermark carries a 256-bit message decoded from the pixels. Robustness comes
@@ -143,12 +173,12 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       <text x="380" y="88" class="flow-sub" text-anchor="middle">BCH(255,131, t=18): exact payload recovery up to 18 wrong bits — beyond that it fails clean, never silently wrong</text>
     </svg>
     <p>
-      The 104 bits are the lowest-frequency half of a
-      <a href="https://github.com/facebook/ThreatExchange/tree/main/pdq">PDQ</a> perceptual
-      hash computed at capture: recompression barely moves it, changing what the image
-      <em>shows</em> moves it a lot. At verification the same hash is recomputed on the
-      received pixels and compared (Hamming distance @104: ≤6 intact, 7–11 inconclusive,
-      ≥12 modified — thresholds from our measured separation, benign 0–3 vs edits 8–60).
+      Verification logic: the verifier recomputes the PDQ hash on the received pixels
+      and measures the Hamming distance to the 104 bits sealed at capture. The verdict
+      tiers sit in the measured gap between benign processing (0–3 bits) and edits
+      (8–60 bits): <strong>≤6 content intact · 7–11 inconclusive · ≥12 modified</strong>.
+      The inconclusive band exists on purpose — when the evidence is ambiguous the
+      verifier says so instead of guessing.
     </p>
 
     <h3>v1 — video, and photos before 1.1.0: pointer only</h3>
@@ -220,10 +250,8 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
         content checksum against the received pixels →
         <em>content intact</em> / <em>inconclusive</em> / <em>modified</em>.</li>
     </ol>
-    <p>The command-line verifier (<code>/verify.mjs</code>, node) is <strong>not a second
-    implementation</strong>: it downloads this site's own verification modules and wasm
-    scanner and runs them unchanged — ffmpeg is used only to decode pixels. One source
-    of truth for every verdict.</p>
+    <p>A command-line verifier (<code>/verify.mjs</code>) runs the same checks for
+    scripting and batch workflows.</p>
 
     <h2>Watermark recovery: semantics and measured limits</h2>
     <p>

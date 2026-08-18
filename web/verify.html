@@ -64,10 +64,9 @@
 
     <div class="card" style="margin-top:1rem">
       <h3>Prefer your terminal?</h3>
-      <p class="note">Same verification from the command line, fully local — and literally
-      the <strong>same code</strong>: the CLI downloads this site's own verification modules
-      and wasm scanner, so there is one implementation, not two. Needs
-      <code>node</code> ≥ 18; the scan also needs <code>ffmpeg</code> to decode pixels:</p>
+      <p class="note">Same verification from the command line, fully local — for scripts,
+      newsroom pipelines and batch checks (needs <code>node</code> ≥ 18, plus
+      <code>ffmpeg</code> for the pixel scan):</p>
       <pre>curl -sO https://trustcam.gregoriogalante.com/verify.mjs
 node verify.mjs photo.jpg           # proof-trailer check
 node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)</pre>
