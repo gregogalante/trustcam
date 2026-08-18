@@ -47,7 +47,10 @@ class IdentityActivity : AppCompatActivity() {
     }
 
     private fun refresh() {
-        b.summary.text = getString(R.string.identity_summary, device.name, device.deviceId)
+        // app version on the identity screen: lets testers confirm which build
+        // captured a file when debugging recognition in the field
+        val version = packageManager.getPackageInfo(packageName, 0).versionName
+        b.summary.text = getString(R.string.identity_summary, device.name, device.deviceId, version)
         thread {
             val key = DeviceKey.ensure()
             val entry = device.enrollmentJson("${Build.MANUFACTURER} ${Build.MODEL}", key)

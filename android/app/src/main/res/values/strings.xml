@@ -11,7 +11,7 @@
     <string name="enroll_note">Add this entry to the public registry (registry.json in the site repository) so verifiers can show your name for social-media copies. Exact copies verify even without it.</string>
     <string name="share_enrollment">Share registry entry</string>
     <string name="identity_title">Device identity</string>
-    <string name="identity_summary">%1$s — device id #%2$d</string>
+    <string name="identity_summary">%1$s — device id #%2$d · app v%3$s</string>
     <string name="identity_close">Close</string>
     <string name="regen_cta">Regenerate device id</string>
     <string name="regen_title">Regenerate device id?</string>
