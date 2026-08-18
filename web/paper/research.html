@@ -12,7 +12,7 @@
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
     <a href="/paper/">Paper</a>
-    <a href="https://github.com/gregogalante/trustcam-monolith">GitHub</a>
+    <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main>
     <h1>Research background &amp; feasibility</h1>
@@ -51,6 +51,9 @@
       <tr><td><a href="https://eprint.iacr.org/2024/1066">VerITAS</a></td><td>2024</td><td>zk-SNARK proofs that edits of signed media were permitted ones</td></tr>
       <tr><td><a href="https://eprint.iacr.org/2026/1598">zk-Cinema</a></td><td>2026</td><td>First zero-knowledge provenance for video</td></tr>
       <tr><td><a href="https://developer.axis.com/video-streaming-and-recording/signed-video/">Axis Signed Video / ONVIF Media Signing</a></td><td>2021–</td><td>Per-GOP rolling signatures in SEI NAL units, deployed in production cameras</td></tr>
+      <tr><td><a href="https://github.com/facebook/ThreatExchange/tree/main/pdq">PDQ</a> (Meta)</td><td>2019</td><td>Production perceptual hash, robust to recompression — our v2 content checksum</td></tr>
+      <tr><td><a href="https://contentauthenticity.org/blog/durable-content-credentials">Durable Content Credentials</a> (CAI)</td><td>2024</td><td>Signed metadata + watermark + perceptual fingerprint, each covering the others — the pattern our v2 payload implements in-band</td></tr>
+      <tr><td><a href="https://arxiv.org/abs/2204.01960">FaceSigns</a></td><td>2022</td><td>Semi-fragile neural watermark that dies on deepfake edits — the alternative design we evaluated against a robust mark + checksum</td></tr>
     </table>
 
     <h2>Our feasibility results (phase 0)</h2>
@@ -68,6 +71,19 @@
       phone's hardware H.264 encoder and MP4 muxer intact (60/60, Motorola Moto G75,
       Qualcomm encoder) — per-GOP signatures need no custom media stack.
     </p>
+    <h2 style="font-size:1rem">Content checksum (phase 1 — shipped for photos)</h2>
+    <p>
+      A 104-bit truncated PDQ hash embedded in the watermark payload separates benign
+      sharing from semantic edits with no overlap in our tests: JPEG re-encodes down to
+      quality 50 and resizes down to 0.5× move the hash 0–3 bits, while patch splices
+      (10–30% of the image), inpainting and crops move it 8–60 bits. BCH(255,131)
+      error correction recovered the exact payload across the entire transcode ladder
+      (real channel, worst case 15 of 18 correctable errors at 360p/500kbps), and
+      failed <em>clean</em> in every over-threshold trial — zero silent miscorrections
+      in 31k synthetic trials. Browser and CLI recompute the checksum independently and
+      agree within 1 bit. Data: <code>spikes/results/</code> in the repo.
+    </p>
+
     <h2 style="font-size:1rem">On-device embedding cost</h2>
     <p>
       The watermark embedder (23.7M params, 28.3 GFLOPs at fp32) runs at
@@ -93,9 +109,11 @@
         server to attest anything). RFC 3161 timestamp tokens, fetched at capture when
         online, close the gap.</li>
       <li><strong>Mark forgery</strong> — the watermark model is open source, so the
-        24-bit mark is forgeable by construction. This is why the verifier renders
-        mark-only recovery as an amber <em>origin claim</em>, never as authentication:
-        the only cryptographic proof is the signed trailer.</li>
+        mark (and the v2 content checksum it carries: 256 bits cannot hold a
+        signature) is forgeable by construction. This is why mark-only recovery is an
+        <em>origin claim</em> and the checksum tiers are <em>tamper evidence</em> —
+        useful to tell a re-shared copy from an edited one, never authentication.
+        The only cryptographic proof is the signed trailer.</li>
     </ul>
 
     <footer><a href="/paper/">← Paper index</a></footer>

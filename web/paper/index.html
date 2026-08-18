@@ -12,7 +12,7 @@
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
     <a href="/paper/">Paper</a>
-    <a href="https://github.com/gregogalante/trustcam-monolith">GitHub</a>
+    <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main>
     <h1>TrustCam: capture-time provenance for photos and video</h1>
@@ -33,10 +33,15 @@
       recorded a file, <em>when</em>, and that it is byte-for-byte unmodified —
       and, because the watermark survives social-media re-encoding, provenance can
       be recovered even after platforms strip metadata (validated in our
-      feasibility experiments).
+      feasibility experiments). For photos, the watermark payload additionally
+      carries a <strong>content checksum</strong> (a truncated PDQ perceptual hash,
+      BCH-protected): recompression barely moves it, semantic edits break it, so
+      the verifier can tell a re-shared copy from an AI-edited one even when the
+      cryptographic seal is long gone.
     </p>
     <p>
-      The roadmap extends this to per-segment rolling signatures carried in the
+      The roadmap extends the content checksum to video (per-segment payloads,
+      validated in spikes) and adds per-segment rolling signatures carried in the
       video bitstream (ONVIF Media Signing), validated on consumer hardware in
       our phase-0 tests.
     </p>
@@ -56,12 +61,15 @@
       modified since</em>. It deliberately does <strong>not</strong> assert that
       the depicted scene is real — no capture-time cryptography can: a trusted
       camera filming a high-resolution display signs what its sensor sees (the
-      "analog hole"). Systems that overclaim here have failed publicly; we scope
-      claims to what the cryptography actually proves.
+      "analog hole"). Likewise, the in-watermark content checksum is
+      <strong>tamper evidence, not authentication</strong>: it tells a recompressed
+      copy from an edited one, but only the signed trailer is cryptographic proof.
+      Systems that overclaim here have failed publicly; we scope claims to what the
+      cryptography actually proves.
     </p>
 
-    <footer>TrustCam 1.0 — this paper describes the shipped system.
-    Source and history on <a href="https://github.com/gregogalante/trustcam-monolith">GitHub</a>.</footer>
+    <footer>TrustCam 1.1 — this paper describes the shipped system.
+    Source and history on <a href="https://github.com/gregogalante/trustcam">GitHub</a>.</footer>
   </main>
 </body>
 </html>

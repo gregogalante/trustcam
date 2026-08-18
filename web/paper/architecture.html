@@ -12,7 +12,7 @@
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
     <a href="/paper/">Paper</a>
-    <a href="https://github.com/gregogalante/trustcam-monolith">GitHub</a>
+    <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main>
     <h1>System architecture</h1>
@@ -22,7 +22,7 @@
     <table>
       <tr><th>Layer</th><th>Proves</th><th>Survives re-encoding?</th></tr>
       <tr><td>Cryptographic signature over content hashes</td><td>Exact integrity, device identity, capture time</td><td>No — any transcode invalidates it, by design</td></tr>
-      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the sealing device (payload = device id + capture counter)</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
+      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the sealing device (device id + capture counter); photos add a content checksum that breaks on semantic edits</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
     </table>
 
     <svg class="layers-diagram" viewBox="0 0 760 240" role="img" aria-label="The signature verifies exact files; the watermark survives social platforms and recovers provenance">
@@ -94,7 +94,10 @@
       <li><strong>Capture</strong>: photo or video from the app, saved to the gallery.</li>
       <li><strong>Watermarking — on the device</strong>: the payload (device id, 10 bit +
         local capture counter, 14 bit) is encoded and embedded into the pixels by the
-        on-device VideoSeal pipeline (ONNX). Fully offline;
+        on-device VideoSeal pipeline (ONNX). For <strong>photos</strong> (app ≥ 1.1.0) the
+        payload additionally carries a <strong>content checksum</strong> — a 104-bit PDQ
+        perceptual hash of the pre-embed pixels — so a later copy can be checked for
+        semantic edits even after recompression. Fully offline;
         <strong>media never leaves the phone</strong>.</li>
       <li><strong>Signing</strong>: the SHA-256 of the watermarked bytes is signed in the
         secure element (<code>SHA256withECDSA</code>). The private key never exists in
@@ -124,8 +127,31 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
     <h2>Watermark payload encoding</h2>
     <p>
       The watermark carries a 256-bit message decoded from the pixels. Robustness comes
-      from structure, not secrecy:
+      from structure, not secrecy. Two formats coexist, and the verifier tries v2 first
+      (its BCH check has a ~2<sup>−124</sup> false-accept rate, so a v2 hit is
+      authoritative), then falls back to v1:
     </p>
+
+    <h3>v2 — photos (app ≥ 1.1.0): pointer + content checksum</h3>
+    <svg class="layers-diagram" viewBox="0 0 760 110" role="img" aria-label="24-bit proof id, 104-bit PDQ hash and 124 BCH parity bits fill the 256-bit message">
+      <rect class="pl-id"  x="40"  y="26" width="160" height="34" rx="6"/>
+      <rect class="pl-rep" x="204" y="26" width="290" height="34" rx="6"/>
+      <rect class="pl-crc" x="498" y="26" width="222" height="34" rx="6"/>
+      <text x="120" y="48" class="flow-label" text-anchor="middle">proof id — 24 bit</text>
+      <text x="349" y="48" class="flow-label" text-anchor="middle">PDQ content hash — 104 bit</text>
+      <text x="609" y="48" class="flow-label" text-anchor="middle">BCH parity — 124 bit</text>
+      <text x="380" y="88" class="flow-sub" text-anchor="middle">BCH(255,131, t=18): exact payload recovery up to 18 wrong bits — beyond that it fails clean, never silently wrong</text>
+    </svg>
+    <p>
+      The 104 bits are the lowest-frequency half of a
+      <a href="https://github.com/facebook/ThreatExchange/tree/main/pdq">PDQ</a> perceptual
+      hash computed at capture: recompression barely moves it, changing what the image
+      <em>shows</em> moves it a lot. At verification the same hash is recomputed on the
+      received pixels and compared (Hamming distance @104: ≤6 intact, 7–11 inconclusive,
+      ≥12 modified — thresholds from our measured separation, benign 0–3 vs edits 8–60).
+    </p>
+
+    <h3>v1 — video, and photos before 1.1.0: pointer only</h3>
 
     <svg class="layers-diagram" viewBox="0 0 760 175" role="img" aria-label="24-bit proof id plus CRC8 form a 32-bit block, repeated 8 times across the 256-bit message">
       <!-- one block -->
@@ -155,9 +181,12 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
     <p>
       Extraction averages the decoded signal across sampled frames, soft-combines the
       eight copies of each bit, and accepts the result only if the CRC validates and
-      signal agreement exceeds a threshold. Measured end-to-end: full payload recovery
-      after real YouTube and WhatsApp round-trips and 720p/2Mbps re-encodes
-      (<a href="/paper/research.html">data</a>).
+      signal agreement exceeds a threshold. Measured end-to-end (both formats): full
+      payload recovery after real YouTube and WhatsApp round-trips and 720p/2Mbps
+      re-encodes (<a href="/paper/research.html">data</a>). Extending v2 to video with
+      per-segment payloads (one checksum per ~1.3s of footage, blind sliding-window
+      recovery on trimmed clips) is validated in spikes and is the next payload
+      iteration.
     </p>
 
     <h2>Bitstream signatures for video (next iteration)</h2>
@@ -183,22 +212,33 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
         byte-exact transfer (email, Drive, file transfer).</li>
       <li><strong>No trailer</strong> (platforms strip it — but they also change the
         bytes, so the signature was lost either way) → watermark extraction
-        <strong>in the browser</strong> (int8 ONNX detector, ~34 MB, WASM) → payload →
-        device looked up in the public <a href="/registry.json">registry.json</a> →
-        <em>Origin traced</em>: the device is known, byte integrity of this copy is not
-        verifiable.</li>
+        <strong>in the browser</strong> (int8 ONNX detector, ~34 MB, WASM). Photos are
+        scanned directly; videos are scanned by sampling 24 frames and averaging the
+        decoded signal. The payload resolves the device in the public
+        <a href="/registry.json">registry.json</a>. A v1 payload yields
+        <em>Origin traced</em>; a v2 payload additionally verifies the embedded
+        content checksum against the received pixels →
+        <em>content intact</em> / <em>inconclusive</em> / <em>modified</em>.</li>
     </ol>
-    <p>Re-encoded videos currently require the command-line verifier for the
-    watermark scan; exact video files verify in the browser via their trailer.</p>
+    <p>The command-line verifier (<code>/verify.mjs</code>, node) is <strong>not a second
+    implementation</strong>: it downloads this site's own verification modules and wasm
+    scanner and runs them unchanged — ffmpeg is used only to decode pixels. One source
+    of truth for every verdict.</p>
 
     <h2>Watermark recovery: semantics and measured limits</h2>
     <p>
-      Recovery via watermark identifies <strong>origin only, never integrity</strong>.
-      The watermark survives whatever preserves most of the pixels — platform re-encoding,
-      moderate crops, screenshots of the full image — which by the same token includes
-      <em>edits</em> that keep most of the original: an AI-altered copy can still carry a
-      readable watermark. This is why the verifier renders recovery as an amber
-      "content NOT verified" verdict, never as authentication.
+      The mark is robust by design: it survives whatever preserves most of the pixels —
+      platform re-encoding, moderate crops, screenshots — which by the same token
+      includes <em>edits</em> that keep most of the original. So the mark alone
+      identifies <strong>origin, never integrity</strong> (v1 verdicts stay amber,
+      "content NOT verified"). The v2 content checksum closes part of this gap: an
+      AI-altered copy still carries a readable mark, but the checksum sealed at capture
+      no longer matches the received pixels, and the verifier says so. One honest
+      caveat: the in-band checksum is <strong>tamper evidence, not authenticity</strong> —
+      256 bits cannot hold a signature, so an attacker with the open embedder can forge
+      a coherent payload on fabricated content. Cryptographic proof remains exclusive
+      to the signed trailer; the checksum tiers tell a re-shared copy from an edited
+      one, they do not certify the capture.
     </p>
     <p>
       The binding constraint is <strong>surviving content area</strong>, not the transform
