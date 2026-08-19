@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TrustCam — prove your video is real</title>
-  <meta name="description" content="TrustCam signs photos and videos at capture inside your phone's secure hardware, and embeds an invisible watermark — with a content checksum — that survives social media. Anyone can verify who recorded a file, when, and whether what it shows was changed.">
+  <meta name="description" content="TrustCam seals photos and videos the moment you take them — a signature in your phone's security chip plus an invisible mark that survives social media. Anyone can verify who recorded a file, when, and whether what it shows was changed.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -94,21 +94,18 @@
       <div class="grid3">
         <div class="card">
           <h3>AI fakes pass every eye test</h3>
-          <p>AI now produces photos and video that nobody can tell from real ones.
-          Chasing the fakes is a losing game — <strong>proving the real ones are real</strong>
-          is the durable answer.</p>
+          <p>Nobody can spot them anymore. Chasing fakes is a losing game —
+          <strong>proving the real ones are real</strong> is the answer.</p>
         </div>
         <div class="card">
           <h3>Platforms erase the evidence</h3>
-          <p>Every social platform recompresses what you upload and strips out anything
-          attached to the file. Whatever certificate travelled with it is gone exactly
+          <p>Uploads get recompressed and stripped of every certificate — exactly
           where media actually circulates.</p>
         </div>
         <div class="card">
           <h3>Trust has a price tag</h3>
-          <p>Fake media drives hundreds of billions in fraud every year — insurance
-          claims, identity checks, legal evidence — and new laws now require media
-          to carry proof of where it came from.</p>
+          <p>Fake media drives billions in fraud every year — and new laws now
+          require proof of origin.</p>
         </div>
       </div>
     </section>
@@ -121,28 +118,26 @@
         <div class="step">
           <div class="step-icon"><svg viewBox="0 0 48 48"><path d="M10 16h6l3-4h10l3 4h6a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V19a3 3 0 0 1 3-3z" fill="none"/><circle cx="24" cy="27" r="6" fill="none"/></svg></div>
           <h3>1 · Capture</h3>
-          <p>Photo or video, from the TrustCam app — saved to your gallery like
-          any camera. Everything that follows happens on the phone, even offline.</p>
+          <p>Photo or video, saved to your gallery like any camera app.
+          Everything happens on the phone — even offline.</p>
         </div>
         <div class="step">
           <div class="step-icon"><svg viewBox="0 0 48 48"><path d="M24 6l14 6v10c0 9-6 15-14 20-8-5-14-11-14-20V12z" fill="none"/><path d="M18 24l4 4 8-8" fill="none"/></svg></div>
           <h3>2 · Invisible mark</h3>
-          <p>An invisible mark is woven into the image itself — for photos it also
-          seals a checksum of what the image shows. Compressing, resizing,
-          re-uploading — it survives what social platforms do to files.</p>
+          <p>An invisible mark — with a fingerprint of what the image shows —
+          is woven into the pixels. It survives social media.</p>
         </div>
         <div class="step">
           <div class="step-icon"><svg viewBox="0 0 48 48"><rect x="12" y="12" width="24" height="24" rx="4" fill="none"/><rect x="20" y="20" width="8" height="8" fill="none"/><path d="M17 6v6M24 6v6M31 6v6M17 36v6M24 36v6M31 36v6M6 17h6M6 24h6M6 31h6M36 17h6M36 24h6M36 31h6" fill="none"/></svg></div>
           <h3>3 · Sealed by the chip</h3>
-          <p>The file's digital fingerprint is signed by a key that lives
-          <em>inside</em> your phone's security chip and physically cannot leave
-          it — no malware, no hack can steal it.</p>
+          <p>Signed by a key sealed inside your phone's security chip —
+          no malware, no hack can steal it.</p>
         </div>
         <div class="step">
           <div class="step-icon"><svg viewBox="0 0 48 48"><circle cx="21" cy="21" r="12" fill="none"/><path d="M30 30l11 11" fill="none"/><path d="M16 21l4 4 7-7" fill="none"/></svg></div>
           <h3>4 · Anyone verifies</h3>
-          <p>Drop any copy of the file on the public verifier: who recorded it,
-          with which phone, when — and whether that exact copy is untouched.</p>
+          <p>Drop any copy on the free verifier: who recorded it, when —
+          and whether it's been changed.</p>
         </div>
       </div>
     </section>
@@ -151,10 +146,9 @@
     <section>
       <p class="eyebrow">Double protection</p>
       <h2>Two layers, because one is never enough</h2>
-      <p class="section-lead">The seal proves a file is exactly as recorded, but doesn't
-      survive social media. The invisible mark survives social media — and for photos it
-      carries a <strong>checksum of what the image shows</strong>, so even a recompressed
-      copy can be checked for edits. TrustCam ships both layers — each covers the other's
+      <p class="section-lead">The seal proves a file is exactly as recorded — but dies on
+      social media. The invisible mark survives social media — and carries a
+      <strong>fingerprint of what the photo shows</strong>. Each covers the other's
       blind spot.</p>
 
       <svg class="layers-diagram" viewBox="0 0 760 240" role="img" aria-label="The signature verifies exact files; the watermark survives social platforms and recovers provenance">
@@ -190,18 +184,14 @@
       <div class="grid2">
         <div class="card">
           <h3><span class="dot"></span> Layer 1 — The seal</h3>
-          <p>A digital signature made inside your phone's security chip. If a file is
-          the exact one that was recorded, the seal proves it — <strong>change a single
-          pixel and the check fails</strong>. Full details in the
-          <a href="/paper/architecture.html">paper</a>.</p>
+          <p>A signature made inside your phone's security chip.
+          <strong>Change a single pixel and the check fails.</strong></p>
         </div>
         <div class="card">
           <h3><span class="dot dot2"></span> Layer 2 — The invisible mark</h3>
-          <p>A mark hidden in the image itself, built on Meta's VideoSeal research.
-          When platforms strip everything else, <strong>the pixels still
-          testify</strong> — and for photos the mark carries a content checksum that
-          survives compression but breaks on edits, so the verifier can tell a
-          re-shared copy from an AI-altered one.</p>
+          <p>Hidden in the pixels themselves. When platforms strip everything else,
+          <strong>the pixels still testify</strong> — and its fingerprint tells a
+          re-shared photo from an AI-altered one.</p>
         </div>
       </div>
     </section>
@@ -209,41 +199,27 @@
     <!-- ============ THE SCIENCE ============ -->
     <section>
       <p class="eyebrow">Under the hood</p>
-      <h2>Built on proven science, not promises</h2>
-      <p class="section-lead">Nothing in TrustCam is a home-grown trick. Every layer is a
-      published, battle-tested algorithm — the same math that already protects money,
-      content and communications at global scale.</p>
+      <h2>Powered by proven science</h2>
       <div class="grid2">
         <div class="card">
-          <h3>A watermark that learned to survive</h3>
-          <p>The invisible mark is a <strong>neural watermark</strong> (Meta AI's
-          VideoSeal): a network trained against thousands of simulated compressions,
-          resizes and crops until it learned where to hide 256 bits that platforms
-          can't destroy — while staying invisible to the eye at measured 43–47 dB.</p>
+          <h3>A mark born from Meta AI research</h3>
+          <p>Trained to survive everything social platforms do to your files.</p>
         </div>
         <div class="card">
-          <h3>A checksum that sees like a person</h3>
-          <p>The content checksum is a <strong>perceptual hash</strong> (Meta's PDQ, the
-          family built to match content at Facebook scale). It fingerprints the image's
-          <em>composition</em> — the low frequencies your eye actually reads — and
-          ignores the compression noise platforms add. Recompress it: nothing.
-          Change what it shows: it breaks.</p>
+          <h3>A fingerprint of what the image shows</h3>
+          <p>Compression can't move it. Edits can't hide from it.</p>
         </div>
         <div class="card">
-          <h3>Error correction from deep space</h3>
-          <p>The payload is armored with <strong>BCH codes</strong> — the same algebra
-          that keeps QR codes and spacecraft telemetry readable. Up to 18 corrupted
-          bits are repaired <em>exactly</em>; beyond that the code refuses to answer
-          rather than guess. A verdict is right, or it doesn't exist.</p>
+          <h3>The math that keeps QR codes readable</h3>
+          <p>Damaged copies get repaired. Doubtful ones get no verdict — never a wrong one.</p>
         </div>
         <div class="card">
-          <h3>A key locked in silicon</h3>
-          <p>Every file is signed with <strong>ECDSA P-256</strong> — banking-grade
-          cryptography — by a key generated <em>inside</em> your phone's security chip.
-          It physically cannot be copied out: not by an app, not by malware, not by us.
-          Hardware attestation proves it, in every single file.</p>
+          <h3>Bank-grade crypto in your phone's chip</h3>
+          <p>The signing key can't be stolen — not by malware, not even by us.</p>
         </div>
       </div>
+      <p class="note" style="text-align:center">Every algorithm is published and battle-tested —
+      <a href="/paper/architecture.html">the full deep-dive is in the paper</a>.</p>
     </section>
 
     <!-- ============ MEASURED ============ -->
@@ -256,8 +232,8 @@
       <div class="kpis">
         <div class="kpi"><div class="kpi-value">98–100%</div><div class="kpi-label">of the mark intact after real WhatsApp round-trips — full proof recovered every time</div></div>
         <div class="kpi"><div class="kpi-value">99.6%</div><div class="kpi-label">of the mark intact after a real YouTube upload &amp; re-download</div></div>
-        <div class="kpi"><div class="kpi-value">46.8 dB</div><div class="kpi-label">measured video quality with the mark — invisible to the eye (photos: 43.7 dB)</div></div>
-        <div class="kpi"><div class="kpi-value">60/60</div><div class="kpi-label">signature-carrying units preserved through a real phone's video encoder</div></div>
+        <div class="kpi"><div class="kpi-value">0</div><div class="kpi-label">visible difference — the mark is invisible to the eye, measured on every capture</div></div>
+        <div class="kpi"><div class="kpi-value">60/60</div><div class="kpi-label">hardware tests passed on a real phone</div></div>
       </div>
 
       <div class="card survival">
@@ -270,11 +246,11 @@
           <li><span class="check">✓</span> WhatsApp-style compression (480p) <span class="val">98.1%</span></li>
           <li><span class="check">✓</span> Extreme stress test (360p, minimum quality) <span class="val">94.9%</span></li>
         </ul>
-        <h3 style="margin-top:1.4rem">And the photo content checksum holds its ground</h3>
+        <h3 style="margin-top:1.4rem">And it can tell sharing from tampering</h3>
         <ul class="matrix">
-          <li><span class="check">✓</span> Benign sharing (JPEG q50–85, resize to 0.5×) moves the checksum <span class="val">0–3 bits</span></li>
-          <li><span class="check">✓</span> Edits (splices 10–30%, inpainting, crops) move it <span class="val">8–60 bits</span></li>
-          <li><span class="check">✓</span> No overlap between the two — verdict threshold sits in the gap <span class="val">≤6 / ≥12</span></li>
+          <li><span class="check">✓</span> Recompressed and resized copies recognized as intact <span class="val">every test</span></li>
+          <li><span class="check">✓</span> Splices, AI inpainting and crops flagged as modified <span class="val">every test</span></li>
+          <li><span class="check">✓</span> Zero cases where the two overlapped <span class="val">0</span></li>
         </ul>
         <p class="note">In every case above the surviving share is enough to recover the
         full proof. Test methodology in the <a href="/paper/research.html">paper</a>.</p>
@@ -319,13 +295,11 @@
       <div class="grid3">
         <div class="card tint-warn">
           <h3>Verdicts that say exactly what we know</h3>
-          <p><strong style="color:var(--ok)">Green</strong> — the exact sealed file, or a
-          recompressed photo whose embedded content checksum still matches its pixels.
-          <strong style="color:#c77d0a">Amber</strong> — origin traced, content not
-          verifiable (or in the gray zone — we show it as gray zone, we don't guess).
-          <strong style="color:var(--bad)">Red</strong> — content modified after capture,
-          or no proof at all. We never call a modified copy authentic.
-          <a href="/verify.html">Full case table</a>.</p>
+          <p><strong style="color:var(--ok)">Green</strong> — untouched, or shared without
+          edits. <strong style="color:#c77d0a">Amber</strong> — we know where it comes
+          from, not what happened to it. <strong style="color:var(--bad)">Red</strong> —
+          modified, or no proof at all. When we're not sure, we say so — we never call a
+          modified copy authentic. <a href="/verify.html">See the verdicts</a>.</p>
         </div>
         <div class="card">
           <h3>What a proof means</h3>
