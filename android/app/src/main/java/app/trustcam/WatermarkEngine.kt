@@ -23,8 +23,20 @@ class WatermarkEngine(context: Context) {
     init {
         val opts = OrtSession.SessionOptions()
         prep = env.createSession(loadAsset(context, "frame_prep.onnx"), opts)
-        // The 90MB embedder is downloaded once at sign-in (keeps the APK small)
-        key = env.createSession(modelFile(context).readBytes(), opts)
+        // The 90MB embedder is downloaded once at sign-in (keeps the APK small).
+        // Its input shapes are fixed (256x256), so it is NNAPI-friendly: try the
+        // accelerator with fp16 relaxation (validated bit-recoverable in
+        // spikes/spike_fp16_embedder.py); unsupported SoCs fall back to CPU.
+        val keyBytes = modelFile(context).readBytes()
+        key = try {
+            val accel = OrtSession.SessionOptions()
+            accel.addNnapi(java.util.EnumSet.of(
+                ai.onnxruntime.providers.NNAPIFlags.USE_FP16))
+            env.createSession(keyBytes, accel)
+        } catch (e: Exception) {
+            android.util.Log.w("TrustCam", "NNAPI unavailable, embedder on CPU", e)
+            env.createSession(keyBytes, opts)
+        }
         apply = env.createSession(loadAsset(context, "frame_apply.onnx"), opts)
     }
 

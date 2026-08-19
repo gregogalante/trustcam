@@ -61,6 +61,9 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   that BCH-decodes across every simulated channel incl. the flat-sky
   screenshot+crop worst case (PSNR ≈45dB; sweep in
   `spikes/spike_strength_sweep.py`). Video stays ×1.0.
+- The embedder key session runs on NNAPI with fp16 relaxation when the SoC
+  supports it (CPU fallback logged as "NNAPI unavailable"); fp16 embed
+  quality validated in `spikes/spike_fp16_embedder.py`.
 - Web pages are plain static HTML/CSS/JS in `web/`. No framework, no backend —
   keep it that way. onnxruntime-web is vendored in `web/ort/`.
 - **Single verification source**: all verdict logic lives in

@@ -176,6 +176,7 @@ class CaptureActivity : AppCompatActivity() {
                 // wait for the engine warm-up if needed
                 while (engine == null) Thread.sleep(100)
                 val eng = engine!!
+                val t0 = System.currentTimeMillis()
 
                 // random capture id — photos embed all 128 bits (v3 payload);
                 // the video channel can't carry them (WhatsApp-class transcodes
@@ -244,8 +245,12 @@ class CaptureActivity : AppCompatActivity() {
                     it.write(ProofTrailer.build(proof))
                 }
 
+                // sealing time in the completion message: lets field tests
+                // compare accelerated vs CPU embedding without extra tooling
+                val secs = (System.currentTimeMillis() - t0) / 1000.0
                 runOnUiThread {
-                    finishSealing(getString(R.string.sealed, captureId.toString().substring(0, 8)))
+                    finishSealing(getString(R.string.sealed,
+                        captureId.toString().substring(0, 8), secs))
                 }
             } catch (e: Exception) {
                 runOnUiThread { finishSealing("Sealing failed: ${e.message}") }

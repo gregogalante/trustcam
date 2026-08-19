@@ -31,5 +31,5 @@
     <string name="watermarking">Applying invisible watermark…</string>
     <string name="watermarking_pct">Applying invisible watermark… %1$d%%</string>
     <string name="signing">Signing in secure hardware…</string>
-    <string name="sealed">Capture %1$s… sealed ✓ — the proof travels inside the file</string>
+    <string name="sealed">Capture %1$s… sealed in %2$.1fs ✓ — the proof travels inside the file</string>
 </resources>
