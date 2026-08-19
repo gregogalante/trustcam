@@ -100,6 +100,13 @@
         mark id recovered at 89% signal agreement.</li>
       <li><strong>Video → YouTube Shorts</strong> (re-encoded to AV1, 2.8Mbps): mark id
         recovered at 91% signal agreement.</li>
+      <li><strong>Photo → Instagram</strong> (full-frame post, downscaled 2.1×): capture
+        id decoded exactly, 7 of 18 correctable bits repaired. The <strong>1:1 square
+        crop</strong> (25% of the frame lost) exceeds the error-correction budget even
+        after the verifier's aspect-restore rescue (~22 coded errors vs t=18) — a
+        measured boundary; the standard 4:5 portrait crop decodes.</li>
+      <li><strong>Video → Instagram</strong> (re-encoded at 720p): mark id recovered at
+        99% signal agreement.</li>
     </ul>
     <p>
       Two production lessons surfaced by these tests. (1) The video channel flips

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Live demos — TrustCam</title>
-  <meta name="description" content="Real TrustCam captures pushed through real platforms — WhatsApp and YouTube — with the recognition numbers. Download any copy and verify it yourself.">
+  <meta name="description" content="Real TrustCam captures pushed through real platforms — WhatsApp, YouTube and Instagram — with the recognition numbers. Download any copy and verify it yourself.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -23,11 +23,11 @@
     them and drop it on <a href="/verify.html">the verifier</a></strong> to see it live.</p>
 
     <!-- ============ PHOTO ============ -->
-    <h2>Photo — through WhatsApp</h2>
-    <p class="note">Captured with the app on a Motorola moto g75, shared on WhatsApp,
-    saved back from the receiving phone. WhatsApp cut the file to an eighth and stripped
+    <h2>Photo — through WhatsApp and Instagram</h2>
+    <p class="note">Captured with the app on a Motorola moto g75, shared on WhatsApp and
+    posted on Instagram, then saved back. Both re-encoded the image and stripped
     everything attached — the mark in the pixels brought the original back.</p>
-    <div class="compare">
+    <div class="compare three">
       <figure>
         <img src="/samples/tc_f2365a51.jpg" alt="original photo" loading="lazy">
         <figcaption><strong>Original</strong> · 3072×4096 · 6.8 MB ·
@@ -40,14 +40,31 @@
         <span class="badge ok">original found</span><br>
         <a href="/demos/photo_whatsapp.jpg" download>download</a></figcaption>
       </figure>
+      <figure>
+        <img src="/demos/photo_instagram.jpg" alt="Instagram copy" loading="lazy">
+        <figcaption><strong>Instagram post</strong> · 1440×1920 · 0.68 MB ·
+        <span class="badge ok">original found</span><br>
+        <a href="/demos/photo_instagram.jpg" download>download</a></figcaption>
+      </figure>
     </div>
     <div class="card">
       <h3>Recognition numbers</h3>
       <dl>
-        <dt>What WhatsApp did</dt><dd>re-encoded the JPEG, halved each side (4× fewer pixels, 8× smaller file), stripped the proof</dd>
-        <dt>Mark recovery</dt><dd>capture id recovered <strong>exactly</strong> — error correction repaired 8 damaged bits of the 18 it can fix</dd>
-        <dt>Verdict</dt><dd>Origin traced — verified original on file, shown side by side</dd>
+        <dt>WhatsApp copy</dt><dd>halved each side (4× fewer pixels, 8× smaller file) — id recovered <strong>exactly</strong>, error correction repaired 8 of the 18 bits it can fix</dd>
+        <dt>Instagram post</dt><dd>downscaled 2.1× and recompressed — id recovered <strong>exactly</strong>, 7 of 18 bits repaired</dd>
+        <dt>Verdict</dt><dd>both copies: Origin traced — verified original on file, shown side by side</dd>
       </dl>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <h3>Where the limit is: Instagram's square crop</h3>
+      <p class="note">The same photo posted as a <strong>1:1 square</strong> loses 25% of
+      the frame to Instagram's crop — beyond what the mark's error correction can absorb,
+      even after the verifier restores the original framing. The verdict is honestly
+      <span class="badge bad">No proof found</span> rather than a guess. Posts that keep
+      the frame (or the standard 4:5 portrait crop) verify fine.
+      <a href="/demos/photo_instagram_square.jpg" download>Download the square copy</a>
+      and see for yourself.</p>
     </div>
 
     <!-- ============ AI EDIT ============ -->
@@ -80,11 +97,11 @@
     </div>
 
     <!-- ============ VIDEO ============ -->
-    <h2 style="margin-top:3rem">Video — through WhatsApp and YouTube</h2>
-    <p class="note">Same capture, two platforms. WhatsApp crushed it to a quarter of the
-    pixels at an eighth of the bitrate; YouTube Shorts re-encoded it to a different
-    codec entirely (AV1). The mark survived both.</p>
-    <div class="compare three">
+    <h2 style="margin-top:3rem">Video — through WhatsApp, YouTube and Instagram</h2>
+    <p class="note">Same capture, three platforms. WhatsApp crushed it to a quarter of
+    the pixels at an eighth of the bitrate; YouTube Shorts re-encoded it to a different
+    codec entirely (AV1); Instagram re-encoded it at 720p. The mark survived all three.</p>
+    <div class="compare">
       <figure>
         <video src="/samples/tc_f0dba886.mp4" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>Original</strong> · 1080×1920 H.264 · 11.6 MB ·
@@ -103,13 +120,20 @@
         <span class="badge ok">original found</span><br>
         <a href="/demos/video_youtube.mp4" download>download</a></figcaption>
       </figure>
+      <figure>
+        <video src="/demos/video_instagram.mp4" controls muted playsinline preload="metadata"></video>
+        <figcaption><strong>Instagram copy</strong> · 720×1280 · 3.4 MB ·
+        <span class="badge ok">original found</span><br>
+        <a href="/demos/video_instagram.mp4" download>download</a></figcaption>
+      </figure>
     </div>
     <div class="card">
       <h3>Recognition numbers</h3>
       <dl>
         <dt>WhatsApp copy</dt><dd>75% of the pixels gone, bitrate cut 8× — mark signal <strong>89%</strong>, capture id recovered</dd>
         <dt>YouTube Short</dt><dd>re-encoded to AV1 (a codec that didn't touch the original) — mark signal <strong>91%</strong>, capture id recovered</dd>
-        <dt>Verdict</dt><dd>both copies: Origin traced — verified original on file, shown side by side</dd>
+        <dt>Instagram copy</dt><dd>re-encoded at 720p — mark signal <strong>99%</strong>, capture id recovered</dd>
+        <dt>Verdict</dt><dd>all three copies: Origin traced — verified original on file, shown side by side</dd>
       </dl>
       <p class="note">The YouTube copy is live: <a href="https://www.youtube.com/shorts/hG7Fs3LzxeE">youtube.com/shorts/hG7Fs3LzxeE</a>.
       Mark signal is how reliably the invisible mark was decoded — a measure of the
