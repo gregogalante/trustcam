@@ -77,9 +77,21 @@ class CaptureActivity : AppCompatActivity() {
 
     private fun bindCamera() {
         val provider = cameraProvider ?: return
-        val preview = Preview.Builder().build()
+        // WYSIWYG: preview and photo share the video's 16:9 ratio, and the
+        // preview letterboxes instead of cropping — what you see is exactly
+        // the frame that gets sealed
+        val ratio16x9 = androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+            .setAspectRatioStrategy(androidx.camera.core.resolutionselector
+                .AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+            .build()
+        b.preview.scaleType = androidx.camera.view.PreviewView.ScaleType.FIT_CENTER
+        val preview = Preview.Builder()
+            .setResolutionSelector(ratio16x9)
+            .build()
             .also { it.surfaceProvider = b.preview.surfaceProvider }
-        imageCapture = ImageCapture.Builder().build()
+        imageCapture = ImageCapture.Builder()
+            .setResolutionSelector(ratio16x9)
+            .build()
         val recorder = Recorder.Builder()
             .setQualitySelector(QualitySelector.from(Quality.FHD))
             .build()
