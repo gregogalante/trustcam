@@ -221,7 +221,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     }
 
     async function imageScan (file, ui) {
-      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~34 MB)…'
+      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~67 MB)…'
       await detector()
       ui.stage.textContent = 'Scanning for the invisible mark on your device…'
 
@@ -236,7 +236,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     // Video scan: sample frames evenly, average the soft bits across frames
     // (same flow as the CLI), then decode.
     async function videoScan (file, ui) {
-      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~34 MB)…'
+      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~67 MB)…'
       await detector()
 
       const video = document.createElement('video')

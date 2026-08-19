@@ -234,7 +234,8 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
         byte-exact transfer (email, Drive, file transfer).</li>
       <li><strong>No trailer</strong> (platforms strip it — but they also change the
         bytes, so the signature was lost either way) → watermark extraction
-        <strong>in the browser</strong> (int8 ONNX detector, ~34 MB, WASM). Photos are
+        <strong>in the browser</strong> (fp16 ONNX detector, ~67 MB, WASM — the earlier
+        int8 build doubled the bit errors on real WhatsApp video and was retired). Photos are
         scanned directly; videos are scanned by sampling 24 frames and averaging the
         decoded signal. The recovered capture id is looked up in the
         <a href="/samples.json">verified originals on file</a>: a hit shows the copy

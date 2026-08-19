@@ -5,9 +5,11 @@
 # the same swap was validated end-to-end for the embedder graphs) -> detector
 # -> (1,257) logits: [0]=detection mask bit, [1:]=256 message bits.
 #
-# Also emits an int8 dynamically-quantized copy (~4x smaller, needed to stay
-# under GitHub's 100MB limit and to speed up WASM) and asserts payload parity
-# for both against the torch reference on realistic degraded inputs.
+# Also emits an fp16 copy (~2x smaller, fits GitHub's 100MB limit) — that is
+# what the site ships. int8 dynamic quantization was shipped first and RETIRED:
+# on real WhatsApp video it doubled the raw bit errors (74/256 vs 29/256 fp16)
+# and broke mark recovery; fp16 tracks fp32 within a few bits everywhere.
+# Parity is asserted against the torch reference on realistic degraded inputs.
 #
 # Run from the videoseal clone root:
 #   python ../export_detector.py
@@ -55,11 +57,13 @@ def export():
         opset_version=17, dynamo=False)
     print(f'exported {dst} ({os.path.getsize(dst) / 1e6:.1f} MB)')
 
-    from onnxruntime.quantization import quantize_dynamic, QuantType
-    dst8 = os.path.join(RESULTS, 'detector_int8.onnx')
-    quantize_dynamic(dst, dst8, weight_type=QuantType.QUInt8)
-    print(f'quantized {dst8} ({os.path.getsize(dst8) / 1e6:.1f} MB)')
-    return dst, dst8
+    import onnx
+    from onnxconverter_common import float16
+    dst16 = os.path.join(RESULTS, 'detector_fp16.onnx')
+    m16 = float16.convert_float_to_float16(onnx.load(dst), keep_io_types=True)
+    onnx.save(m16, dst16)
+    print(f'fp16 {dst16} ({os.path.getsize(dst16) / 1e6:.1f} MB)')
+    return dst, dst16
 
 
 def embed(img):
@@ -101,9 +105,9 @@ def decode_onnx(sess, img):
 
 
 def main():
-    fp32, int8 = export()
+    fp32, fp16 = export()
     s32 = ort.InferenceSession(fp32)
-    s8 = ort.InferenceSession(int8)
+    s8 = ort.InferenceSession(fp16)
 
     src = Image.open('assets/imgs/1.jpg').convert('RGB')
     wm = jpeg(embed(src), 95)
@@ -116,11 +120,11 @@ def main():
         pt, ct = decode_torch(img)
         p32, c32 = decode_onnx(s32, img)
         p8, c8 = decode_onnx(s8, img)
-        line = f'{name:16s} torch={pt}/{ct:.3f}  fp32={p32}/{c32:.3f}  int8={p8}/{c8:.3f}'
+        line = f'{name:16s} torch={pt}/{ct:.3f}  fp32={p32}/{c32:.3f}  fp16={p8}/{c8:.3f}'
         print(line)
         ok &= (pt == p32 == p8 == PAYLOAD)
     assert ok, 'payload parity failed'
-    print('PARITY OK: torch(antialias) == onnx fp32 == onnx int8')
+    print('PARITY OK: torch(antialias) == onnx fp32 == onnx fp16')
 
 
 if __name__ == '__main__':

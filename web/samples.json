@@ -14,6 +14,14 @@
    "capturedAt": "2026-08-19T06:06:11.646073Z",
    "mediaType": "photo",
    "original": "/samples/tc_f2365a51.jpg"
+  },
+  "f0dba8860a68419fab86f85452275524": {
+   "name": "Greg",
+   "model": "motorola moto g75 5G",
+   "capturedAt": "2026-08-19T07:31:00.462099Z",
+   "mediaType": "video",
+   "markId": "2636a4",
+   "original": "/samples/tc_f0dba886.mp4"
   }
  }
 }
