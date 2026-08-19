@@ -60,11 +60,12 @@
     <h2>Our feasibility results (phase 0)</h2>
     <h2 style="font-size:1rem">Watermark robustness</h2>
     <p>
-      A 256-bit VideoSeal payload embedded in 1080p video (imperceptible: PSNR
-      46.8&nbsp;dB) survived simulated platform re-encodes at 100% bit accuracy
-      (YouTube/TikTok/X ladders) and ≥94.9% in a 360p/500kbps stress case — fully
-      recoverable with standard error correction. <strong>Real-platform round
-      trips</strong>: actual YouTube upload/download 99.61%, WhatsApp 100%.
+      A 256-bit VideoSeal payload embedded in 1080p video (measured PSNR
+      46.8&nbsp;dB) survived <em>simulated</em> re-encode ladders (1080p down to a
+      360p/500kbps stress case) at 100% to ≥94.9% bit accuracy — lab numbers, labeled
+      as such. <strong>Real-platform round trips</strong>: actual YouTube
+      upload/download 99.61% bit accuracy, WhatsApp 100% (phase-0 prototype), and the
+      shipped system's live results below.
     </p>
     <h2 style="font-size:1rem">Bitstream signature transport</h2>
     <p>

@@ -23,7 +23,7 @@
     <table>
       <tr><th>Layer</th><th>Proves</th><th>Survives re-encoding?</th></tr>
       <tr><td>Cryptographic signature over content hashes</td><td>Exact integrity, device identity, capture time</td><td>No — any transcode invalidates it, by design</td></tr>
-      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the capture (random 128-bit capture id) — the key that finds the verified original for comparison</td><td>Yes — measured ≥94.9% bit accuracy under aggressive transcodes</td></tr>
+      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the capture (random 128-bit capture id) — the key that finds the verified original for comparison</td><td>Yes — ids recovered from real WhatsApp and YouTube round-trips (<a href="/demos.html">demos</a>)</td></tr>
     </table>
 
     <svg class="layers-diagram" viewBox="0 0 760 240" role="img" aria-label="The signature verifies exact files; the watermark survives social platforms and recovers provenance">
@@ -207,9 +207,10 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
     <p>
       Extraction averages the decoded signal across sampled frames, soft-combines the
       eight copies of each bit, and accepts the result only if the CRC validates and
-      signal agreement exceeds a threshold. Measured end-to-end (both formats): full
-      payload recovery after real YouTube and WhatsApp round-trips and 720p/2Mbps
-      re-encodes (<a href="/paper/research.html">data</a>).
+      signal agreement exceeds a threshold. Measured end-to-end on real round-trips:
+      the mark id came back from WhatsApp (89% signal) and from a YouTube Short
+      re-encoded to AV1 (91%) — copies published on the
+      <a href="/demos.html">demos page</a>.
     </p>
 
     <h2>Bitstream signatures for video (next iteration)</h2>

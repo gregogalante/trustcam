@@ -25,8 +25,8 @@
     <!-- ============ PHOTO ============ -->
     <h2>Photo — through WhatsApp</h2>
     <p class="note">Captured with the app on a Motorola moto g75, shared on WhatsApp,
-    saved back from the receiving phone. WhatsApp shrank it 8× and stripped everything
-    attached — the mark in the pixels brought the original back.</p>
+    saved back from the receiving phone. WhatsApp cut the file to an eighth and stripped
+    everything attached — the mark in the pixels brought the original back.</p>
     <div class="compare">
       <figure>
         <img src="/samples/tc_f2365a51.jpg" alt="original photo" loading="lazy">
@@ -44,9 +44,38 @@
     <div class="card">
       <h3>Recognition numbers</h3>
       <dl>
-        <dt>What WhatsApp did</dt><dd>re-encoded the JPEG, halved each side (8× fewer pixels), stripped the proof</dd>
+        <dt>What WhatsApp did</dt><dd>re-encoded the JPEG, halved each side (4× fewer pixels, 8× smaller file), stripped the proof</dd>
         <dt>Mark recovery</dt><dd>capture id recovered <strong>exactly</strong> — error correction repaired 8 damaged bits of the 18 it can fix</dd>
         <dt>Verdict</dt><dd>Origin traced — verified original on file, shown side by side</dd>
+      </dl>
+    </div>
+
+    <!-- ============ AI EDIT ============ -->
+    <h2 style="margin-top:3rem">Photo — reworked by AI</h2>
+    <p class="note">The same photo fed to ChatGPT for an edit. The AI repaints
+    <em>every</em> pixel — and the invisible mark dies with them. The reworked copy
+    gets <strong>no proof at all</strong>: it cannot borrow the original's identity.
+    That is the fail-safe working as designed.</p>
+    <div class="compare">
+      <figure>
+        <img src="/samples/tc_f2365a51.jpg" alt="original photo" loading="lazy">
+        <figcaption><strong>Original</strong> · 3072×4096 ·
+        <span class="badge ok">Verified — exact file</span><br>
+        <a href="/samples/tc_f2365a51.jpg" download>download</a></figcaption>
+      </figure>
+      <figure>
+        <img src="/demos/photo_chatgpt.png" alt="AI-edited copy" loading="lazy">
+        <figcaption><strong>ChatGPT edit</strong> · 1086×1448 · look at the road signs ·
+        <span class="badge bad">No proof found</span><br>
+        <a href="/demos/photo_chatgpt.png" download>download</a></figcaption>
+      </figure>
+    </div>
+    <div class="card">
+      <h3>Recognition numbers</h3>
+      <dl>
+        <dt>What the AI did</dt><dd>regenerated the whole image (same scene, altered details — the road signs changed)</dd>
+        <dt>Mark recovery</dt><dd><strong>none</strong> — 48 of 128 payload bits flipped (statistically random), decode confidence 60%, below every threshold</dd>
+        <dt>Verdict</dt><dd>No proof found — the AI copy carries no TrustCam identity, and is never called authentic</dd>
       </dl>
     </div>
 
