@@ -286,8 +286,8 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
           `<dl><dt>Capture id</dt><dd><code>${core.idPretty(decoded.captureIdHex)}</code></dd></dl>`)
         return
       }
-      // repetition-format mark: videos since 1.2.2 (random id bound to the
-      // capture by the proof and the originals record) and pre-1.2 captures
+      // repetition-format mark: videos (random id bound to the capture by the
+      // proof and the originals record) and legacy captures
       const db = await samples()
       const hit = core.sampleByMarkId(db, decoded.proofId)
       if (hit) return sampleVerdict({ captureIdHex: hit.key }, hit.entry, file)

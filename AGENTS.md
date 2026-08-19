@@ -55,8 +55,8 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   (parity-asserted); tiny ones live in `android/app/src/main/assets/`, the 90MB
   embedder in `web/models/` (downloaded by the app at setup). The browser
   detector (`web/models/detector.onnx`, int8) is exported by
-  `spikes/export_detector.py`. `spikes/sim_device_pipeline.py` and
-  `spikes/sim_screenshot.py` simulate the exact Android pipelines.
+  `spikes/export_detector.py`. `spikes/sim_screenshot.py` simulates the exact
+  Android photo pipeline.
 - Photo embed strength is ×1.2 (`PhotoWatermarker.STRENGTH`) — lowest strength
   that BCH-decodes across every simulated channel incl. the flat-sky
   screenshot+crop worst case (PSNR ≈45dB; sweep in

@@ -148,12 +148,13 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
     <h2>Watermark payload encoding</h2>
     <p>
       The watermark carries a 256-bit message decoded from the pixels. Robustness comes
-      from structure, not secrecy. The current format (v3) carries a random capture id;
-      the verifier tries it first (its BCH check has a ~2<sup>−124</sup> false-accept
-      rate, so a hit is authoritative), then falls back to the legacy v1 format:
+      from structure, not secrecy. Photos and video use two layouts, each sized to
+      its channel; the verifier tries the BCH layout first (its check has a
+      ~2<sup>−124</sup> false-accept rate, so a hit is authoritative), then the
+      repetition layout:
     </p>
 
-    <h3>v3 — photos (app ≥ 1.2.0): capture id</h3>
+    <h3>Photos — capture id, BCH-protected</h3>
     <svg class="layers-diagram" viewBox="0 0 760 110" role="img" aria-label="128-bit capture id and 124 BCH parity bits fill the 256-bit message">
       <rect class="pl-id"  x="40"  y="26" width="340" height="34" rx="6"/>
       <rect class="pl-crc" x="384" y="26" width="336" height="34" rx="6"/>
@@ -169,7 +170,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       the full design). 128 random bits make guessing or colliding ids a non-issue.
     </p>
 
-    <h3>Repetition format — video (and captures before 1.2.0)</h3>
+    <h3>Video — mark id, repetition-protected</h3>
     <p>
       Measured on real WhatsApp video round-trips, the channel flips ~20–25% of the
       decoded bits <em>systematically</em> — beyond what any code carrying 128 bits in
@@ -236,8 +237,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
         byte-exact transfer (email, Drive, file transfer).</li>
       <li><strong>No trailer</strong> (platforms strip it — but they also change the
         bytes, so the signature was lost either way) → watermark extraction
-        <strong>in the browser</strong> (fp16 ONNX detector, ~67 MB, WASM — the earlier
-        int8 build doubled the bit errors on real WhatsApp video and was retired). Photos are
+        <strong>in the browser</strong> (fp16 ONNX detector, ~67 MB, WASM). Photos are
         scanned directly; videos are scanned by sampling 24 frames and averaging the
         decoded signal. The recovered capture id is looked up in the
         <a href="/samples.json">verified originals on file</a>: a hit shows the copy
