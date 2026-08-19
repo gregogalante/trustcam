@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live demos — TrustCam</title>
+  <meta name="description" content="Real TrustCam captures pushed through real platforms — WhatsApp and YouTube — with the recognition numbers. Download any copy and verify it yourself.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/">TrustCam</a>
+    <a href="/verify.html">Verify</a>
+    <a href="/demos.html">Demos</a>
+    <a href="/paper/">Paper</a>
+    <a href="https://github.com/gregogalante/trustcam">GitHub</a>
+  </nav>
+  <main>
+    <h1>Live demos</h1>
+    <p class="lead">Real captures from a real phone, pushed through real platforms.
+    Every copy below still resolves to its verified original — <strong>download any of
+    them and drop it on <a href="/verify.html">the verifier</a></strong> to see it live.</p>
+
+    <!-- ============ PHOTO ============ -->
+    <h2>Photo — through WhatsApp</h2>
+    <p class="note">Captured with the app on a Motorola moto g75, shared on WhatsApp,
+    saved back from the receiving phone. WhatsApp shrank it 8× and stripped everything
+    attached — the mark in the pixels brought the original back.</p>
+    <div class="compare">
+      <figure>
+        <img src="/samples/tc_f2365a51.jpg" alt="original photo" loading="lazy">
+        <figcaption><strong>Original</strong> · 3072×4096 · 6.8 MB ·
+        <span class="badge ok">Verified — exact file</span><br>
+        <a href="/samples/tc_f2365a51.jpg" download>download</a></figcaption>
+      </figure>
+      <figure>
+        <img src="/demos/photo_whatsapp.jpg" alt="WhatsApp copy" loading="lazy">
+        <figcaption><strong>WhatsApp copy</strong> · 1536×2048 · 0.86 MB ·
+        <span class="badge ok">original found</span><br>
+        <a href="/demos/photo_whatsapp.jpg" download>download</a></figcaption>
+      </figure>
+    </div>
+    <div class="card">
+      <h3>Recognition numbers</h3>
+      <dl>
+        <dt>What WhatsApp did</dt><dd>re-encoded the JPEG, halved each side (8× fewer pixels), stripped the proof</dd>
+        <dt>Mark recovery</dt><dd>capture id recovered <strong>exactly</strong> — error correction repaired 8 damaged bits of the 18 it can fix</dd>
+        <dt>Verdict</dt><dd>Origin traced — verified original on file, shown side by side</dd>
+      </dl>
+    </div>
+
+    <!-- ============ VIDEO ============ -->
+    <h2 style="margin-top:3rem">Video — through WhatsApp and YouTube</h2>
+    <p class="note">Same capture, two platforms. WhatsApp crushed it to a quarter of the
+    pixels at an eighth of the bitrate; YouTube Shorts re-encoded it to a different
+    codec entirely (AV1). The mark survived both.</p>
+    <div class="compare three">
+      <figure>
+        <video src="/samples/tc_f0dba886.mp4" controls muted playsinline preload="metadata"></video>
+        <figcaption><strong>Original</strong> · 1080×1920 H.264 · 11.6 MB ·
+        <span class="badge ok">Verified — exact file</span><br>
+        <a href="/samples/tc_f0dba886.mp4" download>download</a></figcaption>
+      </figure>
+      <figure>
+        <video src="/demos/video_whatsapp.mp4" controls muted playsinline preload="metadata"></video>
+        <figcaption><strong>WhatsApp copy</strong> · 478×850 · 1.5 MB ·
+        <span class="badge ok">original found</span><br>
+        <a href="/demos/video_whatsapp.mp4" download>download</a></figcaption>
+      </figure>
+      <figure>
+        <video src="/demos/video_youtube.mp4" controls muted playsinline preload="metadata"></video>
+        <figcaption><strong>YouTube Short</strong> · 1080×1920 AV1 · 2.2 MB ·
+        <span class="badge ok">original found</span><br>
+        <a href="/demos/video_youtube.mp4" download>download</a></figcaption>
+      </figure>
+    </div>
+    <div class="card">
+      <h3>Recognition numbers</h3>
+      <dl>
+        <dt>WhatsApp copy</dt><dd>75% of the pixels gone, bitrate cut 8× — mark signal <strong>89%</strong>, capture id recovered</dd>
+        <dt>YouTube Short</dt><dd>re-encoded to AV1 (a codec that didn't touch the original) — mark signal <strong>91%</strong>, capture id recovered</dd>
+        <dt>Verdict</dt><dd>both copies: Origin traced — verified original on file, shown side by side</dd>
+      </dl>
+      <p class="note">The YouTube copy is live: <a href="https://www.youtube.com/shorts/hG7Fs3LzxeE">youtube.com/shorts/hG7Fs3LzxeE</a>.
+      Mark signal is how reliably the invisible mark was decoded — a measure of the
+      surviving watermark, not of authenticity: the proof of what the capture looked
+      like is the verified original itself.</p>
+    </div>
+
+    <div class="card" style="margin-top:2rem">
+      <h3>Try it yourself</h3>
+      <p class="note">Download any copy above — or screenshot the photo, or re-share it
+      once more — and drop it on <a href="/verify.html">the verifier</a>. Everything runs
+      in your browser; nothing is uploaded. The exact originals also verify green as
+      sealed files.</p>
+    </div>
+
+    <footer>These are the project's reference test captures — the
+    <a href="/samples.json">verified originals on file</a>. Methodology in the
+    <a href="/paper/research.html">paper</a>.</footer>
+  </main>
+</body>
+</html>

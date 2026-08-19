@@ -11,6 +11,7 @@
   <nav>
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
+    <a href="/demos.html">Demos</a>
     <a href="/paper/">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
@@ -83,6 +84,31 @@
       128-bit random capture id. The BCH layer survived into the current payload;
       the PDQ implementations remain in <code>spikes/</code>.
       Data: <code>spikes/results/</code> in the repo.
+    </p>
+
+    <h2 style="font-size:1rem">Live end-to-end results (phase 2 — shipped system)</h2>
+    <p>
+      Real captures (app 1.2.2, Motorola moto g75, TEE-backed key) pushed through real
+      platforms and verified with the production verifier — copies and originals are
+      published on the <a href="/demos.html">demos page</a>:
+    </p>
+    <ul>
+      <li><strong>Photo → WhatsApp</strong> (3072×4096 → 1536×2048, 8× smaller): the
+        128-bit capture id decoded <em>exactly</em>; BCH corrected 8 of its 18
+        correctable bits.</li>
+      <li><strong>Video → WhatsApp</strong> (1080×1920 @14.5Mbps → 478×850 @1.7Mbps):
+        mark id recovered at 89% signal agreement.</li>
+      <li><strong>Video → YouTube Shorts</strong> (re-encoded to AV1, 2.8Mbps): mark id
+        recovered at 91% signal agreement.</li>
+    </ul>
+    <p>
+      Two production lessons surfaced by these tests. (1) The video channel flips
+      20–25% of decoded bits <em>systematically</em> — flat across 24→200 sampled
+      frames and all scan scales — so video carries a 24-bit id in the 8× repetition
+      format rather than the 128-bit BCH payload (the information-theoretic ceiling at
+      that error rate is ~48 bits). (2) int8 dynamic quantization of the browser
+      detector doubled raw bit errors versus fp32 (74/256 vs 32 on the WhatsApp video)
+      and was replaced by an fp16 export that tracks fp32 within a few bits.
     </p>
 
     <h2 style="font-size:1rem">On-device embedding cost</h2>
