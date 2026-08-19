@@ -105,35 +105,40 @@ function markId (core, proof) {
     : `device #${core.deviceIdOf(proof.payload || 0)} · capture #${core.captureOf(proof.payload || 0)}`
 }
 
-async function sampleEntry (captureIdHex) {
+async function samplesDb () {
   try {
-    const db = await (await fetch(`${BASE}/samples.json`)).json()
-    return db.samples?.[captureIdHex] || null
-  } catch { return null }
+    return await (await fetch(`${BASE}/samples.json`)).json()
+  } catch { return { samples: {} } }
 }
 
 // Mark-only outcome: resolve the capture id against the verified originals
 // on file; a hit means a human can compare copy vs original.
+function printSampleHit (core, key, entry) {
+  console.log('ORIGIN TRACED — verified original ON FILE.')
+  console.log(`  recorded by : ${entry.name} (${entry.model})`)
+  console.log(`  captured at : ${entry.capturedAt} (device-claimed)`)
+  console.log(`  capture id  : ${core.idPretty(key)}`)
+  console.log(`  original    : ${BASE}${entry.original}`)
+  console.log('  compare your copy against the original above — any depicted difference is an edit.')
+  process.exit(0)
+}
+
 async function printMarkVerdict (core, decoded) {
+  const db = await samplesDb()
   if (decoded.v === 3) {
-    const entry = await sampleEntry(decoded.captureIdHex)
-    if (entry) {
-      console.log('ORIGIN TRACED — verified original ON FILE.')
-      console.log(`  recorded by : ${entry.name} (${entry.model})`)
-      console.log(`  captured at : ${entry.capturedAt} (device-claimed)`)
-      console.log(`  capture id  : ${core.idPretty(decoded.captureIdHex)}`)
-      console.log(`  original    : ${BASE}${entry.original}`)
-      console.log('  compare your copy against the original above — any depicted difference is an edit.')
-      process.exit(0)
-    }
+    const entry = db.samples?.[decoded.captureIdHex]
+    if (entry) printSampleHit(core, decoded.captureIdHex, entry)
     console.log('ORIGIN TRACED — content NOT verified.')
     console.log(`  capture id  : ${core.idPretty(decoded.captureIdHex)}`)
     console.log('  the mark identifies a TrustCam capture, but its verified original is not on file.')
     console.log('  the copy was modified since capture (re-encode or edit — indistinguishable).')
     process.exit(2)
   }
+  // repetition-format mark: videos since 1.2.2 + pre-1.2 captures
+  const hit = core.sampleByMarkId(db, decoded.proofId)
+  if (hit) printSampleHit(core, hit.key, hit.entry)
   console.log('ORIGIN TRACED — content NOT verified.')
-  console.log(`  mark id     : device #${core.deviceIdOf(decoded.proofId)} · capture #${core.captureOf(decoded.proofId)}`)
+  console.log(`  mark id     : ${core.markIdHex(decoded.proofId)}`)
   console.log(`  mark signal : ${Math.round(decoded.confidence * 100)}% (decoding confidence, not authenticity)`)
   console.log('  the copy was modified since capture (re-encode or edit — indistinguishable).')
   process.exit(2)

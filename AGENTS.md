@@ -30,17 +30,24 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   `Signature("SHA256withECDSA").update(H)` in `android/.../DeviceKey.kt` +
   `ProofTrailer.kt`. Verifier side: WebCrypto in `web/verify.html`
   (DER→P1363 signature conversion required).
-- **Watermark payload v3 (photos + video since 1.2.0)**: captureId 128 (random
-  UUID) | BCH(255,131) parity 124 | pad 4. Canonical `spikes/codec_v3.py`;
+- **Watermark payload v3 (PHOTOS since 1.2.0)**: captureId 128 (random UUID) |
+  BCH(255,131) parity 124 | pad 4. Canonical `spikes/codec_v3.py`;
   ports `android/.../PayloadCodecV3.kt` (encode, matrix XOR) and
   `web/js/codec_v3.js` (decode), parity-tested against
   `spikes/results/v3_vectors.json` (regen: `spikes/export_v3_vectors.py`;
-  JS test: `spikes/test_v3_js.mjs`). The verifier tries v3 (BCH) first, falls
-  back to legacy v1 (`spikes/codec.py` / `web/js/codec.js`: 24-bit
-  `deviceId<<14 | counter` + CRC8, 8 reps — pre-1.2 captures). Changing a layout
-  desyncs every already-embedded file — never change one, add a version.
-- Proof JSON v2 (app ≥ 1.2.0) carries `captureId` + `deviceId` (both UUIDs);
-  v1 proofs carried a numeric `payload`. The verifier supports both.
+  JS test: `spikes/test_v3_js.mjs`).
+- **VIDEO embeds the repetition format** (`spikes/codec.py` /
+  `PayloadCodec.kt` / `web/js/codec.js`: 24-bit id + CRC8, 8 reps) with a
+  RANDOM markId since 1.2.2 — real WhatsApp video flips ~20-25% of decoded
+  bits systematically, beyond any 128-bit-in-256 code (theoretical ceiling
+  ~48 bits); positional redundancy is what survives. The proof's `markId`
+  (6-hex) binds the mark to the captureId; samples entries carry the same
+  field. The verifier tries v3 (BCH) first, then the repetition format.
+  Changing a layout desyncs every already-embedded file — never change one,
+  add a version.
+- Proof JSON v2 (app ≥ 1.2.0) carries `captureId` + `deviceId` (both UUIDs;
+  videos add `markId`); v1 proofs carried a numeric `payload`. The verifier
+  supports both.
 - `web/samples.json` maps capture ids (32-hex, no dashes) to verified originals
   under `web/samples/` — the static stand-in for the future cloud registry.
   Exact-file verification does not need it.

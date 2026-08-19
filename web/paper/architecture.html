@@ -92,9 +92,10 @@
         registration will bind to this key.</li>
       <li><strong>Capture</strong>: photo or video from the app, saved to the gallery.
         Each capture gets a fresh <strong>random 128-bit capture id</strong>.</li>
-      <li><strong>Watermarking — on the device</strong>: the capture id, protected by
-        BCH error correction, is embedded into the pixels by the on-device VideoSeal
-        pipeline (ONNX) — same payload for photos and video. Fully offline;
+      <li><strong>Watermarking — on the device</strong>: photos embed the full capture
+        id protected by BCH error correction; videos embed a random 24-bit mark id in
+        a repetition format sized to the harsher video channel (both via the on-device
+        VideoSeal pipeline, ONNX). Fully offline;
         <strong>media never leaves the phone</strong>.</li>
       <li><strong>Signing</strong>: the SHA-256 of the watermarked bytes is signed in the
         secure element (<code>SHA256withECDSA</code>). The private key never exists in
@@ -151,7 +152,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       rate, so a hit is authoritative), then falls back to the legacy v1 format:
     </p>
 
-    <h3>v3 — photos and video (app ≥ 1.2.0): capture id</h3>
+    <h3>v3 — photos (app ≥ 1.2.0): capture id</h3>
     <svg class="layers-diagram" viewBox="0 0 760 110" role="img" aria-label="128-bit capture id and 124 BCH parity bits fill the 256-bit message">
       <rect class="pl-id"  x="40"  y="26" width="340" height="34" rx="6"/>
       <rect class="pl-crc" x="384" y="26" width="336" height="34" rx="6"/>
@@ -167,7 +168,15 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       the full design). 128 random bits make guessing or colliding ids a non-issue.
     </p>
 
-    <h3>v1 — captures before 1.2.0: device pointer</h3>
+    <h3>Repetition format — video (and captures before 1.2.0)</h3>
+    <p>
+      Measured on real WhatsApp video round-trips, the channel flips ~20–25% of the
+      decoded bits <em>systematically</em> — beyond what any code carrying 128 bits in
+      256 can survive (the information-theoretic ceiling at that error rate is ~48
+      bits). What does survive is positional redundancy: video therefore embeds a
+      <strong>random 24-bit mark id</strong> in the repetition format below, and the
+      proof (and the originals record) binds that id to the full capture id.
+    </p>
 
     <svg class="layers-diagram" viewBox="0 0 760 175" role="img" aria-label="24-bit proof id plus CRC8 form a 32-bit block, repeated 8 times across the 256-bit message">
       <!-- one block -->

@@ -285,12 +285,16 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
           `<dl><dt>Capture id</dt><dd><code>${core.idPretty(decoded.captureIdHex)}</code></dd></dl>`)
         return
       }
-      // v1 legacy mark (pre-1.2 captures)
+      // repetition-format mark: videos since 1.2.2 (random id bound to the
+      // capture by the proof and the originals record) and pre-1.2 captures
+      const db = await samples()
+      const hit = core.sampleByMarkId(db, decoded.proofId)
+      if (hit) return sampleVerdict({ captureIdHex: hit.key }, hit.entry, file)
       const pct = Math.round(decoded.confidence * 100)
       verdictCard('!', 'warn', 'Origin traced — content NOT verified',
         'This copy comes from a TrustCam capture, but it has been changed since — maybe just social-media compression, maybe a deliberate edit: the mark cannot tell the difference. We can say where it comes from, not that it is authentic.',
         `<dl>
-          <dt>Mark id</dt><dd>device #${core.deviceIdOf(decoded.proofId)} · capture #${core.captureOf(decoded.proofId)}</dd>
+          <dt>Mark id</dt><dd><code>${core.markIdHex(decoded.proofId)}</code></dd>
         </dl>`, `
         <div class="signal">
           <div class="signal-value">${pct}%</div>

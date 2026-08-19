@@ -127,6 +127,18 @@
   function deviceIdOf (proofId) { return Math.floor(proofId / 16384) }
   function captureOf (proofId) { return proofId % 16384 }
 
+  // 24-bit video mark id as 6 hex chars (the samples.json binding key)
+  function markIdHex (id) { return id.toString(16).padStart(6, '0') }
+
+  // find the sample entry bound to a 24-bit video mark id
+  function sampleByMarkId (db, id) {
+    const hex = markIdHex(id)
+    for (const [key, entry] of Object.entries(db.samples || {})) {
+      if (entry.markId === hex) return { key, entry }
+    }
+    return null
+  }
+
   return {
     MAGIC,
     V1_MIN_CONFIDENCE,
@@ -142,6 +154,8 @@
     idKey,
     idPretty,
     deviceIdOf,
-    captureOf
+    captureOf,
+    markIdHex,
+    sampleByMarkId
   }
 })()

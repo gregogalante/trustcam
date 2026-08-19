@@ -177,17 +177,23 @@ class CaptureActivity : AppCompatActivity() {
                 while (engine == null) Thread.sleep(100)
                 val eng = engine!!
 
-                // random capture id: the only thing the watermark carries
+                // random capture id — photos embed all 128 bits (v3 payload);
+                // the video channel can't carry them (WhatsApp-class transcodes
+                // flip ~20-25% of decoded bits), so video embeds a random 24-bit
+                // mark id in the proven repetition format and the proof binds it
+                // to the capture id
                 val captureId = java.util.UUID.randomUUID()
-                val idBytes = java.nio.ByteBuffer.allocate(16)
-                    .putLong(captureId.mostSignificantBits)
-                    .putLong(captureId.leastSignificantBits)
-                    .array()
-                val msg = PayloadCodecV3.encode(idBytes)
-
+                var markId = 0
                 if (mediaType == "photo") {
-                    PhotoWatermarker.watermarkInPlace(contentResolver, uri, eng, msg)
+                    val idBytes = java.nio.ByteBuffer.allocate(16)
+                        .putLong(captureId.mostSignificantBits)
+                        .putLong(captureId.leastSignificantBits)
+                        .array()
+                    PhotoWatermarker.watermarkInPlace(contentResolver, uri, eng,
+                        PayloadCodecV3.encode(idBytes))
                 } else {
+                    markId = java.security.SecureRandom().nextInt(PayloadCodec.MAX_ID - 1) + 1
+                    val msg = PayloadCodec.encode(markId)
                     val tmp = File(cacheDir, "wm_$captureId.mp4")
                     VideoWatermarker.process(this, uri, tmp, eng, msg) { pct ->
                         runOnUiThread {
@@ -220,6 +226,11 @@ class CaptureActivity : AppCompatActivity() {
                 val proof = org.json.JSONObject()
                     .put("v", 2)
                     .put("captureId", captureId.toString())
+                    .apply {
+                        // videos: the in-pixel mark carries this 24-bit id, not
+                        // the full capture id — record the binding in the proof
+                        if (markId != 0) put("markId", "%06x".format(markId))
+                    }
                     .put("deviceId", device.deviceId)
                     .put("name", device.name)
                     .put("model", "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
