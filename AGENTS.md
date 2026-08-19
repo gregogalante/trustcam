@@ -78,6 +78,13 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
 - The browser caches the detector via the Cache API under the name
   `trustcam-model-v1` (in `web/verify.html`) — bump the name whenever
   `web/models/detector.onnx` changes or visitors keep the old model.
+- **Aspect-restore rescue** (photos): when the direct scan fails, browser and
+  CLI retry with the capture aspect restored by centered gray padding
+  (`core.padPlans`, native-res pixels — the regular scan's downscale costs
+  the remaining margin; BCH hits only). Measured: Instagram 4:5 crop of a
+  3:4 capture (6% lost) decodes (corr 12-13/18); Instagram 1:1 (25% lost)
+  is BEYOND the payload's limit (~22 coded errors vs t=18) — a real
+  documented boundary, not a bug.
 - Attestation: the verifier validates the FULL chain (leaf key match,
   cert-by-cert signatures incl. root self-signature, root pinned against
   Google's published attestation roots — `GOOGLE_ROOTS` sha256 list in

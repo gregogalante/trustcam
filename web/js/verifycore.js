@@ -9,6 +9,9 @@
 
   const V1_MIN_CONFIDENCE = 0.7
   const SCAN_MAX_DIM = 1536 // longest image side fed to the detector
+  // the aspect-restore rescue works on native pixels (the extra downscale
+  // costs the few bits of margin a cropped copy has left)
+  const RESCUE_MAX_DIM = 2560
   const VIDEO_SCAN_FRAMES = 24 // frames sampled evenly across the duration
 
   function b64ToBytes (b64) {
@@ -230,6 +233,29 @@
     return null
   }
 
+  // ---------- aspect-restore rescue ----------
+  // Platforms crop to their post formats (Instagram 1:1 / 4:5); the mark grid
+  // is anchored to the FULL capture frame, so a cropped copy misaligns it.
+  // Restoring the capture aspect by padding the short side re-aligns the grid
+  // for the surviving content. App captures are 4:3 (legacy) or 16:9.
+  const CAPTURE_RATIOS = [4 / 3, 16 / 9]
+
+  // pad plans (centered, gray fill) that turn a cropped copy back into a
+  // capture-shaped frame; only ratios wider than the input make sense
+  function padPlans (w, h) {
+    const short = Math.min(w, h)
+    const long = Math.max(w, h)
+    const plans = []
+    for (const r of CAPTURE_RATIOS) {
+      const targetLong = Math.round(short * r)
+      if (targetLong <= long + 2) continue // input is not cropped tighter than this
+      plans.push(h >= w
+        ? { w, h: targetLong, dx: 0, dy: Math.round((targetLong - h) / 2) }
+        : { w: targetLong, h, dx: Math.round((targetLong - w) / 2), dy: 0 })
+    }
+    return plans
+  }
+
   // canonical UUID string -> 32-hex key used by samples.json
   function idKey (uuidOrHex) {
     return String(uuidOrHex || '').toLowerCase().replace(/-/g, '')
@@ -259,6 +285,7 @@
     MAGIC,
     V1_MIN_CONFIDENCE,
     SCAN_MAX_DIM,
+    RESCUE_MAX_DIM,
     VIDEO_SCAN_FRAMES,
     b64ToBytes,
     toHex,
@@ -273,6 +300,7 @@
     deviceIdOf,
     captureOf,
     markIdHex,
-    sampleByMarkId
+    sampleByMarkId,
+    padPlans
   }
 })()
