@@ -68,6 +68,13 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   the node CLI `web/verify.mjs` (which downloads the site's own modules + wasm
   and uses ffmpeg only to decode pixels). Never fork verification logic into a
   second implementation.
+- **CLI integrity pinning**: `verify.mjs` embeds SHA-256 hashes of every
+  shared file it downloads. After ANY change to `web/js/*`, `web/ort/*` or
+  `web/models/detector.onnx`, regenerate with `node web/verify.mjs --hashes`
+  and update the SHARED map, or the published CLI fails closed.
+- The browser caches the detector via the Cache API under the name
+  `trustcam-model-v1` (in `web/verify.html`) — bump the name whenever
+  `web/models/detector.onnx` changes or visitors keep the old model.
 - Attestation: the verifier checks the leaf cert certifies the signing key.
   Full chain validation to Google hardware attestation roots is a tracked TODO.
 

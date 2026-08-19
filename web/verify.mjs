@@ -15,6 +15,7 @@
 // Exit codes: 0 verified (exact file, or mark resolved to a verified
 // original on file) · 1 invalid/no proof · 2 origin traced only.
 import { execFileSync, spawnSync } from 'node:child_process'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import os from 'node:os'
@@ -22,32 +23,56 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const BASE = process.env.TRUSTCAM_URL || 'https://trustcam.gregoriogalante.com'
-const SHARED = [
-  'js/codec.js', 'js/codec_v3.js', 'js/verifycore.js',
-  'ort/ort.min.js', 'ort/ort-wasm-simd-threaded.mjs', 'ort/ort-wasm-simd-threaded.wasm',
-  'models/detector.onnx'
-]
+// Shared verifier files, pinned by SHA-256: this CLI executes what it
+// downloads, so every file must hash-match the site version this copy of
+// verify.mjs was published with. Regenerate after any change:
+//   node verify.mjs --hashes   (from a repo checkout, next to web/)
+const SHARED = {
+  'js/codec.js': 'c38ef43250b509d7d3d757074099418eaf049c1b669650bd47beffad6e9ce5e2',
+  'js/codec_v3.js': 'cce9236875d72a64c49c832e6ec1ff0e125d02916016d10085bf3e3e268f6989',
+  'js/verifycore.js': '7b5ba68e3fd325ae98e72960cb198f69dbdcf8d85a96c39cada398e38a703fff',
+  'ort/ort.min.js': 'be6e560b64c03c99252eedc0e1989e9e51e44d9f191e7655c9bf011bf9f576c8',
+  'ort/ort-wasm-simd-threaded.mjs': '745eb7c0ce6f18a6aa521971b2877babc7ffb27eecb58ab3bc6e5ef4692672e8',
+  'ort/ort-wasm-simd-threaded.wasm': '207d02be4591c156b0a98f024f3d58005b5b04c92274d759fb390338c63559ea',
+  'models/detector.onnx': '4b09c87d43314303b7854bbe615a4c97f4531bd239c0a7383319bde6717ce781'
+}
+
+function sha256 (buf) {
+  return crypto.createHash('sha256').update(buf).digest('hex')
+}
 
 // ---------- shared-source resolution: repo checkout, else site + cache ----------
-async function sourceDir () {
+function repoDir () {
   const here = path.dirname(fileURLToPath(import.meta.url))
-  if (fs.existsSync(path.join(here, 'js', 'verifycore.js'))) return here
+  return fs.existsSync(path.join(here, 'js', 'verifycore.js')) ? here : null
+}
+
+async function sourceDir () {
+  const here = repoDir()
+  if (here) return here // developer checkout: run what is on disk, no pinning
   const cache = path.join(os.homedir(), '.cache', 'trustcam')
-  for (const rel of SHARED) {
+  for (const [rel, hash] of Object.entries(SHARED)) {
     const dst = path.join(cache, rel)
-    if (fs.existsSync(dst)) continue
-    fs.mkdirSync(path.dirname(dst), { recursive: true })
+    // cached copies are re-verified every run; stale/tampered ones re-fetch
+    if (fs.existsSync(dst) && sha256(fs.readFileSync(dst)) === hash) continue
     console.error(`downloading ${rel} from ${BASE} …`)
     const res = await fetch(`${BASE}/${rel}`)
     if (!res.ok) throw new Error(`${rel}: HTTP ${res.status}`)
-    fs.writeFileSync(dst, Buffer.from(await res.arrayBuffer()))
+    const buf = Buffer.from(await res.arrayBuffer())
+    if (sha256(buf) !== hash) {
+      throw new Error(`${rel}: integrity check failed — the site has been updated ` +
+        'since this copy of verify.mjs was published. Re-download it:\n' +
+        `  curl -sO ${BASE}/verify.mjs`)
+    }
+    fs.mkdirSync(path.dirname(dst), { recursive: true })
+    fs.writeFileSync(dst, buf)
   }
   return cache
 }
 
 function loadShared (dir) {
   globalThis.window = globalThis // the browser modules attach to window
-  for (const rel of SHARED) {
+  for (const rel of Object.keys(SHARED)) {
     if (!rel.endsWith('.js') || rel.startsWith('ort/')) continue
     ;(0, eval)(fs.readFileSync(path.join(dir, rel), 'utf8')) // eslint-disable-line no-eval
   }
@@ -146,6 +171,18 @@ async function printMarkVerdict (core, decoded) {
 
 async function main () {
   const args = process.argv.slice(2)
+  if (args.includes('--hashes')) {
+    // release helper: print the pinned-hash map from a repo checkout
+    const here = repoDir()
+    if (!here) {
+      console.error('--hashes needs a repo checkout (run next to web/js/)')
+      process.exit(1)
+    }
+    for (const rel of Object.keys(SHARED)) {
+      console.log(`  '${rel}': '${sha256(fs.readFileSync(path.join(here, rel)))}',`)
+    }
+    process.exit(0)
+  }
   const scan = args.includes('--scan')
   const files = args.filter(a => a !== '--scan')
   if (files.length !== 1 || !fs.existsSync(files[0])) {

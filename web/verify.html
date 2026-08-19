@@ -194,11 +194,52 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     function detector () {
       if (!detectorPromise) {
         window.ort.env.wasm.wasmPaths = '/ort/'
-        detectorPromise = window.ort.InferenceSession.create('/models/detector.onnx', {
-          executionProviders: ['wasm']
-        })
+        detectorPromise = fetchModel().then(bytes =>
+          window.ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] }))
       }
       return detectorPromise
+    }
+
+    // Download the detector once with a progress readout, then keep it in the
+    // Cache API so later visits skip the ~67 MB fetch entirely.
+    let modelProgress = () => {}
+    async function fetchModel () {
+      const url = '/models/detector.onnx'
+      let cache = null
+      try {
+        cache = await caches.open('trustcam-model-v1')
+        const hit = await cache.match(url)
+        if (hit) return new Uint8Array(await hit.arrayBuffer())
+      } catch {} // Cache API unavailable (private mode) — plain download
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('model download failed: HTTP ' + res.status)
+      const total = +res.headers.get('content-length') || 0
+      const reader = res.body.getReader()
+      const chunks = []
+      let got = 0
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        chunks.push(value)
+        got += value.length
+        modelProgress(total ? Math.round(got * 100 / total) + '%' : (got / 1e6).toFixed(0) + ' MB')
+      }
+      const blob = new Blob(chunks)
+      if (cache) try { await cache.put(url, new Response(blob)) } catch {}
+      return new Uint8Array(await blob.arrayBuffer())
+    }
+
+    // wire the download progress into the current progress card
+    async function loadScanner (ui) {
+      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~67 MB)…'
+      modelProgress = p => {
+        ui.stage.textContent = `No proof trailer — downloading the mark scanner (one-time, ~67 MB)… ${p}`
+      }
+      try {
+        await detector()
+      } finally {
+        modelProgress = () => {}
+      }
     }
 
     // draw a bitmap/video frame on a canvas capped at the detector input size
@@ -222,8 +263,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     }
 
     async function imageScan (file, ui) {
-      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~67 MB)…'
-      await detector()
+      await loadScanner(ui)
       ui.stage.textContent = 'Scanning for the invisible mark on your device…'
 
       const bmp = await createImageBitmap(file)
@@ -237,8 +277,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     // Video scan: sample frames evenly, average the soft bits across frames
     // (same flow as the CLI), then decode.
     async function videoScan (file, ui) {
-      ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~67 MB)…'
-      await detector()
+      await loadScanner(ui)
 
       const video = document.createElement('video')
       video.muted = true
