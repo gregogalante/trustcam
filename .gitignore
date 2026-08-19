@@ -1,6 +1,5 @@
 # Node
 node_modules/
-server/trustcam.db*
 
 # Android / Gradle
 android/build/
@@ -33,3 +32,8 @@ seitest/app/src/androidTest/assets/embedder.onnx
 # the tiny prep/apply graphs stay in the APK assets and are committed.
 spikes/results/pdq_frames/
 __pycache__/
+
+# Raw platform round-trip files (canonical copies live in web/demos/)
+examples/*.jpg
+examples/*.jpeg
+examples/*.mp4

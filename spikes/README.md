@@ -1,6 +1,8 @@
-# spikes — phase 0 feasibility scripts
+# spikes — feasibility and validation scripts
 
-Experiment scripts behind the results in [docs/04-phase0-spikes.md](../docs/04-phase0-spikes.md). Reports and light artifacts (JSON results, logs, watermark payload) are versioned here; the heavy dependencies are not — restore them as follows before rerunning.
+Experiment scripts behind the results in [docs/](../docs/) and the paper's
+research page. Reports and light artifacts (JSON results) are versioned here;
+the heavy dependencies are not — restore them as follows before rerunning.
 
 ## One-time setup
 
@@ -14,9 +16,7 @@ conda activate videoseal
 pip install torch torchvision torchaudio
 pip install -r videoseal/requirements.txt
 pip install -e videoseal --no-deps        # skips decord (no arm64 macOS wheel)
-pip install requests onnx onnxruntime      # requests is an undeclared videoseal dep
-
-# 3. Checkpoint auto-downloads (218MB) into ./ckpts on first videoseal.load()
+pip install requests onnx onnxruntime onnxconverter-common bchlib
 ```
 
 `ffmpeg` must be on PATH.
@@ -27,21 +27,31 @@ All must run **from the videoseal clone root** (configs/checkpoints resolve rela
 
 ```bash
 cd videoseal
-python ../spike_robustness.py                      # embed → simulated social transcodes → extract (~8 min)
-python ../spike_export.py                          # latency bench + ONNX export (~3 min)
-python ../export_frame_graphs.py                   # exports the 3 on-device embedder graphs + parity asserts
-python ../export_detector.py                       # exports the browser detector (fp32 + int8) + parity asserts
-python ../sim_device_pipeline.py <video>           # bit-faithful simulation of the Android video pipeline
-python ../sim_screenshot.py [image]                # watermark survival across the social/screenshot chain
-python ../extract_check.py <video> [...]           # verify a platform round-trip file against results/watermarked.txt
-python ../convert_tflite.py                        # TFLite conversion attempt (known-blocked, kept as documentation)
+python ../spike_robustness.py                # embed → simulated social transcodes → extract
+python ../spike_export.py                    # latency bench + ONNX export
+python ../export_frame_graphs.py             # exports the 3 on-device embedder graphs + parity asserts
+python ../export_detector.py                 # exports the browser detector (fp32 + fp16) + parity asserts
+python ../sim_screenshot.py [image]          # watermark survival across the social/screenshot chain
+python ../spike_strength_sweep.py            # photo embed strength: visibility vs recovery
+python ../spike_video_strength.py <video>    # video embed strength x delta-refresh through WhatsApp-sim
+python ../spike_fp16_embedder.py             # fp16 embedder quality vs fp32 (NNAPI relaxation proxy)
+python ../export_v3_vectors.py               # parity vectors for the v3 payload codec (run from spikes/)
+node   ../test_v3_js.mjs                     # web/js/codec_v3.js against the vectors (run from spikes/)
+python ../convert_tflite.py                  # TFLite conversion attempt (known-blocked, kept as documentation)
 ```
 
-`codec.py` in this folder is the **canonical** payload codec — `PayloadCodec.kt`
-(app) and `web/js/codec.js` (browser) must stay bit-identical to it.
+Canonical payload codecs live in this folder — the ports must stay
+bit-identical to them:
 
-- `results/watermarked.txt` — the 256-bit payload embedded in `roundtrip/upload_me.mp4`; needed by `extract_check.py` for future platform round-trips (TikTok still pending).
-- `roundtrip/upload_me.mp4` — watermarked reference video to upload to platforms.
+- `codec.py` (repetition format: video, and legacy captures) ↔
+  `PayloadCodec.kt` (app), `web/js/codec.js` (browser)
+- `codec_v3.py` (128-bit capture id + BCH: photos) ↔
+  `PayloadCodecV3.kt` (app), `web/js/codec_v3.js` (browser),
+  pinned by `results/v3_vectors.json`
+
+`codec_v2.py`, `pdq_ref.py` and the `spike_pdq_*`/`spike_bch_*`/
+`spike_video_segments.py` scripts are the research record behind the explored
+(not shipped) content-checksum design — see
+[docs/07](../docs/07-watermark-content-checksum.md).
+
 - `results/device_tests.jsonl` — on-device results, one JSON per device (see [runbook](../docs/06-device-test-runbook.md)).
-
-Conversion env (`aiedge` conda env with litert-torch/onnx2tf) is only needed to retry TFLite conversion — both tools currently fail on VideoSeal's msg-processor Tile op; ONNX Runtime is the working mobile path.
