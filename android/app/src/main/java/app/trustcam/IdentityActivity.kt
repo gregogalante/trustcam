@@ -62,11 +62,9 @@ class IdentityActivity : AppCompatActivity() {
         thread {
             val key = DeviceKey.ensure()
             val entry = device.enrollmentJson("${Build.MANUFACTURER} ${Build.MODEL}", key)
+            val intent = device.shareRecordIntent(this, entry)
             runOnUiThread {
-                startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, entry.toString())
-                }, getString(R.string.share_enrollment)))
+                startActivity(Intent.createChooser(intent, getString(R.string.share_enrollment)))
             }
         }
     }

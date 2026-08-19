@@ -51,10 +51,9 @@ class SetupActivity : AppCompatActivity() {
                     b.enrollCard.visibility = View.VISIBLE
                     b.enrollJson.text = entry.toString(2)
                     b.shareBtn.setOnClickListener {
-                        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, entry.toString())
-                        }, getString(R.string.share_enrollment)))
+                        startActivity(Intent.createChooser(
+                            device.shareRecordIntent(this, entry),
+                            getString(R.string.share_enrollment)))
                     }
                 }
             } catch (e: Exception) {

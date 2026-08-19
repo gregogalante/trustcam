@@ -42,6 +42,19 @@ class Device(context: Context) {
         prefs.edit().putString("deviceUuid", UUID.randomUUID().toString()).apply()
     }
 
+    /** Share the device record as a .json file (as text it is unreadably long). */
+    fun shareRecordIntent(context: Context, entry: JSONObject): android.content.Intent {
+        val f = File(context.cacheDir, "trustcam-device.json")
+        f.writeText(entry.toString(2))
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context, "${context.packageName}.fileprovider", f)
+        return android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+            type = "application/json"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+    }
+
     /** Self-contained device record (what a future cloud registration would store). */
     fun enrollmentJson(model: String, key: DeviceKey.Info): JSONObject = JSONObject()
         .put("deviceId", deviceId)
