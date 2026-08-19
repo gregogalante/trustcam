@@ -33,3 +33,4 @@ seitest/app/src/androidTest/assets/embedder.onnx
 # the tiny prep/apply graphs stay in the APK assets and are committed.
 spikes/results/pdq_frames/
 __pycache__/
+materiale/
