@@ -161,7 +161,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     async function verifyTrailer (bytes, t, file, ui) {
       ui.stage.textContent = 'Proof found in the file — verifying the seal on your device…'
       const p = t.proof
-      const { sigValid, attested, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
+      const { sigValid, attestation, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
 
       // proof v2 carries a capture UUID; v1 carried a small numeric payload
       const markId = p.captureId
@@ -172,7 +172,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
         name: p.name,
         model: p.model || 'unknown',
         securityLevel: p.securityLevel,
-        attested,
+        attestation,
         capturedAt: p.capturedAt,
         mediaType: p.mediaType,
         sizeBytes: file.size,
@@ -377,11 +377,26 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     }
 
     // ---------- rendering ----------
+    // human wording for the attestation chain outcome
+    function attestationRow (status) {
+      switch (status) {
+        case 'google-root':
+          return '<dd><span class="badge ok">verified</span> chain checked signature-by-signature up to Google\'s hardware attestation root</dd>'
+        case 'unverified-root':
+          return '<dd>chain internally consistent, but its root is not a Google hardware root (emulator or software keystore)</dd>'
+        case 'invalid':
+          return '<dd><span class="badge bad">invalid</span> the certificate chain does not check out — treat the hardware claim as unproven</dd>'
+        default:
+          return '<dd>not present in the proof</dd>'
+      }
+    }
+
     function detailRows (d) {
       return `
         <dl>
           <dt>Recorded by</dt><dd>${esc(d.name)}</dd>
-          <dt>Device</dt><dd>${esc(d.model)} (${esc(d.securityLevel)}${d.attested ? ', hardware-attested key' : ''})</dd>
+          <dt>Device</dt><dd>${esc(d.model)} (${esc(d.securityLevel)})</dd>
+          <dt>Key attestation</dt>${attestationRow(d.attestation)}
           <dt>Captured at</dt><dd>${esc(d.capturedAt)} <span class="note">(device-claimed)</span></dd>
           <dt>Media</dt><dd>${esc(d.mediaType)}, ${Number(d.sizeBytes).toLocaleString()} bytes</dd>
           <dt>Mark id</dt><dd>${d.markId}</dd>

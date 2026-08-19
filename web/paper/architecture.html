@@ -116,11 +116,13 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
     <p>
       The verifier (a static page — WebCrypto, no backend) strips the trailer,
       recomputes <code>H</code> and checks <code>sig</code> against the public key
-      carried in the proof; it also checks that the attestation leaf certificate
-      certifies that same key (validation up to Google's attestation root is on the
-      roadmap). The proof is a claim, the signature is the evidence, and it is
-      re-checked from scratch on every verification — by <em>your</em> browser,
-      not by a service you must trust.
+      carried in the proof. It then validates the <strong>full Android Key
+      Attestation chain</strong>: the leaf certificate must certify exactly the
+      signing key, every certificate is signature-verified against its issuer, and
+      the chain must terminate on one of Google's published hardware attestation
+      roots (pinned by hash in the verifier). The proof is a claim, the signature is
+      the evidence, and it is re-checked from scratch on every verification — by
+      <em>your</em> browser, not by a service you must trust.
     </p>
 
     <h2>The algorithms</h2>
@@ -232,9 +234,10 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
     explicitly:</p>
     <ol>
       <li><strong>Proof trailer present</strong> → strip, hash the canonical bytes,
-        verify the signature with WebCrypto against the key in the proof (attestation
-        leaf cross-checked) → <em>Verified (original)</em>. Works offline; survives any
-        byte-exact transfer (email, Drive, file transfer).</li>
+        verify the signature with WebCrypto against the key in the proof, and validate
+        the attestation chain up to Google's pinned hardware roots →
+        <em>Verified (original)</em>. Works offline; survives any byte-exact transfer
+        (email, Drive, file transfer).</li>
       <li><strong>No trailer</strong> (platforms strip it — but they also change the
         bytes, so the signature was lost either way) → watermark extraction
         <strong>in the browser</strong> (fp16 ONNX detector, ~67 MB, WASM). Photos are

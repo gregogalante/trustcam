@@ -30,7 +30,7 @@ const BASE = process.env.TRUSTCAM_URL || 'https://trustcam.gregoriogalante.com'
 const SHARED = {
   'js/codec.js': 'c38ef43250b509d7d3d757074099418eaf049c1b669650bd47beffad6e9ce5e2',
   'js/codec_v3.js': 'cce9236875d72a64c49c832e6ec1ff0e125d02916016d10085bf3e3e268f6989',
-  'js/verifycore.js': '7b5ba68e3fd325ae98e72960cb198f69dbdcf8d85a96c39cada398e38a703fff',
+  'js/verifycore.js': 'fda469e1e20c08fcd3c102a75e4747483fffdc9abd411764e687262c2da384f6',
   'ort/ort.min.js': 'be6e560b64c03c99252eedc0e1989e9e51e44d9f191e7655c9bf011bf9f576c8',
   'ort/ort-wasm-simd-threaded.mjs': '745eb7c0ce6f18a6aa521971b2877babc7ffb27eecb58ab3bc6e5ef4692672e8',
   'ort/ort-wasm-simd-threaded.wasm': '207d02be4591c156b0a98f024f3d58005b5b04c92274d759fb390338c63559ea',
@@ -198,12 +198,19 @@ async function main () {
   const t = core.parseTrailer(bytes)
   if (t) {
     const p = t.proof
-    const { sigValid, attested, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
+    const { sigValid, attestation, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
+    const ATT = {
+      'google-root': 'chain verified to Google hardware attestation root',
+      'unverified-root': 'chain valid, root NOT a Google hardware root',
+      invalid: 'chain INVALID — hardware claim unproven',
+      none: 'not present'
+    }
     console.log(sigValid
       ? 'VERIFIED — exact file, seal valid. Untouched since capture.'
       : 'INVALID — the file carries a proof but the seal does NOT check out. Untrusted.')
     console.log(`  recorded by : ${p.name}`)
-    console.log(`  device      : ${p.model} (${p.securityLevel}${attested ? ', hardware-attested key' : ''})`)
+    console.log(`  device      : ${p.model} (${p.securityLevel})`)
+    console.log(`  attestation : ${ATT[attestation]}`)
     console.log(`  captured at : ${p.capturedAt} (device-claimed)`)
     console.log(`  mark id     : ${markId(core, p)}`)
     console.log(`  fingerprint : ${fingerprint}`)

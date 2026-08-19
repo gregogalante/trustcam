@@ -75,8 +75,12 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
 - The browser caches the detector via the Cache API under the name
   `trustcam-model-v1` (in `web/verify.html`) — bump the name whenever
   `web/models/detector.onnx` changes or visitors keep the old model.
-- Attestation: the verifier checks the leaf cert certifies the signing key.
-  Full chain validation to Google hardware attestation roots is a tracked TODO.
+- Attestation: the verifier validates the FULL chain (leaf key match,
+  cert-by-cert signatures incl. root self-signature, root pinned against
+  Google's published attestation roots — `GOOGLE_ROOTS` sha256 list in
+  verifycore.js, source https://android.googleapis.com/attestation/root).
+  Certificate validity dates and the revocation list are NOT checked (offline
+  verifier) — tracked as future work.
 
 ## Testing on devices
 

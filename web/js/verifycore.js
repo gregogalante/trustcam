@@ -22,16 +22,6 @@
     return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('')
   }
 
-  function findSubarray (hay, needle) {
-    outer: for (let i = 0; i <= hay.length - needle.length; i++) { // eslint-disable-line no-labels
-      for (let j = 0; j < needle.length; j++) {
-        if (hay[i + j] !== needle[j]) continue outer // eslint-disable-line no-labels
-      }
-      return i
-    }
-    return -1
-  }
-
   // ---------- proof trailer ----------
   function parseTrailer (bytes) {
     const n = bytes.length
@@ -47,25 +37,149 @@
     } catch { return null }
   }
 
-  // ECDSA signatures from Android are DER; WebCrypto wants raw r||s (P1363)
-  function derSigToP1363 (der) {
-    let i = 2 // SEQUENCE header (assume short-form length; P-256 sigs are < 128 bytes)
-    function readInt () {
-      if (der[i++] !== 0x02) throw new Error('bad DER signature')
-      let len = der[i++]
-      let start = i
-      i += len
-      while (len > 32) { start++; len-- } // strip leading zero padding
-      const out = new Uint8Array(32)
-      out.set(der.subarray(start, start + len), 32 - len)
+  // ECDSA signatures from Android are DER; WebCrypto wants raw r||s (P1363).
+  // size = bytes per integer (32 for P-256, 48 for P-384).
+  function derSigToP1363 (der, size = 32) {
+    const seq = derParse(der, 0)
+    const [ri, si] = derChildren(der, seq)
+    function pad (node) {
+      let start = node.content
+      let len = node.len
+      while (len > size) { start++; len-- } // strip leading zero padding
+      const out = new Uint8Array(size)
+      out.set(der.subarray(start, start + len), size - len)
       return out
     }
-    const r = readInt()
-    const s = readInt()
-    const sig = new Uint8Array(64)
-    sig.set(r, 0)
-    sig.set(s, 32)
+    const sig = new Uint8Array(size * 2)
+    sig.set(pad(ri), 0)
+    sig.set(pad(si), size)
     return sig
+  }
+
+  // ---------- minimal DER / X.509 ----------
+  function derParse (b, pos) {
+    const tag = b[pos]
+    let len = b[pos + 1]
+    let head = 2
+    if (len & 0x80) {
+      const n = len & 0x7f
+      len = 0
+      for (let i = 0; i < n; i++) len = len * 256 + b[pos + 2 + i]
+      head = 2 + n
+    }
+    return { tag, start: pos, content: pos + head, len, end: pos + head + len }
+  }
+
+  function derChildren (b, node) {
+    const out = []
+    let p = node.content
+    while (p < node.end) {
+      const c = derParse(b, p)
+      out.push(c)
+      p = c.end
+    }
+    return out
+  }
+
+  function derOid (b, node) {
+    const v = b.subarray(node.content, node.end)
+    const parts = [Math.floor(v[0] / 40), v[0] % 40]
+    let acc = 0
+    for (let i = 1; i < v.length; i++) {
+      acc = acc * 128 + (v[i] & 0x7f)
+      if (!(v[i] & 0x80)) { parts.push(acc); acc = 0 }
+    }
+    return parts.join('.')
+  }
+
+  const EC_CURVES = {
+    '1.2.840.10045.3.1.7': { name: 'P-256', size: 32 },
+    '1.3.132.0.34': { name: 'P-384', size: 48 },
+    '1.3.132.0.35': { name: 'P-521', size: 66 }
+  }
+  const SIG_ALGS = {
+    '1.2.840.10045.4.3.2': { kind: 'EC', hash: 'SHA-256' },
+    '1.2.840.10045.4.3.3': { kind: 'EC', hash: 'SHA-384' },
+    '1.2.840.10045.4.3.4': { kind: 'EC', hash: 'SHA-512' },
+    '1.2.840.113549.1.1.11': { kind: 'RSA', hash: 'SHA-256' },
+    '1.2.840.113549.1.1.12': { kind: 'RSA', hash: 'SHA-384' },
+    '1.2.840.113549.1.1.13': { kind: 'RSA', hash: 'SHA-512' }
+  }
+
+  // Certificate ::= SEQUENCE { tbsCertificate, signatureAlgorithm, signatureValue }
+  function parseCert (der) {
+    const cert = derParse(der, 0)
+    const [tbs, sigAlg, sigVal] = derChildren(der, cert)
+    const alg = SIG_ALGS[derOid(der, derChildren(der, sigAlg)[0])]
+    const tbsKids = derChildren(der, tbs)
+    const shift = tbsKids[0].tag === 0xa0 ? 1 : 0 // optional version [0]
+    const spkiNode = tbsKids[shift + 5]
+    const spki = der.subarray(spkiNode.start, spkiNode.end)
+    // curve of the SUBJECT key (used to verify the NEXT cert down the chain)
+    const algSeq = derChildren(der, spkiNode)[0]
+    const algKids = derChildren(der, algSeq)
+    const keyOid = derOid(der, algKids[0])
+    const curve = keyOid === '1.2.840.10045.2.1' && algKids[1]
+      ? EC_CURVES[derOid(der, algKids[1])] : null
+    return {
+      tbs: der.subarray(tbs.start, tbs.end),
+      alg,
+      sig: der.subarray(sigVal.content + 1, sigVal.end), // BIT STRING, skip pad byte
+      spki,
+      keyKind: keyOid === '1.2.840.10045.2.1' ? 'EC' : 'RSA',
+      curve
+    }
+  }
+
+  // Google hardware attestation roots — SHA-256 of the DER certificates from
+  // https://android.googleapis.com/attestation/root (RSA 2022 + ECDSA 2025)
+  const GOOGLE_ROOTS = [
+    'cedb1cb6dc896ae5b0da3e70e9b16255c55e8d77f5f4b9d206bb45525e79892e',
+    '6d9db4ce6c5c0b293166d08986e05774a8776ceb525d9e4329520de12ba4bcc0'
+  ]
+
+  // verifies one cert's signature with the issuer's public key
+  async function verifyCertSig (child, issuer) {
+    if (!child.alg) return false
+    if (issuer.keyKind === 'EC') {
+      if (!issuer.curve) return false
+      const key = await crypto.subtle.importKey('spki', issuer.spki,
+        { name: 'ECDSA', namedCurve: issuer.curve.name }, false, ['verify'])
+      return crypto.subtle.verify({ name: 'ECDSA', hash: child.alg.hash }, key,
+        derSigToP1363(child.sig, issuer.curve.size), child.tbs)
+    }
+    const key = await crypto.subtle.importKey('spki', issuer.spki,
+      { name: 'RSASSA-PKCS1-v1_5', hash: child.alg.hash }, false, ['verify'])
+    return crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, child.sig, child.tbs)
+  }
+
+  /**
+   * Validates an Android Key Attestation chain (leaf first, base64 DER):
+   * the leaf must certify exactly the signing key, every certificate must be
+   * signed by the next one, and the last must be a pinned Google hardware
+   * attestation root. Returns:
+   *   'google-root'     chain fully verified to a Google root
+   *   'unverified-root' chain internally consistent, root not a known Google one
+   *   'invalid'         broken signature / malformed / wrong leaf key
+   *   'none'            no chain in the proof
+   */
+  async function verifyAttestation (chainB64, signerSpkiB64) {
+    if (!Array.isArray(chainB64) || chainB64.length === 0) return 'none'
+    try {
+      const certs = chainB64.map(c => parseCert(b64ToBytes(c)))
+      const signer = b64ToBytes(signerSpkiB64)
+      if (toHex(certs[0].spki) !== toHex(signer)) return 'invalid'
+      for (let i = 0; i < certs.length - 1; i++) {
+        if (!await verifyCertSig(certs[i], certs[i + 1])) return 'invalid'
+      }
+      const root = certs[certs.length - 1]
+      if (!await verifyCertSig(root, root)) return 'invalid' // self-signature
+      const rootDer = b64ToBytes(chainB64[chainB64.length - 1])
+      const rootHash = toHex(await crypto.subtle.digest('SHA-256', rootDer))
+      return GOOGLE_ROOTS.includes(rootHash) ? 'google-root' : 'unverified-root'
+    } catch {
+      return 'invalid'
+    }
   }
 
   // Verifies the trailer seal against the canonical bytes (file minus trailer).
@@ -73,19 +187,21 @@
     const canonical = bytes.subarray(0, canonicalEnd)
     const hash = await crypto.subtle.digest('SHA-256', canonical)
     let sigValid = false
-    let attested = false
     try {
       const spki = b64ToBytes(proof.pubkey)
       const key = await crypto.subtle.importKey('spki', spki,
         { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
       sigValid = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key,
         derSigToP1363(b64ToBytes(proof.sig)), hash)
-      // the attestation leaf must certify the very key that signed
-      if (Array.isArray(proof.attestation) && proof.attestation.length > 0) {
-        attested = findSubarray(b64ToBytes(proof.attestation[0]), spki) >= 0
-      }
     } catch {}
-    return { sigValid, attested, fingerprint: toHex(hash) }
+    // full chain validation: leaf key match, cert-by-cert signatures, pinned root
+    const attestation = await verifyAttestation(proof.attestation, proof.pubkey)
+    return {
+      sigValid,
+      attestation,
+      attested: attestation === 'google-root',
+      fingerprint: toHex(hash)
+    }
   }
 
   // ---------- invisible-mark payload ----------
@@ -148,6 +264,7 @@
     toHex,
     parseTrailer,
     derSigToP1363,
+    verifyAttestation,
     verifySeal,
     toDetectorInput,
     decodePayload,
