@@ -7,13 +7,13 @@
 //                                          #    needs ffmpeg/ffprobe for pixel decode)
 //
 // ONE verification source: this CLI runs the exact same files the browser
-// verifier runs — js/codec.js, js/codec_v2.js, js/pdq.js, js/verifycore.js and
-// the vendored onnxruntime wasm + detector.onnx — fetched from the site (or
+// verifier runs — js/codec.js, js/codec_v3.js, js/verifycore.js and the
+// vendored onnxruntime wasm + detector.onnx — fetched from the site (or
 // used straight from the repo when run next to web/). Only pixel decoding
 // differs: the browser uses canvas, this CLI uses ffmpeg rawvideo RGBA.
 //
-// Exit codes: 0 verified/intact · 1 invalid/no proof · 2 origin traced or
-// inconclusive · 3 content modified.
+// Exit codes: 0 verified (exact file, or mark resolved to a verified
+// original on file) · 1 invalid/no proof · 2 origin traced only.
 import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url'
 
 const BASE = process.env.TRUSTCAM_URL || 'https://trustcam.gregoriogalante.com'
 const SHARED = [
-  'js/codec.js', 'js/codec_v2.js', 'js/pdq.js', 'js/verifycore.js',
+  'js/codec.js', 'js/codec_v3.js', 'js/verifycore.js',
   'ort/ort.min.js', 'ort/ort-wasm-simd-threaded.mjs', 'ort/ort-wasm-simd-threaded.wasm',
   'models/detector.onnx'
 ]
@@ -99,26 +99,42 @@ function decodeFrames (file, w, h, filters) {
 }
 
 // ---------- verdict printing ----------
-function markId (core, proofId) {
-  return `device #${core.deviceIdOf(proofId)} · capture #${core.captureOf(proofId)}`
+function markId (core, proof) {
+  return proof.captureId
+    ? `capture ${proof.captureId}`
+    : `device #${core.deviceIdOf(proof.payload || 0)} · capture #${core.captureOf(proof.payload || 0)}`
 }
 
-async function registryName (core, proofId) {
+async function sampleEntry (captureIdHex) {
   try {
-    const reg = await (await fetch(`${BASE}/registry.json`)).json()
-    return reg.devices?.[String(core.deviceIdOf(proofId))] || null
+    const db = await (await fetch(`${BASE}/samples.json`)).json()
+    return db.samples?.[captureIdHex] || null
   } catch { return null }
 }
 
-async function printOriginTraced (core, decoded) {
-  const entry = await registryName(core, decoded.proofId)
-  const who = entry ? entry.name : `device #${core.deviceIdOf(decoded.proofId)} (not in the public registry)`
-  console.log('ORIGIN TRACED — content NOT verified.')
-  console.log(`  this copy derives from a TrustCam capture by: ${who}`)
-  console.log(`  mark id     : ${markId(core, decoded.proofId)}`)
-  if (decoded.v === 1) {
-    console.log(`  mark signal : ${Math.round(decoded.confidence * 100)}% (decoding confidence, not authenticity)`)
+// Mark-only outcome: resolve the capture id against the verified originals
+// on file; a hit means a human can compare copy vs original.
+async function printMarkVerdict (core, decoded) {
+  if (decoded.v === 3) {
+    const entry = await sampleEntry(decoded.captureIdHex)
+    if (entry) {
+      console.log('ORIGIN TRACED — verified original ON FILE.')
+      console.log(`  recorded by : ${entry.name} (${entry.model})`)
+      console.log(`  captured at : ${entry.capturedAt} (device-claimed)`)
+      console.log(`  capture id  : ${core.idPretty(decoded.captureIdHex)}`)
+      console.log(`  original    : ${BASE}${entry.original}`)
+      console.log('  compare your copy against the original above — any depicted difference is an edit.')
+      process.exit(0)
+    }
+    console.log('ORIGIN TRACED — content NOT verified.')
+    console.log(`  capture id  : ${core.idPretty(decoded.captureIdHex)}`)
+    console.log('  the mark identifies a TrustCam capture, but its verified original is not on file.')
+    console.log('  the copy was modified since capture (re-encode or edit — indistinguishable).')
+    process.exit(2)
   }
+  console.log('ORIGIN TRACED — content NOT verified.')
+  console.log(`  mark id     : device #${core.deviceIdOf(decoded.proofId)} · capture #${core.captureOf(decoded.proofId)}`)
+  console.log(`  mark signal : ${Math.round(decoded.confidence * 100)}% (decoding confidence, not authenticity)`)
   console.log('  the copy was modified since capture (re-encode or edit — indistinguishable).')
   process.exit(2)
 }
@@ -147,7 +163,7 @@ async function main () {
     console.log(`  recorded by : ${p.name}`)
     console.log(`  device      : ${p.model} (${p.securityLevel}${attested ? ', hardware-attested key' : ''})`)
     console.log(`  captured at : ${p.capturedAt} (device-claimed)`)
-    console.log(`  mark id     : ${markId(core, p.payload || 0)}`)
+    console.log(`  mark id     : ${markId(core, p)}`)
     console.log(`  fingerprint : ${fingerprint}`)
     process.exit(sigValid ? 0 : 1)
   }
@@ -170,25 +186,7 @@ async function main () {
       console.log('NO PROOF — no invisible mark could be recovered.')
       process.exit(1)
     }
-    if (decoded.v === 2) {
-      // content check: sealed checksum vs these pixels (same tiers as the site)
-      const dist = core.contentDistance(rgba, w, h, decoded.phashHex)
-      const verdict = core.contentVerdict(dist)
-      const entry = await registryName(core, decoded.proofId)
-      const who = entry ? entry.name : `device #${core.deviceIdOf(decoded.proofId)} (not in the public registry)`
-      if (verdict === 'intact') {
-        console.log('ORIGIN TRACED — content INTACT (recompressed copy, nothing depicted has changed).')
-      } else if (verdict === 'inconclusive') {
-        console.log('ORIGIN TRACED — content check INCONCLUSIVE (gray zone between compression and a small edit).')
-      } else {
-        console.log('ORIGIN TRACED — content MODIFIED after capture (edit, splice or crop).')
-      }
-      console.log(`  recorded by      : ${who}`)
-      console.log(`  mark id          : ${markId(core, decoded.proofId)}`)
-      console.log(`  content distance : ${dist} (0 = identical, ≤${core.PDQ_MATCH} = intact, >${core.PDQ_INCONCLUSIVE} = modified)`)
-      process.exit(verdict === 'intact' ? 0 : verdict === 'inconclusive' ? 2 : 3)
-    }
-    await printOriginTraced(core, decoded)
+    await printMarkVerdict(core, decoded)
   }
 
   // video: sample frames evenly, average soft bits — same flow as the browser
@@ -215,7 +213,7 @@ async function main () {
     console.log('NO PROOF — no invisible mark could be recovered from the sampled frames.')
     process.exit(1)
   }
-  await printOriginTraced(core, decoded)
+  await printMarkVerdict(core, decoded)
 }
 
 main().catch(e => { console.error(e.message); process.exit(1) })

@@ -11,8 +11,8 @@ import kotlin.concurrent.thread
 
 /**
  * Device identity screen: edit the display name, always-available access to
- * the registry entry (share/copy into the public registry.json), and a
- * device-id regeneration escape hatch for registry collisions.
+ * the device record (the identity every proof carries), and a device-id
+ * regeneration escape hatch.
  */
 class IdentityActivity : AppCompatActivity() {
     private lateinit var b: ActivityIdentityBinding
@@ -54,7 +54,7 @@ class IdentityActivity : AppCompatActivity() {
         thread {
             val key = DeviceKey.ensure()
             val entry = device.enrollmentJson("${Build.MANUFACTURER} ${Build.MODEL}", key)
-            runOnUiThread { b.enrollJson.text = "\"${device.deviceId}\": ${entry.toString(2)}" }
+            runOnUiThread { b.enrollJson.text = entry.toString(2) }
         }
     }
 
@@ -65,7 +65,7 @@ class IdentityActivity : AppCompatActivity() {
             runOnUiThread {
                 startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, "\"${device.deviceId}\": $entry")
+                    putExtra(Intent.EXTRA_TEXT, entry.toString())
                 }, getString(R.string.share_enrollment)))
             }
         }

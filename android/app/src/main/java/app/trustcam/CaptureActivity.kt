@@ -156,9 +156,10 @@ class CaptureActivity : AppCompatActivity() {
 
     /**
      * Fully offline, fully self-contained sealing: embed the invisible
-     * watermark (payload = deviceId + local counter), hash the canonical
+     * watermark (payload = random 128-bit capture id), hash the canonical
      * bytes, hardware-sign, then append the proof trailer to the file itself.
-     * There is nothing to sync — the file carries its own proof.
+     * There is nothing to sync — the file carries its own proof; the capture
+     * id is the pointer a verifier can use to look up the original.
      */
     private fun sealCapture(uri: Uri, mediaType: String) {
         val capturedAt = Instant.now().toString()
@@ -175,18 +176,19 @@ class CaptureActivity : AppCompatActivity() {
                 // wait for the engine warm-up if needed
                 while (engine == null) Thread.sleep(100)
                 val eng = engine!!
-                val payload = PayloadCodec.payloadOf(device.deviceId.toLong(), device.nextCounter())
 
-                // photos carry a v2 payload (id + PDQ content checksum) so a
-                // transcoded copy can still be checked for semantic edits;
-                // video stays on the v1 pointer payload until the per-segment
-                // contract is validated (docs/07)
-                var phash: ByteArray? = null
+                // random capture id: the only thing the watermark carries
+                val captureId = java.util.UUID.randomUUID()
+                val idBytes = java.nio.ByteBuffer.allocate(16)
+                    .putLong(captureId.mostSignificantBits)
+                    .putLong(captureId.leastSignificantBits)
+                    .array()
+                val msg = PayloadCodecV3.encode(idBytes)
+
                 if (mediaType == "photo") {
-                    phash = PhotoWatermarker.watermarkInPlace(contentResolver, uri, eng, payload)
+                    PhotoWatermarker.watermarkInPlace(contentResolver, uri, eng, msg)
                 } else {
-                    val msg = PayloadCodec.encode(payload)
-                    val tmp = File(cacheDir, "wm_$payload.mp4")
+                    val tmp = File(cacheDir, "wm_$captureId.mp4")
                     VideoWatermarker.process(this, uri, tmp, eng, msg) { pct ->
                         runOnUiThread {
                             showProgress(indeterminate = false, percent = pct)
@@ -216,15 +218,9 @@ class CaptureActivity : AppCompatActivity() {
                 val hash = digest.digest()
                 val key = DeviceKey.ensure()
                 val proof = org.json.JSONObject()
-                    .put("v", 1)
-                    .put("payload", payload)
-                    .apply {
-                        // additive fields: v2 watermark payload carries the content hash
-                        if (phash != null) {
-                            put("pv", 2)
-                            put("phash", phash.joinToString("") { "%02x".format(it) })
-                        }
-                    }
+                    .put("v", 2)
+                    .put("captureId", captureId.toString())
+                    .put("deviceId", device.deviceId)
                     .put("name", device.name)
                     .put("model", "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
                     .put("capturedAt", capturedAt)
@@ -237,7 +233,9 @@ class CaptureActivity : AppCompatActivity() {
                     it.write(ProofTrailer.build(proof))
                 }
 
-                runOnUiThread { finishSealing(getString(R.string.sealed, payload)) }
+                runOnUiThread {
+                    finishSealing(getString(R.string.sealed, captureId.toString().substring(0, 8)))
+                }
             } catch (e: Exception) {
                 runOnUiThread { finishSealing("Sealing failed: ${e.message}") }
             }

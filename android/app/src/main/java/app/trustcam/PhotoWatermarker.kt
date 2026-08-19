@@ -13,20 +13,16 @@ import androidx.exifinterface.media.ExifInterface
  */
 object PhotoWatermarker {
 
-    // Photos get a stronger embed than video: no temporal accumulation at
-    // extraction, and social flows (screenshot + crop) are harsher on stills.
-    // x1.5 keeps PSNR ~43.7dB (imperceptible) and survives ~40% content loss
-    // (measured in spikes/sim_screenshot.py).
-    private const val STRENGTH = 1.5f
+    // Photos get a slightly stronger embed than video: no temporal accumulation
+    // at extraction, and social flows (screenshot + crop) are harsher on stills.
+    // x1.2 is the lowest strength that still BCH-decodes across every simulated
+    // channel, including the flat-sky screenshot worst case (PSNR ~45dB vs
+    // ~43dB at the previous x1.5 — measured in spikes/spike_strength_sweep.py).
+    private const val STRENGTH = 1.2f
 
-    /**
-     * Watermarks the photo with a v2 payload (payload id + PDQ content hash)
-     * and returns the 13-byte hash embedded, for the proof trailer. The hash
-     * is computed on the pre-embed pixels: the watermark delta (PSNR ~43dB)
-     * and the JPEG re-save land well inside the verifier's match threshold.
-     */
+    /** Watermarks the photo in place with the given 256-bit message. */
     fun watermarkInPlace(resolver: ContentResolver, uri: Uri,
-                         engine: WatermarkEngine, payload: Int): ByteArray {
+                         engine: WatermarkEngine, msg: FloatArray) {
         // CameraX saves unrotated pixels + an EXIF orientation tag; re-saving via
         // Bitmap.compress drops the tag, so bake the rotation into the pixels first
         // (also puts the watermark in display orientation, like the video path)
@@ -54,11 +50,6 @@ object PhotoWatermarker {
             y[i] = (0.299f * r + 0.587f * g + 0.114f * b) / 255f
         }
 
-        // content checksum from the same luma the embedder sees (PDQ wants 0..255)
-        val y255 = FloatArray(y.size) { y[it] * 255f }
-        val phash = Pdq.hash104(y255, w, h)
-        val msg = PayloadCodecV2.encode(payload, phash)
-
         val delta = engine.keyDelta(y, w, h, msg)
         for (i in delta.indices) delta[i] *= STRENGTH
         val yW = engine.applyDelta(y, w, h, delta)
@@ -79,6 +70,5 @@ object PhotoWatermarker {
         }
         src.recycle()
         out.recycle()
-        return phash
     }
 }

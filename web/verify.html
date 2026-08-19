@@ -45,11 +45,10 @@
           <div class="verdict-icon warn" style="width:32px;height:32px;font-size:1rem">!</div>
           <h3 style="margin:0">Origin traced</h3>
         </div>
-        <p class="note">The invisible mark tells us which device this image comes from.
-        Photos sealed by recent app versions also carry a <strong>content checksum</strong>
-        inside the mark: it survives compression but breaks when what the image
-        <em>shows</em> is changed — so we can usually tell a re-shared copy from an
-        edited one. <strong>Never proof of authenticity</strong>, only of origin.</p>
+        <p class="note">The invisible mark carries the capture's id, and it survives
+        social-media compression. When the verified original is on file, we show it
+        <strong>side by side</strong> with your copy — compare them and see exactly what
+        changed. <strong>Never proof of authenticity</strong>, only of origin.</p>
       </div>
       <div class="card tint-bad">
         <div class="verdict" style="margin-bottom:.6rem">
@@ -72,15 +71,14 @@ node verify.mjs photo.jpg           # proof-trailer check
 node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)</pre>
     </div>
 
-    <footer>The proof travels inside the file itself; the public
-    <a href="/registry.json">device registry</a> maps invisible marks back to registered
-    devices. Everything is verified locally — this site is fully static.</footer>
+    <footer>The proof travels inside the file itself; the invisible mark points back to
+    the <a href="/samples.json">verified originals on file</a>. Everything is verified
+    locally — this site is fully static.</footer>
   </main>
 
   <script src="/ort/ort.min.js"></script>
   <script src="/js/codec.js"></script>
-  <script src="/js/codec_v2.js"></script>
-  <script src="/js/pdq.js"></script>
+  <script src="/js/codec_v3.js"></script>
   <script src="/js/verifycore.js"></script>
   <script>
     const drop = document.getElementById('drop')
@@ -122,13 +120,13 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     // shared verification logic (also used verbatim by the node CLI verify.mjs)
     const core = window.TrustCamVerifyCore
 
-    // ---------- registry ----------
-    let registryPromise = null
-    function registry () {
-      if (!registryPromise) {
-        registryPromise = fetch('/registry.json').then(r => r.json()).catch(() => ({ devices: {} }))
+    // ---------- verified originals on file ----------
+    let samplesPromise = null
+    function samples () {
+      if (!samplesPromise) {
+        samplesPromise = fetch('/samples.json').then(r => r.json()).catch(() => ({ samples: {} }))
       }
-      return registryPromise
+      return samplesPromise
     }
 
     // ---------- main flow ----------
@@ -164,21 +162,20 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
       const p = t.proof
       const { sigValid, attested, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
 
-      const reg = await registry()
-      const deviceId = core.deviceIdOf(p.payload || 0)
-      const entry = reg.devices?.[String(deviceId)]
-      const registered = !!entry && entry.pubkey === p.pubkey
+      // proof v2 carries a capture UUID; v1 carried a small numeric payload
+      const markId = p.captureId
+        ? `capture ${esc(p.captureId)}`
+        : `device #${core.deviceIdOf(p.payload || 0)} · capture #${core.captureOf(p.payload || 0)}`
 
       const details = detailRows({
-        name: registered ? entry.name : p.name,
-        registered,
-        model: registered ? entry.model : (p.model || 'unknown'),
+        name: p.name,
+        model: p.model || 'unknown',
         securityLevel: p.securityLevel,
         attested,
         capturedAt: p.capturedAt,
         mediaType: p.mediaType,
         sizeBytes: file.size,
-        payload: p.payload,
+        markId,
         fingerprint
       })
 
@@ -232,15 +229,12 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
       const { data, w, h } = grabPixels(bmp, bmp.width, bmp.height)
       const decoded = core.decodePayload(await runDetector(data, w, h))
       if (!decoded) return false
-      // v2 carries a content checksum — verify it against the received pixels
-      if (decoded.v === 2) await v2Verdict(decoded, data, w, h)
-      else await originTracedVerdict(decoded)
+      await markVerdict(decoded, file)
       return true
     }
 
     // Video scan: sample frames evenly, average the soft bits across frames
-    // (same flow as the CLI), then decode. Videos carry v1 payloads today, so
-    // no content check — a v2 hit still resolves to origin-traced.
+    // (same flow as the CLI), then decode.
     async function videoScan (file, ui) {
       ui.stage.textContent = 'No proof trailer — loading the mark scanner (one-time, ~34 MB)…'
       await detector()
@@ -271,38 +265,33 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
         for (let b = 0; b < 256; b++) avg[b] = acc[b] / n
         const decoded = core.decodePayload(avg)
         if (!decoded) return false
-        await originTracedVerdict(decoded)
+        await markVerdict(decoded, file)
         return true
       } finally {
         URL.revokeObjectURL(video.src)
       }
     }
 
-    // Origin-only verdict: the mark identifies the capture but carries no
-    // verifiable content checksum (v1 payloads, and all videos for now).
-    async function originTracedVerdict (decoded) {
-      const reg = await registry()
-      const deviceId = core.deviceIdOf(decoded.proofId)
-      const entry = reg.devices?.[String(deviceId)]
-
-      // only rows we actually know — re-encoding stripped everything but the mark
-      const details = entry
-        ? `<dl>
-            <dt>Recorded by</dt><dd>${esc(entry.name)} <span class="badge ok">registered device</span></dd>
-            <dt>Device</dt><dd>${esc(entry.model)} (${esc(entry.securityLevel)})</dd>
-            <dt>Mark id</dt><dd>device #${deviceId} · capture #${core.captureOf(decoded.proofId)}</dd>
-          </dl>`
-        : `<dl>
-            <dt>Mark id</dt><dd>device #${deviceId} · capture #${core.captureOf(decoded.proofId)}</dd>
-          </dl>
-          <p class="note">Device #${deviceId} is not in the <a href="/registry.json">public
-          registry</a>, so no name can be shown — the mark still proves these pixels come
-          from a TrustCam capture. Names appear when the device's owner publishes their
-          registry entry.</p>`
-      const pct = decoded.v === 1 ? Math.round(decoded.confidence * 100) : null
+    // Mark-only verdict (no trailer): the mark identifies the capture. When
+    // the verified original is on file, show it next to the dropped copy so
+    // the viewer can compare with their own eyes.
+    async function markVerdict (decoded, file) {
+      if (decoded.v === 3) {
+        const db = await samples()
+        const entry = db.samples?.[decoded.captureIdHex]
+        if (entry) return sampleVerdict(decoded, entry, file)
+        verdictCard('!', 'warn', 'Origin traced — content NOT verified',
+          'This copy comes from a TrustCam capture, but it has been changed since — maybe just social-media compression, maybe a deliberate edit: the mark alone cannot tell the difference. The verified original for this capture is not on file, so no comparison can be shown.',
+          `<dl><dt>Capture id</dt><dd><code>${core.idPretty(decoded.captureIdHex)}</code></dd></dl>`)
+        return
+      }
+      // v1 legacy mark (pre-1.2 captures)
+      const pct = Math.round(decoded.confidence * 100)
       verdictCard('!', 'warn', 'Origin traced — content NOT verified',
         'This copy comes from a TrustCam capture, but it has been changed since — maybe just social-media compression, maybe a deliberate edit: the mark cannot tell the difference. We can say where it comes from, not that it is authentic.',
-        details, pct == null ? '' : `
+        `<dl>
+          <dt>Mark id</dt><dd>device #${core.deviceIdOf(decoded.proofId)} · capture #${core.captureOf(decoded.proofId)}</dd>
+        </dl>`, `
         <div class="signal">
           <div class="signal-value">${pct}%</div>
           <div class="signal-body">
@@ -314,51 +303,44 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
         </div>`)
     }
 
-    async function v2Verdict (v2, rgba, w, h) {
-      const dist = core.contentDistance(rgba, w, h, v2.phashHex)
-
-      const reg = await registry()
-      const deviceId = core.deviceIdOf(v2.proofId)
-      const entry = reg.devices?.[String(deviceId)]
-      const details = (entry
-        ? `<dl>
-            <dt>Recorded by</dt><dd>${esc(entry.name)} <span class="badge ok">registered device</span></dd>
-            <dt>Device</dt><dd>${esc(entry.model)} (${esc(entry.securityLevel)})</dd>
-            <dt>Mark id</dt><dd>device #${deviceId} · capture #${v2.proofId % 16384}</dd>
-          </dl>`
-        : `<dl><dt>Mark id</dt><dd>device #${deviceId} · capture #${v2.proofId % 16384}</dd></dl>`) + `
-        <div class="signal">
-          <div class="signal-value">${dist}</div>
-          <div class="signal-body">
-            <div class="signal-label">Content distance (0 = identical, ≤${core.PDQ_MATCH} = intact)</div>
-            <div class="signal-meter"><div style="width:${Math.max(4, 100 - dist * 2)}%"></div></div>
-            <div class="signal-caption">Distance between the content checksum sealed inside the
-            invisible mark at capture and the same checksum recomputed on these pixels.
-            Compression barely moves it; changing what the image shows moves it a lot.</div>
-          </div>
-        </div>`
-
-      if (core.contentVerdict(dist) === 'intact') {
-        verdictCard('✓', 'ok', 'Origin traced — content intact',
-          'This copy was recompressed (the exact-file seal is gone), but the content checksum sealed inside the invisible mark still matches these pixels: what the image shows is what the camera captured. Not the bit-exact original, but nothing depicted has changed.', details)
-      } else if (core.contentVerdict(dist) === 'inconclusive') {
-        verdictCard('!', 'warn', 'Origin traced — content check inconclusive',
-          'The invisible mark identifies the capture, but the content checksum lands in the gray zone between heavy compression and a small edit. Treat with care.', details)
-      } else {
-        verdictCard('✕', 'bad', 'Origin traced — content MODIFIED',
-          'The invisible mark identifies the capture, but the content checksum sealed at capture no longer matches these pixels: what the image shows was changed after it left the camera — an AI edit, a splice, or a crop.', details)
-      }
+    // The mark resolved to a verified original we hold: show both, let the
+    // human compare. The copy may be identical-but-recompressed or edited —
+    // the comparison makes the difference visible.
+    function sampleVerdict (decoded, entry, file) {
+      const yours = URL.createObjectURL(file)
+      const isVideo = (file.type || '').startsWith('video')
+      const media = (src, label) => isVideo || (label === 'original' && entry.mediaType === 'video')
+        ? `<video src="${src}" controls muted playsinline></video>`
+        : `<img src="${src}" alt="${label}">`
+      verdictCard('✓', 'ok', 'Origin traced — verified original on file',
+        'The invisible mark survived and points to an original we hold, captured and cryptographically verified at the source. Your copy is shown next to it — compare them: if something depicted differs, the copy was edited after capture.',
+        `<dl>
+          <dt>Recorded by</dt><dd>${esc(entry.name)}</dd>
+          <dt>Device</dt><dd>${esc(entry.model)}</dd>
+          <dt>Captured at</dt><dd>${esc(entry.capturedAt)} <span class="note">(device-claimed)</span></dd>
+          <dt>Capture id</dt><dd><code>${core.idPretty(decoded.captureIdHex)}</code></dd>
+        </dl>`, `
+        <div class="compare">
+          <figure>
+            ${media(yours, 'your copy')}
+            <figcaption>Your copy</figcaption>
+          </figure>
+          <figure>
+            ${media(entry.original, 'original')}
+            <figcaption>Verified original — <a href="${entry.original}" download>download</a></figcaption>
+          </figure>
+        </div>`)
     }
 
     // ---------- rendering ----------
     function detailRows (d) {
       return `
         <dl>
-          <dt>Recorded by</dt><dd>${esc(d.name)}${d.registered ? ' <span class="badge ok">registered device</span>' : ''}</dd>
+          <dt>Recorded by</dt><dd>${esc(d.name)}</dd>
           <dt>Device</dt><dd>${esc(d.model)} (${esc(d.securityLevel)}${d.attested ? ', hardware-attested key' : ''})</dd>
           <dt>Captured at</dt><dd>${esc(d.capturedAt)} <span class="note">(device-claimed)</span></dd>
           <dt>Media</dt><dd>${esc(d.mediaType)}, ${Number(d.sizeBytes).toLocaleString()} bytes</dd>
-          <dt>Mark id</dt><dd>device #${Math.floor(d.payload / 16384)} · capture #${d.payload % 16384}</dd>
+          <dt>Mark id</dt><dd>${d.markId}</dd>
           ${d.fingerprint ? `<dt>Fingerprint</dt><dd><code>${esc(d.fingerprint)}</code></dd>` : ''}
         </dl>`
     }

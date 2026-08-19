@@ -1,8 +1,13 @@
 # 07 — Content checksum inside the watermark (exploration)
 
-Date: 2026-08-17. Status: **implemented for photos** (app 1.1.0 + web verifier);
-video stays on the v1 pointer payload until the 32-frame segment contract is
-validated on more clips. Branch: `feature/watermark-content-checksum`.
+Date: 2026-08-17. Status: **superseded** (2026-08-19). Shipped for photos in app
+1.1.x, then rolled back: verdicts from an in-band perceptual hash proved harder to
+sell than simply showing the copy next to the verified original, and the freed
+payload now carries a 128-bit random capture id (payload v3, app 1.2.0) that keys
+the original lookup (`web/samples.json` today, cloud registry in the full design).
+The BCH layer validated here survived into v3; the PDQ ports remain in `spikes/`
+and this doc stands as the research record. See also
+`spikes/spike_strength_sweep.py` (photo embed strength ×1.5 → ×1.2).
 
 Goal: put a checksum of the captured pixels *inside* the VideoSeal payload so that a
 re-encoded copy (trailer stripped, C2PA-style metadata gone) can still be checked for

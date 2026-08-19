@@ -1,0 +1,405 @@
+{
+ "captureId": "c7ba55040eb04ced9f4aa89767fb8b1c",
+ "strengths": {
+  "1.0": {
+   "photo": {
+    "psnr": 46.31,
+    "maxDelta": 12.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "photo_4080": {
+    "psnr": 45.85,
+    "maxDelta": 11.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "flat_sky": {
+    "psnr": 44.62,
+    "maxDelta": 7.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 16,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 32,
+      "decoded": false
+     }
+    }
+   }
+  },
+  "1.1": {
+   "photo": {
+    "psnr": 45.63,
+    "maxDelta": 12.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "photo_4080": {
+    "psnr": 45.22,
+    "maxDelta": 12.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "flat_sky": {
+    "psnr": 44.53,
+    "maxDelta": 8.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 1,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 1,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 7,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 26,
+      "decoded": false
+     }
+    }
+   }
+  },
+  "1.2": {
+   "photo": {
+    "psnr": 45.01,
+    "maxDelta": 12.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "photo_4080": {
+    "psnr": 44.64,
+    "maxDelta": 13.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "flat_sky": {
+    "psnr": 44.44,
+    "maxDelta": 8.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 4,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 16,
+      "decoded": true
+     }
+    }
+   }
+  },
+  "1.3": {
+   "photo": {
+    "psnr": 44.42,
+    "maxDelta": 14.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "photo_4080": {
+    "psnr": 44.09,
+    "maxDelta": 14.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "flat_sky": {
+    "psnr": 44.37,
+    "maxDelta": 8.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 3,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 15,
+      "decoded": true
+     }
+    }
+   }
+  },
+  "1.5": {
+   "photo": {
+    "psnr": 43.34,
+    "maxDelta": 14.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "photo_4080": {
+    "psnr": 43.06,
+    "maxDelta": 14.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 0,
+      "decoded": true
+     }
+    }
+   },
+   "flat_sky": {
+    "psnr": 44.22,
+    "maxDelta": 9.0,
+    "channels": {
+     "gallery_q95": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "whatsapp_x2": {
+      "codedErrors": 0,
+      "decoded": true
+     },
+     "instagram": {
+      "codedErrors": 4,
+      "decoded": true
+     },
+     "screenshot_crop": {
+      "codedErrors": 18,
+      "decoded": true
+     }
+    }
+   }
+  }
+ }
+}

@@ -8,18 +8,18 @@
     <string name="setup_continue">Start capturing</string>
     <string name="fill_name">Enter a display name</string>
     <string name="enroll_title">Device ready — one last step</string>
-    <string name="enroll_note">Add this entry to the public registry (registry.json in the site repository) so verifiers can show your name for social-media copies. Exact copies verify even without it.</string>
-    <string name="share_enrollment">Share registry entry</string>
+    <string name="enroll_note">This is your device record. Every capture is signed by this device\'s hardware key and carries this identity in its proof — keep the record if you plan to register the device later.</string>
+    <string name="share_enrollment">Share device record</string>
     <string name="identity_title">Device identity</string>
-    <string name="identity_summary">%1$s — device id #%2$d · app v%3$s</string>
+    <string name="identity_summary">%1$s — app v%3$s\ndevice %2$s</string>
     <string name="identity_close">Close</string>
     <string name="regen_cta">Regenerate device id</string>
     <string name="regen_title">Regenerate device id?</string>
-    <string name="regen_warning">Only do this if your current id is already taken in the public registry. Captures you already took keep the old id in their invisible mark — if the old id was published, leave its registry entry in place and add the new one too.</string>
+    <string name="regen_warning">New captures will carry the new device id in their proof. Captures you already took keep the old id.</string>
     <string name="regen_confirm">Regenerate</string>
     <string name="identity">Device identity</string>
     <string name="save_name">Save name</string>
-    <string name="name_saved">Name updated — republish your registry entry if it was already public</string>
+    <string name="name_saved">Name updated</string>
     <string name="rec_elapsed">● REC %1$d:%2$02d</string>
     <string name="downloading_model">Downloading watermark engine… %1$d%%</string>
     <string name="generic_error">Something went wrong</string>
@@ -31,5 +31,5 @@
     <string name="watermarking">Applying invisible watermark…</string>
     <string name="watermarking_pct">Applying invisible watermark… %1$d%%</string>
     <string name="signing">Signing in secure hardware…</string>
-    <string name="sealed">Capture #%1$d sealed ✓ — the proof travels inside the file</string>
+    <string name="sealed">Capture %1$s… sealed ✓ — the proof travels inside the file</string>
 </resources>

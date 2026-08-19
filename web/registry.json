@@ -1,4 +1,0 @@
-{
-  "_readme": "Public TrustCam device registry. Each entry maps a 10-bit device id (the invisible mark's namespace) to the device's display name and public key. Devices enroll by adding the JSON shown by the app at setup — via pull request to this file. Verification of exact files does NOT need this registry (the proof travels inside the file); it only names devices for re-encoded social copies.",
-  "devices": {}
-}

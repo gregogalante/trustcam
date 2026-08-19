@@ -1,0 +1,12 @@
+{
+ "_readme": "Verified originals on file. Each entry maps a 128-bit capture id (decoded from the invisible mark) to the original, cryptographically verified capture. In the full design this is a cloud service the app uploads to at capture time; this static file holds a handful of demo captures so the compare-with-original flow can be tried today. Keys are the capture id as 32 lowercase hex chars (UUID without dashes); 'original' points to the exact sealed file under /samples/.",
+ "samples": {
+  "b5a4521ab3994139bd58a95ade9dbf5a": {
+   "name": "TrustCam demo",
+   "model": "synthetic pipeline (demo)",
+   "capturedAt": "2026-08-19T07:50:00Z",
+   "mediaType": "photo",
+   "original": "/samples/tc_demo.jpg"
+  }
+ }
+}

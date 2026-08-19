@@ -11,7 +11,7 @@ import kotlin.concurrent.thread
 
 /**
  * First-launch setup, no account: pick a display name, generate the hardware
- * key, download the watermark model, then show the registry entry to publish.
+ * key, download the watermark model, then show the device record.
  */
 class SetupActivity : AppCompatActivity() {
     private lateinit var b: ActivitySetupBinding
@@ -49,11 +49,11 @@ class SetupActivity : AppCompatActivity() {
                     b.progress.visibility = View.GONE
                     b.form.visibility = View.GONE
                     b.enrollCard.visibility = View.VISIBLE
-                    b.enrollJson.text = "\"${device.deviceId}\": ${entry.toString(2)}"
+                    b.enrollJson.text = entry.toString(2)
                     b.shareBtn.setOnClickListener {
                         startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
-                            putExtra(Intent.EXTRA_TEXT, "\"${device.deviceId}\": $entry")
+                            putExtra(Intent.EXTRA_TEXT, entry.toString())
                         }, getString(R.string.share_enrollment)))
                     }
                 }

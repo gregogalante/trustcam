@@ -30,33 +30,34 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   `Signature("SHA256withECDSA").update(H)` in `android/.../DeviceKey.kt` +
   `ProofTrailer.kt`. Verifier side: WebCrypto in `web/verify.html`
   (DER→P1363 signature conversion required).
-- **Watermark payload codec** exists in THREE implementations that must stay
-  bit-identical: `spikes/codec.py` (canonical), `android/.../PayloadCodec.kt`
-  (unit-tested against python vectors), `web/js/codec.js`. 24-bit payload
-  (`deviceId<<14 | counter`) + CRC8, 8 reps, copies 32 apart. Changing the layout
-  desyncs every already-embedded file — never change it without versioning.
-- **Payload v2 (photos since 1.1.0)**: proofId 24 | PDQ pHash 104 | BCH(255,131)
-  parity 124 | pad 4. Canonical `spikes/codec_v2.py` + `spikes/pdq_ref.py`;
-  ports `android/.../PayloadCodecV2.kt` + `Pdq.kt` (encode) and
-  `web/js/codec_v2.js` + `web/js/pdq.js` (decode), parity-tested against
-  `spikes/results/checksum_vectors.json` (regen: `spikes/export_checksum_vectors.py`).
-  Verifier tries v2 (BCH) first, falls back to v1 (CRC8). Video still embeds v1.
-  Same versioning rule: never change layouts, add a v3.
-- Device ids are random 10-bit values chosen at app setup; `web/registry.json`
-  maps them to names/keys (enrollment = pull request). Exact-file verification
-  does not need the registry.
+- **Watermark payload v3 (photos + video since 1.2.0)**: captureId 128 (random
+  UUID) | BCH(255,131) parity 124 | pad 4. Canonical `spikes/codec_v3.py`;
+  ports `android/.../PayloadCodecV3.kt` (encode, matrix XOR) and
+  `web/js/codec_v3.js` (decode), parity-tested against
+  `spikes/results/v3_vectors.json` (regen: `spikes/export_v3_vectors.py`;
+  JS test: `spikes/test_v3_js.mjs`). The verifier tries v3 (BCH) first, falls
+  back to legacy v1 (`spikes/codec.py` / `web/js/codec.js`: 24-bit
+  `deviceId<<14 | counter` + CRC8, 8 reps — pre-1.2 captures). Changing a layout
+  desyncs every already-embedded file — never change one, add a version.
+- Proof JSON v2 (app ≥ 1.2.0) carries `captureId` + `deviceId` (both UUIDs);
+  v1 proofs carried a numeric `payload`. The verifier supports both.
+- `web/samples.json` maps capture ids (32-hex, no dashes) to verified originals
+  under `web/samples/` — the static stand-in for the future cloud registry.
+  Exact-file verification does not need it.
 - On-device graphs are exported by `spikes/export_frame_graphs.py`
   (parity-asserted); tiny ones live in `android/app/src/main/assets/`, the 90MB
   embedder in `web/models/` (downloaded by the app at setup). The browser
   detector (`web/models/detector.onnx`, int8) is exported by
   `spikes/export_detector.py`. `spikes/sim_device_pipeline.py` and
   `spikes/sim_screenshot.py` simulate the exact Android pipelines.
-- Photo embed strength is ×1.5 (`PhotoWatermarker.STRENGTH`) — measured PSNR
-  43.7dB, survives ~40% content loss. Video stays ×1.0.
+- Photo embed strength is ×1.2 (`PhotoWatermarker.STRENGTH`) — lowest strength
+  that BCH-decodes across every simulated channel incl. the flat-sky
+  screenshot+crop worst case (PSNR ≈45dB; sweep in
+  `spikes/spike_strength_sweep.py`). Video stays ×1.0.
 - Web pages are plain static HTML/CSS/JS in `web/`. No framework, no backend —
   keep it that way. onnxruntime-web is vendored in `web/ort/`.
 - **Single verification source**: all verdict logic lives in
-  `web/js/verifycore.js` (+ codec/pdq js), used by BOTH `web/verify.html` and
+  `web/js/verifycore.js` (+ codec js), used by BOTH `web/verify.html` and
   the node CLI `web/verify.mjs` (which downloads the site's own modules + wasm
   and uses ffmpeg only to decode pixels). Never fork verification logic into a
   second implementation.

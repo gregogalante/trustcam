@@ -2,16 +2,11 @@
 // verifier (verify.html) and the CLI (verify.mjs, node). Everything here must
 // run in both environments: WebCrypto (crypto.subtle), TextDecoder and atob
 // are available in browsers and node >= 18.
-// Depends on codec.js, codec_v2.js, pdq.js being loaded first.
+// Depends on codec.js and codec_v3.js being loaded first.
 ;(typeof window !== 'undefined' ? window : globalThis).TrustCamVerifyCore = (() => {
   const root = typeof window !== 'undefined' ? window : globalThis
   const MAGIC = 'TCPROOF1'
 
-  // v2 verdict tiers, from spikes/results/pdq_separation.json: benign
-  // transcodes measured 0-3 bits @104 (same implementation); cross-
-  // implementation float noise adds ~2 → accept ≤6. Edits measured ≥8.
-  const PDQ_MATCH = 6
-  const PDQ_INCONCLUSIVE = 11
   const V1_MIN_CONFIDENCE = 0.7
   const SCAN_MAX_DIM = 1536 // longest image side fed to the detector
   const VIDEO_SCAN_FRAMES = 24 // frames sampled evenly across the duration
@@ -20,12 +15,6 @@
     const bin = atob(b64)
     const out = new Uint8Array(bin.length)
     for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
-    return out
-  }
-
-  function hexToBytes (hex) {
-    const out = new Uint8Array(hex.length / 2)
-    for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16)
     return out
   }
 
@@ -112,12 +101,12 @@
     return chw
   }
 
-  // preds: 256 soft bits (frame-averaged for video). v2 first: its BCH check
-  // is ~2^-124 false-accept, so a v2 hit is authoritative; fall back to the
-  // v1 repetition codec for pre-checksum captures.
+  // preds: 256 soft bits (frame-averaged for video). v3 first: its BCH check
+  // is ~2^-124 false-accept, so a v3 hit is authoritative; fall back to the
+  // v1 repetition codec for pre-1.2 captures.
   function decodePayload (preds) {
-    const v2 = root.TrustCamCodecV2.decode(preds)
-    if (v2) return { v: 2, proofId: v2.proofId, phashHex: v2.phashHex, corrected: v2.corrected }
+    const v3 = root.TrustCamCodecV3.decode(preds)
+    if (v3) return { v: 3, captureIdHex: v3.captureIdHex, corrected: v3.corrected }
     const { payload, confidence } = root.TrustCamCodec.decode(preds)
     if (payload != null && confidence >= V1_MIN_CONFIDENCE) {
       return { v: 1, proofId: payload, confidence }
@@ -125,18 +114,14 @@
     return null
   }
 
-  // Hamming distance between the sealed checksum and one recomputed on the
-  // received pixels — the v2 content check.
-  function contentDistance (rgba, w, h, phashHex) {
-    const recomputed = root.TrustCamPdq.fromImageData(rgba, w, h)
-    return root.TrustCamPdq.hamming104(recomputed, hexToBytes(phashHex))
+  // canonical UUID string -> 32-hex key used by samples.json
+  function idKey (uuidOrHex) {
+    return String(uuidOrHex || '').toLowerCase().replace(/-/g, '')
   }
 
-  // 3-state content verdict for the v2 check
-  function contentVerdict (dist) {
-    if (dist <= PDQ_MATCH) return 'intact'
-    if (dist <= PDQ_INCONCLUSIVE) return 'inconclusive'
-    return 'modified'
+  // pretty print a 32-hex capture id as a canonical UUID
+  function idPretty (hex) {
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
   }
 
   function deviceIdOf (proofId) { return Math.floor(proofId / 16384) }
@@ -144,21 +129,18 @@
 
   return {
     MAGIC,
-    PDQ_MATCH,
-    PDQ_INCONCLUSIVE,
     V1_MIN_CONFIDENCE,
     SCAN_MAX_DIM,
     VIDEO_SCAN_FRAMES,
     b64ToBytes,
-    hexToBytes,
     toHex,
     parseTrailer,
     derSigToP1363,
     verifySeal,
     toDetectorInput,
     decodePayload,
-    contentDistance,
-    contentVerdict,
+    idKey,
+    idPretty,
     deviceIdOf,
     captureOf
   }

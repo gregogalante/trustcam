@@ -233,6 +233,16 @@ form.card button:disabled { opacity: .6; cursor: default; transform: none }
 .plain h3 { margin: 0 0 .3rem; font-size: 1rem }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.4rem }
+
+/* side-by-side copy vs verified original */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.2rem 0 }
+.compare figure { margin: 0 }
+.compare img, .compare video {
+  width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line);
+  background: #000;
+}
+.compare figcaption { font-size: .85rem; color: var(--muted); margin-top: .4rem; text-align: center }
+@media (max-width: 640px) { .compare { grid-template-columns: 1fr } }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.4rem }
 .card h3 { margin-top: 0; font-size: 1.02rem }
 .card p:last-child { margin-bottom: 0 }
