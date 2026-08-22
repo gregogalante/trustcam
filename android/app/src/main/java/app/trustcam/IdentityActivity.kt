@@ -1,18 +1,21 @@
 package app.trustcam
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import app.trustcam.databinding.ActivityIdentityBinding
+import app.trustcam.databinding.DialogRegenerateBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlin.concurrent.thread
 
 /**
- * Device identity screen: edit the display name, always-available access to
- * the device record (the identity every proof carries), and a device-id
- * regeneration escape hatch.
+ * Device identity screen: share the device record, regenerate the identity
+ * (a fresh device id always comes with a fresh nickname — the pair is what
+ * the verifier shows, so they change together), and a short project blurb
+ * linking to the site.
  */
 class IdentityActivity : AppCompatActivity() {
     private lateinit var b: ActivityIdentityBinding
@@ -24,26 +27,13 @@ class IdentityActivity : AppCompatActivity() {
         b = ActivityIdentityBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        b.name.setText(device.name ?: "")
         refresh()
-        b.saveNameBtn.setOnClickListener { if (saveName()) refresh() }
-        b.shareBtn.setOnClickListener { saveName(); share() }
+        b.shareBtn.setOnClickListener { share() }
         b.regenBtn.setOnClickListener { confirmRegenerate() }
+        b.websiteBtn.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.BASE_URL)))
+        }
         b.closeBtn.setOnClickListener { finish() }
-    }
-
-    /** Persists the edited name; false when the field is empty. */
-    private fun saveName(): Boolean {
-        val name = b.name.text.toString().trim()
-        if (name.isEmpty()) {
-            toast(getString(R.string.fill_name))
-            return false
-        }
-        if (name != device.name) {
-            device.name = name
-            toast(getString(R.string.name_saved))
-        }
-        return true
     }
 
     private fun refresh() {
@@ -51,11 +41,6 @@ class IdentityActivity : AppCompatActivity() {
         // captured a file when debugging recognition in the field
         val version = packageManager.getPackageInfo(packageName, 0).versionName
         b.summary.text = getString(R.string.identity_summary, device.name, device.deviceId, version)
-        thread {
-            val key = DeviceKey.ensure()
-            val entry = device.enrollmentJson("${Build.MANUFACTURER} ${Build.MODEL}", key)
-            runOnUiThread { b.enrollJson.text = entry.toString(2) }
-        }
     }
 
     private fun share() {
@@ -69,17 +54,30 @@ class IdentityActivity : AppCompatActivity() {
         }
     }
 
+    /** New id + new nickname together: the dialog won't confirm without a name. */
     private fun confirmRegenerate() {
-        MaterialAlertDialogBuilder(this)
+        val d = DialogRegenerateBinding.inflate(layoutInflater)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(R.string.regen_title)
             .setMessage(R.string.regen_warning)
+            .setView(d.root)
             .setPositiveButton(R.string.regen_confirm) { _, _ ->
-                saveName() // a new identity can carry a new nickname too
+                device.name = d.name.text.toString().trim()
                 device.regenerateDeviceId()
                 refresh()
+                toast(getString(R.string.regen_done))
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+        val confirm = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+        confirm.isEnabled = false
+        d.name.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {
+                confirm.isEnabled = !s.isNullOrBlank()
+            }
+            override fun beforeTextChanged(s: CharSequence?, a: Int, c: Int, n: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, before: Int, n: Int) {}
+        })
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
