@@ -22,7 +22,10 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".CaptureActivity" android:exported="false" />
+        <activity
+            android:name=".CaptureActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TrustCam.Capture" />
         <activity android:name=".IdentityActivity" android:exported="false" />
 
         <!-- share the device record as a .json file instead of a wall of text -->

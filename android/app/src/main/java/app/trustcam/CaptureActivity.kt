@@ -44,6 +44,17 @@ class CaptureActivity : AppCompatActivity() {
         b = ActivityCaptureBinding.inflate(layoutInflater)
         setContentView(b.root)
 
+        // Edge-to-edge viewfinder: the preview runs under the system bars and
+        // the floating controls shift by the bar insets instead
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(b.root) { _, insets ->
+            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            b.controls.setPadding(0, b.controls.paddingTop, 0, 28.dp + bars.bottom)
+            (b.identityBtn.layoutParams as android.view.ViewGroup.MarginLayoutParams)
+                .topMargin = 16.dp + bars.top
+            insets
+        }
+
         b.photoBtn.setOnClickListener { takePhoto() }
         b.videoBtn.setOnClickListener { toggleRecording() }
         b.identityBtn.setOnClickListener {
@@ -290,4 +301,6 @@ class CaptureActivity : AppCompatActivity() {
     }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+
+    private val Int.dp get() = (this * resources.displayMetrics.density).toInt()
 }

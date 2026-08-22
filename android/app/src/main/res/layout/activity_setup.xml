@@ -11,6 +11,15 @@
         android:padding="28dp"
         android:gravity="center_vertical">
 
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="20dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_launcher_fg"
+            android:background="@drawable/seal_badge" />
+
         <TextView
             android:id="@+id/title"
             android:layout_width="wrap_content"

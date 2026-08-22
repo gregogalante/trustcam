@@ -15,13 +15,28 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- identity floats top-right over the viewfinder; top margin grows with
+         the status-bar inset at runtime -->
+    <ImageButton
+        android:id="@+id/identityBtn"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/circle_scrim"
+        android:contentDescription="@string/identity"
+        android:padding="10dp"
+        android:src="@drawable/ic_identity"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <TextView
         android:id="@+id/status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="20dp"
         android:paddingHorizontal="16dp"
         android:paddingVertical="8dp"
         android:background="@drawable/status_chip"
@@ -32,45 +47,44 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <LinearLayout
+    <!-- no full-width band: the controls float over the frame; bottom padding
+         grows with the navigation-bar inset at runtime -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/controls"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:paddingVertical="24dp"
-        android:background="#66000000"
+        android:paddingTop="16dp"
+        android:paddingBottom="28dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
+        <ImageButton
             android:id="@+id/photoBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:background="@drawable/shutter_photo"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/photo"
-            app:srcCompat="@android:drawable/ic_menu_camera"
-            app:fabSize="normal" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/videoBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="48dp"
-            android:contentDescription="@string/record"
-            app:srcCompat="@drawable/ic_record"
-            app:fabSize="normal" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <ImageButton
-            android:id="@+id/identityBtn"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_marginStart="48dp"
-            android:background="@drawable/status_chip"
-            android:contentDescription="@string/identity"
-            android:padding="10dp"
-            android:src="@drawable/ic_identity" />
-    </LinearLayout>
+            android:id="@+id/videoBtn"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="44dp"
+            android:background="@drawable/circle_scrim"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/record"
+            android:padding="12dp"
+            android:src="@drawable/ic_record"
+            app:layout_constraintTop_toTopOf="@id/photoBtn"
+            app:layout_constraintBottom_toBottomOf="@id/photoBtn"
+            app:layout_constraintStart_toEndOf="@id/photoBtn" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Fullscreen sealing overlay: hides the camera preview and the capture
          controls while the watermark is being applied (blocks touches too) -->

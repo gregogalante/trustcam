@@ -13,6 +13,7 @@
     <string name="identity_title">Device identity</string>
     <string name="identity_summary">%1$s — app v%3$s\ndevice %2$s</string>
     <string name="identity_close">Close</string>
+    <string name="record_title">Device record</string>
     <string name="regen_note">Need a fresh start? Regenerating gives this device a new id — and a new identity means picking a new display name too.</string>
     <string name="regen_cta">Regenerate identity</string>
     <string name="regen_title">Regenerate identity?</string>
