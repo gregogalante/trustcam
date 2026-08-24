@@ -2,4 +2,5 @@
 <resources>
     <!-- Matches the web accent color in web/style.css -->
     <color name="brand">#2456D6</color>
+    <color name="on_brand">#FFFFFF</color>
 </resources>

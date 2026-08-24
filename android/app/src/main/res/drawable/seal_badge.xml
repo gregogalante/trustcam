@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Rounded gradient badge behind the sealing-overlay logo -->
+<!-- Rounded brand badge behind the logo. Fixed light-mode brand blue: the
+     glyph on top is white, so the badge must stay dark in both themes. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="18dp" />
-    <gradient
-        android:angle="315"
-        android:startColor="#2563EB"
-        android:endColor="#7C3AED" />
+    <solid android:color="#2456D6" />
 </shape>

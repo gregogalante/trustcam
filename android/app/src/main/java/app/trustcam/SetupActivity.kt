@@ -50,6 +50,8 @@ class SetupActivity : AppCompatActivity() {
                     b.form.visibility = View.GONE
                     b.enrollCard.visibility = View.VISIBLE
                     b.enrollJson.text = entry.toString(2)
+                    // maxLines + scrollbars need a movement method to actually scroll
+                    b.enrollJson.movementMethod = android.text.method.ScrollingMovementMethod()
                     b.shareBtn.setOnClickListener {
                         startActivity(Intent.createChooser(
                             device.shareRecordIntent(this, entry),

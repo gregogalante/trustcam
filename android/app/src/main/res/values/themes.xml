@@ -2,7 +2,7 @@
 <resources>
     <style name="Theme.TrustCam" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/brand</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimary">@color/on_brand</item>
     </style>
 
     <!-- Viewfinder: pitch black, edge-to-edge, and no system scrim behind the

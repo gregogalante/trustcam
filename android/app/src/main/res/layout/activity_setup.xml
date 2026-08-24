@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="28dp"
+        android:padding="24dp"
         android:gravity="center_vertical">
 
         <ImageView
@@ -96,8 +96,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/enroll_title"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textStyle="bold" />
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -115,7 +114,7 @@
                 android:padding="12dp"
                 android:background="@drawable/status_chip"
                 android:fontFamily="monospace"
-                android:textSize="10sp"
+                android:textSize="11sp"
                 android:textColor="#E9EBF0"
                 android:maxLines="14"
                 android:scrollbars="vertical" />
