@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Matches the web accent color in web/style.css -->
+    <!-- M3 tonal roles derived from the brand seed #2456D6 (matches the web
+         accent in web/style.css). Light roles here, night in values-night.
+         Neutrals are blue-seeded on purpose: the library baseline is purple
+         and reads pink next to the brand blue. -->
     <color name="brand">#2456D6</color>
     <color name="on_brand">#FFFFFF</color>
+    <color name="brand_container">#DCE1FF</color>
+    <color name="on_brand_container">#001453</color>
+    <color name="secondary">#575E71</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="secondary_container">#DBE2F9</color>
+    <color name="on_secondary_container">#141B2C</color>
+    <color name="surface">#F9F9FF</color>
+    <color name="on_surface">#1A1B20</color>
+    <color name="surface_container">#EDEDF4</color>
+    <color name="surface_container_high">#E7E8EE</color>
+    <color name="surface_container_highest">#E2E2E9</color>
+    <color name="on_surface_variant">#44464F</color>
+    <color name="outline">#757780</color>
+    <color name="outline_variant">#C5C6D0</color>
 </resources>

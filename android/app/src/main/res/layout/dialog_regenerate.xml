@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Input for the regenerate dialog: a new device id requires a new nickname. -->
-<com.google.android.material.textfield.TextInputLayout
+<!-- Input for the regenerate dialog: a new device id requires a new nickname.
+     Wrapped in a padded FrameLayout — layout_margins on the root of a view
+     inflated without a parent are dropped, so padding must live inside. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/nameLayout"
-    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="24dp"
-    android:layout_marginEnd="24dp"
-    android:layout_marginTop="16dp"
-    android:hint="@string/regen_name_hint">
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="16dp">
 
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/name"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/nameLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textPersonName" />
-</com.google.android.material.textfield.TextInputLayout>
+        android:hint="@string/regen_name_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName" />
+    </com.google.android.material.textfield.TextInputLayout>
+</FrameLayout>

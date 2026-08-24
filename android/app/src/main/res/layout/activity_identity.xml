@@ -54,12 +54,12 @@
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant" />
 
+                <!-- primary action of the screen: the only filled button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/shareBtn"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    style="@style/Widget.Material3.Button.TonalButton"
                     android:text="@string/share_enrollment" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -96,7 +96,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    style="@style/Widget.Material3.Button.TonalButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:text="@string/regen_confirm" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -133,7 +133,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    style="@style/Widget.Material3.Button.TonalButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:text="@string/about_link" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
