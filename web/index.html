@@ -36,34 +36,27 @@
       · no accounts · no servers — the proof travels inside the file and
       verification runs in your browser.</p>
 
-      <div class="diagram">
-        <svg class="hero-flow" viewBox="0 0 720 110" role="img" aria-label="Capture is signed in hardware, registered, and verifiable by anyone">
-          <g class="flow-node">
-            <rect x="8" y="12" width="160" height="86" rx="12"/>
-            <path class="icon" d="M70 33h7l4-5h14l4 5h7a3 3 0 0 1 3 3v19a3 3 0 0 1-3 3H70a3 3 0 0 1-3-3V36a3 3 0 0 1 3-3z" fill="none"/>
-            <circle class="icon" cx="88" cy="45" r="6" fill="none"/>
-            <text x="88" y="82" class="flow-label" text-anchor="middle">Capture</text>
-          </g>
-          <path class="flow-arrow" d="M172 55h38"/>
-          <g class="flow-node">
-            <rect x="214" y="12" width="160" height="86" rx="12"/>
-            <path class="icon" d="M286 40v-6a8 8 0 0 1 16 0v6m-19 0h22a3 3 0 0 1 3 3v13a3 3 0 0 1-3 3h-22a3 3 0 0 1-3-3V43a3 3 0 0 1 3-3z" fill="none"/>
-            <text x="294" y="82" class="flow-label" text-anchor="middle">Sealed on the phone</text>
-          </g>
-          <path class="flow-arrow" d="M378 55h38"/>
-          <g class="flow-node">
-            <rect x="420" y="12" width="160" height="86" rx="12"/>
-            <path class="icon" d="M488 58a10 10 0 0 1 2-19 13 13 0 0 1 25 3 8 8 0 0 1-2 16z" fill="none"/>
-            <text x="500" y="82" class="flow-label" text-anchor="middle">Proof sealed in the file</text>
-          </g>
-          <path class="flow-arrow" d="M584 55h38"/>
-          <g class="flow-node ok">
-            <rect x="626" y="12" width="86" height="86" rx="12"/>
-            <path class="icon" d="M657 43l8 8 15-15" fill="none"/>
-            <text x="669" y="82" class="flow-label" text-anchor="middle">Verified</text>
-          </g>
-        </svg>
+    <div class="flow">
+      <div class="fnode">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 16h6l3-4h10l3 4h6a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V19a3 3 0 0 1 3-3z"/><circle cx="24" cy="27" r="6"/></svg>
+        <span class="fnode-title">Capture</span>
       </div>
+      <div class="farrow" aria-hidden="true"></div>
+      <div class="fnode">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M16 21v-5a8 8 0 0 1 16 0v5"/><rect x="11" y="21" width="26" height="16" rx="3"/></svg>
+        <span class="fnode-title">Sealed on the phone</span>
+      </div>
+      <div class="farrow" aria-hidden="true"></div>
+      <div class="fnode">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M15 37a8 8 0 0 1 1-16 11 11 0 0 1 21 3 7 7 0 0 1-1 13z"/></svg>
+        <span class="fnode-title">Proof sealed in the file</span>
+      </div>
+      <div class="farrow" aria-hidden="true"></div>
+      <div class="fnode ok">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 25l7 7 14-15"/></svg>
+        <span class="fnode-title">Verified</span>
+      </div>
+    </div>
     </section>
 
     <!-- ============ IN PLAIN WORDS ============ -->
@@ -154,37 +147,34 @@
       that <strong>finds the verified original</strong>. Each covers the other's
       blind spot.</p>
 
-      <div class="diagram">
-        <svg class="layers-diagram" viewBox="0 0 760 240" role="img" aria-label="The signature verifies exact files; the watermark survives social platforms and recovers provenance">
-          <!-- source file -->
-          <g class="flow-node">
-            <rect x="8" y="80" width="130" height="80" rx="12"/>
-            <text x="73" y="112" class="flow-label" text-anchor="middle">Your capture</text>
-            <text x="73" y="130" class="flow-sub" text-anchor="middle">sealed +</text>
-            <text x="73" y="144" class="flow-sub" text-anchor="middle">invisibly marked</text>
-          </g>
-          <!-- direct path (signature) -->
-          <path class="flow-arrow" d="M142 100 C 240 40, 420 40, 600 92"/>
-          <text x="360" y="46" class="flow-sub" text-anchor="middle">shared as exact file (email, drive, download)</text>
-          <!-- social path -->
-          <path class="flow-arrow" d="M142 140 C 220 190, 260 190, 306 176"/>
-          <g class="flow-node warn">
-            <rect x="310" y="150" width="170" height="70" rx="12"/>
-            <text x="395" y="178" class="flow-label" text-anchor="middle">Social platform</text>
-            <text x="395" y="196" class="flow-sub" text-anchor="middle">recompresses the file,</text>
-            <text x="395" y="210" class="flow-sub" text-anchor="middle">strips everything attached</text>
-          </g>
-          <path class="flow-arrow" d="M484 185 C 540 185, 560 160, 598 132"/>
-          <!-- verifier -->
-          <g class="flow-node ok">
-            <rect x="594" y="76" width="160" height="88" rx="12"/>
-            <path class="icon" d="M655 92l6 6 12-12" fill="none"/>
-            <text x="674" y="118" class="flow-label" text-anchor="middle">Verified</text>
-            <text x="674" y="138" class="flow-sub" text-anchor="middle">exact copy → the seal</text>
-            <text x="674" y="152" class="flow-sub" text-anchor="middle">social copy → the mark</text>
-          </g>
-        </svg>
+    <div class="flow branch">
+      <div class="fnode">
+        <span class="fnode-title">Your capture</span>
+        <span class="fnode-sub">sealed +</span>
+        <span class="fnode-sub">invisibly marked</span>
       </div>
+      <div class="lanes">
+        <div class="lane direct">
+          <span class="lane-label">shared as exact file (email, drive, download)</span>
+          <div class="farrow" aria-hidden="true"></div>
+        </div>
+        <div class="lane">
+          <div class="farrow" aria-hidden="true"></div>
+          <div class="fnode warn">
+            <span class="fnode-title">Social platform</span>
+            <span class="fnode-sub">recompresses the file,</span>
+            <span class="fnode-sub">strips everything attached</span>
+          </div>
+          <div class="farrow" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="fnode ok">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 25l7 7 14-15"/></svg>
+        <span class="fnode-title">Verified</span>
+        <span class="fnode-sub">exact copy → the seal</span>
+        <span class="fnode-sub">social copy → the mark</span>
+      </div>
+    </div>
 
       <div class="grid2">
         <div class="card">

@@ -69,10 +69,13 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
 - **One design system**: `web/style.css` (single stylesheet, every page).
   Tokens on `:root` (dark) + a `prefers-color-scheme: light` override — never
   hardcode a color in a page. Monospace (`--mono`) marks machine-emitted text
-  (labels, ids, numbers, badges), sans is for prose. Fixed-aspect SVG diagrams
-  go inside a `<div class="diagram">` (horizontal scroll on narrow screens);
-  prose-only pages use `<main class="doc">`; the nav link of the current page
-  carries `aria-current="page"`.
+  (labels, ids, numbers, badges), sans is for prose. Diagrams are HTML, never
+  fixed-viewBox SVG: flow charts use `.flow` / `.fnode` / `.farrow` (`.branch`
+  + `.lanes` for the two-route one), bit layouts use `.bits` / `.bitbar` with
+  proportional `flex` values — all of them turn into vertical stacks under
+  720px, so nothing scrolls sideways on a phone. Prose-only pages use
+  `<main class="doc">`; the nav link of the current page carries
+  `aria-current="page"`.
 - **Single verification source**: all verdict logic lives in
   `web/js/verifycore.js` (+ codec js), used by BOTH `web/verify.html` and
   the node CLI `web/verify.mjs` (which downloads the site's own modules + wasm

@@ -394,38 +394,73 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
 .compare figcaption { font-size: .82rem; color: var(--muted); margin-top: .55rem; text-align: center; line-height: 1.55 }
 @media (max-width: 640px) { .compare, .compare.three { grid-template-columns: 1fr } }
 
-/* ---------- SVG diagrams ---------- */
-/* scroll container: these diagrams have a fixed aspect, so on narrow screens
-   they scroll horizontally instead of shrinking their labels to nothing */
-.diagram { overflow-x: auto; overscroll-behavior-x: contain }
-.diagram::-webkit-scrollbar { height: 6px }
-.diagram::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 99px }
-@media (max-width: 680px) {
-  .diagram svg { min-width: 620px }
-  .hero .eyebrow::before, .hero .eyebrow::after { display: none }
-  .eyebrow { flex-wrap: wrap }
+/* ---------- flow diagrams ----------
+   HTML, not SVG: a fixed viewBox cannot reflow, so these lay out with flexbox
+   and turn into a vertical stack on narrow screens (see the mobile block). */
+.flow { display: flex; align-items: stretch; gap: .55rem; margin: 2.4rem 0 }
+.fnode {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px;
+  padding: .95rem .85rem; text-align: center;
 }
-.hero-flow, .layers-diagram { width: 100%; height: auto; margin-top: 2.6rem }
-.flow-node rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1 }
-.flow-node.ok rect { stroke: color-mix(in srgb, var(--ok) 60%, transparent);
-  fill: color-mix(in srgb, var(--ok) 7%, var(--surface)) }
-.flow-node.warn rect { stroke: color-mix(in srgb, var(--bad) 55%, transparent); stroke-dasharray: 4 4;
-  fill: color-mix(in srgb, var(--bad) 6%, var(--surface)) }
-.flow-node .icon { stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round }
-.flow-node.ok .icon { stroke: var(--ok); stroke-width: 3.4 }
-.flow-label { fill: var(--fg); font: 620 12.5px -apple-system, system-ui, sans-serif; letter-spacing: -.2px }
-.flow-sub { fill: var(--muted); font: 400 10.5px ui-monospace, 'SF Mono', Menlo, monospace }
-/* marching dashes: reads as data in motion, not decoration */
-.flow-arrow {
-  fill: none; stroke: color-mix(in srgb, var(--accent) 55%, transparent);
-  stroke-width: 1.4; stroke-dasharray: 5 5; animation: march 1.4s linear infinite;
+.fnode.ok { border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+  background: color-mix(in srgb, var(--ok) 7%, var(--surface)) }
+.fnode.warn { border-style: dashed; border-color: color-mix(in srgb, var(--bad) 50%, transparent);
+  background: color-mix(in srgb, var(--bad) 6%, var(--surface)) }
+.fnode svg {
+  width: 28px; height: 28px; margin: 0 auto .5rem; fill: none;
+  stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
 }
-@keyframes march { to { stroke-dashoffset: -20 } }
+.fnode.ok svg { stroke: var(--ok); stroke-width: 3 }
+.fnode-title { font-weight: 620; font-size: .9rem; letter-spacing: -.01em; line-height: 1.35 }
+.fnode-sub {
+  display: block; font-family: var(--mono); font-size: .7rem; line-height: 1.55;
+  color: var(--muted); margin-top: .2rem;
+}
+.fnode-title + .fnode-sub { margin-top: .4rem }
+/* dashed connector; the dashes march so the diagram reads as data in motion */
+.farrow {
+  flex: 0 0 22px; align-self: center; height: 1px;
+  background: repeating-linear-gradient(90deg,
+    color-mix(in srgb, var(--accent) 65%, transparent) 0 5px, transparent 5px 10px);
+  animation: marchx 1s linear infinite;
+}
+@keyframes marchx { to { background-position: 10px 0 } }
+/* branch: one path stays exact, the other goes through a platform */
+.flow.branch { align-items: center }
+.branch .lanes { flex: 1.6; display: flex; flex-direction: column; gap: 1.1rem; min-width: 0 }
+.branch .lane { display: flex; align-items: center; gap: .55rem; min-width: 0 }
+.branch .lane .farrow { flex: 1 }
+.branch .lane .fnode { flex: 2 }
+.lane-label {
+  font-family: var(--mono); font-size: .68rem; line-height: 1.5;
+  color: var(--muted); text-align: center;
+}
+/* the exact-file route is a labelled line rather than a node: label on top,
+   connector spanning the whole lane underneath */
+.branch .lane.direct { flex-direction: column; align-items: stretch; gap: .4rem }
+.branch .lane.direct .farrow { flex: none; width: 100%; align-self: stretch }
 
-/* payload layout diagram (paper) */
-.pl-id { fill: color-mix(in srgb, var(--accent) 18%, transparent); stroke: var(--accent); stroke-width: 1 }
-.pl-crc { fill: color-mix(in srgb, var(--ok) 18%, transparent); stroke: var(--ok); stroke-width: 1 }
-.pl-rep { fill: var(--surface-2); stroke: var(--line-strong); stroke-width: 1 }
+/* ---------- bit-field diagrams (paper) ---------- */
+.bits { margin: 2.2rem 0 }
+.bitbar { display: flex; gap: .3rem }
+.bitbar > span {
+  min-width: 0; padding: .55rem .5rem; border-radius: 7px; text-align: center;
+  font-family: var(--mono); font-size: .68rem; line-height: 1.4; overflow-wrap: break-word;
+}
+.bit-id { background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); color: var(--fg) }
+.bit-parity { background: color-mix(in srgb, var(--ok) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ok) 50%, transparent); color: var(--fg) }
+.bitreps { display: flex; gap: .3rem; margin-top: .4rem }
+.bitreps span {
+  flex: 1; height: 22px; border-radius: 5px;
+  background: var(--surface-2); border: 1px solid var(--line-strong);
+}
+.bit-caption {
+  font-family: var(--mono); font-size: .68rem; line-height: 1.6;
+  color: var(--muted); margin: .55rem 0 0; text-align: center;
+}
 
 /* ---------- steps ---------- */
 .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-top: 1.8rem }
@@ -528,14 +563,84 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
   .landing section { margin-top: 5rem }
   .band { padding: 2rem 1.3rem }
 }
+
+/* Tablet down: the flow diagrams stop being rows and become vertical stacks —
+   connectors rotate with them, so nothing ever needs sideways scrolling. */
+@media (max-width: 720px) {
+  .flow, .flow.branch { flex-direction: column; align-items: stretch }
+  .branch .lanes { flex: none; width: 100%; gap: .55rem }
+  /* stacked, the two routes would read as one sequence — so each gets its own
+     rail and the fork is drawn once, above and below the pair */
+  .branch .lanes { position: relative; gap: .7rem; padding: 1.5rem 0 }
+  .branch .lanes::before, .branch .lanes::after {
+    content: ''; position: absolute; left: 50%; width: 1px; height: 18px;
+    background: repeating-linear-gradient(180deg,
+      color-mix(in srgb, var(--accent) 65%, transparent) 0 5px, transparent 5px 10px);
+    animation: marchy 1s linear infinite;
+  }
+  .branch .lanes::before { top: 0 }
+  .branch .lanes::after { bottom: 0 }
+  .branch .lane {
+    flex-direction: column; align-items: stretch; gap: 0;
+    border-left: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    border-radius: 0 10px 10px 0; padding-left: .8rem;
+  }
+  .branch .lane .farrow { display: none }
+  .branch .lane .fnode, .lane-label { flex: none }
+  .lane-label { text-align: left; padding: .15rem 0 }
+  .farrow {
+    width: 1px; height: 18px; align-self: center;
+    background: repeating-linear-gradient(180deg,
+      color-mix(in srgb, var(--accent) 65%, transparent) 0 5px, transparent 5px 10px);
+    animation: marchy 1s linear infinite;
+  }
+  /* stacked nodes get compact: icon beside the title, details below */
+  .fnode { flex-flow: row wrap; align-items: center; gap: .65rem; text-align: left; padding: .8rem .9rem }
+  .fnode svg { width: 24px; height: 24px; margin: 0 }
+  .fnode-sub, .fnode-title + .fnode-sub { flex: 0 0 100%; margin-top: 0 }
+  .fnode-title { flex: 1 }
+  .hero .eyebrow::before, .hero .eyebrow::after { display: none }
+  .eyebrow { flex-wrap: wrap }
+}
+@keyframes marchy { to { background-position: 0 10px } }
+
 @media (max-width: 560px) {
-  nav { gap: .9rem; padding: .75rem 1rem }
-  nav a:not(.brand) { font-size: .68rem; letter-spacing: .06em }
-  .grid2, .grid3, .steps, .kpis, .timeline { grid-template-columns: 1fr }
-  dl { grid-template-columns: 1fr; gap: .15rem .8rem }
-  dt { margin-top: .7rem }
-  .matrix li { flex-wrap: wrap }
-  .matrix .val { margin-left: 2rem; text-align: left; padding-left: 0 }
+  main { padding: 1.8rem 1rem 3.5rem }
+  nav { gap: .85rem; padding: .75rem 1rem }
+  nav a:not(.brand) { font-size: .68rem; letter-spacing: .05em }
+  .hero h1 { font-size: clamp(2rem, 8.6vw, 2.5rem) }
+  p.lead { font-size: 1.02rem }
+  .card { padding: 1.1rem }
+  .grid2, .grid3 { grid-template-columns: 1fr }
+  /* KPIs stay paired: one number per row wastes the whole width */
+  .kpis { grid-template-columns: 1fr 1fr; gap: .7rem }
+  .kpi { padding: .9rem }
+  .kpi-value { font-size: 1.5rem }
+  .kpi-label { font-size: .74rem }
+  .band { padding: 1.6rem 1.1rem; border-radius: 18px }
+  .final-cta { padding: 2.2rem 1.1rem; border-radius: 18px }
+  .final-cta h2 { font-size: 1.5rem }
+  /* one full-width button per row — centred pills of unequal width read as noise */
+  .cta-row { flex-direction: column; align-items: stretch; gap: .6rem }
+  .cta-row .btn { justify-content: center }
+  dl { grid-template-columns: 1fr; gap: .15rem }
+  dd + dt { margin-top: .8rem }
+  /* check + claim on one row, the measurement under it (no hanging indent) */
+  .matrix li { display: grid; grid-template-columns: 18px 1fr; column-gap: .6rem; row-gap: .2rem; align-items: start }
+  .matrix .check { grid-row: 1 }
+  .matrix .val { grid-column: 2; margin: 0; padding: 0; text-align: left }
+  /* steps: icon next to its text, not orphaned above it */
+  .steps { grid-template-columns: 1fr; gap: 1.3rem }
+  .step { display: grid; grid-template-columns: 44px 1fr; column-gap: .9rem }
+  .step-icon { grid-row: 1 / span 2; width: 44px; height: 44px; border-radius: 12px }
+  .step-icon svg { width: 24px; height: 24px }
+  .step h3 { margin: 0 0 .2rem; align-self: center }
+  /* timeline turns into a vertical rail with the dots on it */
+  .timeline { grid-template-columns: 1fr; gap: 0; margin-top: 1.5rem }
+  .tl-item { border-top: 0; border-left: 1px solid var(--line); padding: 0 0 1.4rem 1.1rem }
+  .tl-item::before { top: .35rem; left: -4px }
+  .tl-item.now { border-left-color: color-mix(in srgb, var(--accent) 60%, transparent) }
+  .tl-item:last-child { padding-bottom: 0 }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto }
