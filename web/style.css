@@ -269,8 +269,8 @@ pre {
   padding: 1.1rem 1.2rem; overflow-x: auto; color: #cfe0ff; line-height: 1.6;
 }
 footer {
-  color: var(--faint); font-size: .82rem; margin-top: 5rem;
-  border-top: 1px solid var(--line); padding-top: 1.3rem;
+  color: var(--faint); font-size: .82rem; margin-top: 5rem; text-align: center;
+  border-top: 1px solid var(--line); padding-top: 1.5rem;
 }
 .note { color: var(--muted); font-size: .85rem }
 .error { color: var(--bad); margin: 1rem 0 0 }
@@ -426,9 +426,13 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
   animation: marchx 1s linear infinite;
 }
 @keyframes marchx { to { background-position: 10px 0 } }
-/* branch: one path stays exact, the other goes through a platform */
-.flow.branch { align-items: center }
-.branch .lanes { flex: 1.6; display: flex; flex-direction: column; gap: 1.1rem; min-width: 0 }
+/* branch: one path stays exact, the other goes through a platform.
+   Stretch, not center: the capture and verdict cards flank the fork and must
+   share one height — centering left them ragged. */
+.branch .lanes {
+  flex: 1.6; display: flex; flex-direction: column; justify-content: center;
+  gap: 1.1rem; min-width: 0;
+}
 .branch .lane { display: flex; align-items: center; gap: .55rem; min-width: 0 }
 .branch .lane .farrow { flex: 1 }
 .branch .lane .fnode { flex: 2 }
