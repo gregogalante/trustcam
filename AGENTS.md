@@ -66,6 +66,13 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   quality validated in `spikes/spike_fp16_embedder.py`.
 - Web pages are plain static HTML/CSS/JS in `web/`. No framework, no backend —
   keep it that way. onnxruntime-web is vendored in `web/ort/`.
+- **One design system**: `web/style.css` (single stylesheet, every page).
+  Tokens on `:root` (dark) + a `prefers-color-scheme: light` override — never
+  hardcode a color in a page. Monospace (`--mono`) marks machine-emitted text
+  (labels, ids, numbers, badges), sans is for prose. Fixed-aspect SVG diagrams
+  go inside a `<div class="diagram">` (horizontal scroll on narrow screens);
+  prose-only pages use `<main class="doc">`; the nav link of the current page
+  carries `aria-current="page"`.
 - **Single verification source**: all verdict logic lives in
   `web/js/verifycore.js` (+ codec js), used by BOTH `web/verify.html` and
   the node CLI `web/verify.mjs` (which downloads the site's own modules + wasm

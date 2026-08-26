@@ -4,7 +4,7 @@
     {
       "name": "trustcam",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8090", "-d", "/Users/galante/trustcam/web"],
+      "runtimeArgs": ["-m", "http.server", "8090", "-d", "/Users/galante/Workspace/trustcam/web"],
       "port": 8090
     }
   ]
