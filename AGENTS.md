@@ -120,6 +120,16 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   "mismatch". Extension values are authenticated by the chain: UIs flag them
   when the chain didn't verify to a Google root.
 
+## Release flow
+
+Project version = shipped app version (single number). To release:
+1. Bump `versionCode` + `versionName` in `android/app/build.gradle`.
+2. Bump the `footer::after` content in `web/style.css` (the ONE site-side
+   version string, shown in every footer).
+3. `gradle assembleRelease`, copy the APK to `web/trustcam.apk` (same
+   keystore — the verifier pins the signing cert, see above).
+4. Tag `vX.Y.Z` on the release commit and push the tag.
+
 ## Testing on devices
 
 On-device test harness and multi-device runbook: `docs/06-device-test-runbook.md`.

@@ -272,6 +272,12 @@ footer {
   color: var(--faint); font-size: .82rem; margin-top: 5rem; text-align: center;
   border-top: 1px solid var(--line); padding-top: 1.5rem;
 }
+/* released project version (= shipped app version) — the ONE place to bump */
+footer::after {
+  content: 'v1.4.0';
+  display: block; margin-top: .4rem;
+  font-family: var(--mono); font-size: .72rem; color: var(--faint);
+}
 .note { color: var(--muted); font-size: .85rem }
 .error { color: var(--bad); margin: 1rem 0 0 }
 
