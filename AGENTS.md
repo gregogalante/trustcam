@@ -47,7 +47,14 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   add a version.
 - Proof JSON v2 (app ≥ 1.2.0) carries `captureId` + `deviceId` (both UUIDs;
   videos add `markId`); v1 proofs carried a numeric `payload`. The verifier
-  supports both.
+  supports both. Since 1.4.0 the proof MAY carry `tsr`: an RFC 3161
+  TimeStampToken (base64 DER) over the canonical SHA-256, fetched at capture
+  from Sectigo (`android/.../Rfc3161.kt`, best-effort — absent offline).
+  `verifyTimestamp` in verifycore.js validates it fully client-side
+  (imprint, CMS signature, chain to `TSA_ROOTS` pins); real-token vector in
+  `spikes/results/rfc3161_vector.json`, test `spikes/test_rfc3161_js.mjs`.
+  Proof fields are ADDITIVE — old verifiers ignore unknown keys, never
+  repurpose one.
 - `web/samples.json` maps capture ids (32-hex, no dashes) to verified originals
   under `web/samples/` — the static stand-in for the future cloud registry.
   Exact-file verification does not need it.

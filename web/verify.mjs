@@ -30,7 +30,7 @@ const BASE = process.env.TRUSTCAM_URL || 'https://trustcam.gregoriogalante.com'
 const SHARED = {
   'js/codec.js': 'c38ef43250b509d7d3d757074099418eaf049c1b669650bd47beffad6e9ce5e2',
   'js/codec_v3.js': 'cce9236875d72a64c49c832e6ec1ff0e125d02916016d10085bf3e3e268f6989',
-  'js/verifycore.js': 'b149f339f548e51e1de3dc84c4d996a72b9e8a0d836ee52e2607842fbd60ec6b',
+  'js/verifycore.js': '2e5c04326edebbce86d1a53982aaabf4fce980e8447eb8d76e53ffcab607a9f2',
   'ort/ort.min.js': 'be6e560b64c03c99252eedc0e1989e9e51e44d9f191e7655c9bf011bf9f576c8',
   'ort/ort-wasm-simd-threaded.mjs': '745eb7c0ce6f18a6aa521971b2877babc7ffb27eecb58ab3bc6e5ef4692672e8',
   'ort/ort-wasm-simd-threaded.wasm': '207d02be4591c156b0a98f024f3d58005b5b04c92274d759fb390338c63559ea',
@@ -198,7 +198,7 @@ async function main () {
   const t = core.parseTrailer(bytes)
   if (t) {
     const p = t.proof
-    const { sigValid, attestation, key, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
+    const { sigValid, attestation, key, timestamp, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
     const ATT = {
       'google-root': 'chain verified to Google hardware attestation root',
       'unverified-root': 'chain valid, root NOT a Google hardware root',
@@ -226,6 +226,14 @@ async function main () {
     console.log(`  boot        : ${boot}`)
     console.log(`  signing app : ${app}`)
     console.log(`  captured at : ${p.capturedAt} (device-claimed)`)
+    if (timestamp) {
+      const TS = {
+        verified: `existed no later than ${timestamp.genTime} (RFC 3161, trusted TSA)`,
+        'untrusted-tsa': `token reads ${timestamp.genTime} but the TSA is not trusted — treat as device-claimed`,
+        invalid: 'token INVALID — treat the time as device-claimed'
+      }
+      console.log(`  timestamped : ${TS[timestamp.status]}`)
+    }
     console.log(`  mark id     : ${markId(core, p)}`)
     console.log(`  fingerprint : ${fingerprint}`)
     process.exit(sigValid ? 0 : 1)

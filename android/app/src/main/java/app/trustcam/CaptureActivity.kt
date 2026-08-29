@@ -247,6 +247,9 @@ class CaptureActivity : AppCompatActivity() {
                 }
                 val hash = digest.digest()
                 val key = DeviceKey.ensure()
+                // RFC 3161 token over the same hash the secure element signs —
+                // best-effort: null when offline, the proof is valid without it
+                val tsr = Rfc3161.token(hash)
                 val proof = org.json.JSONObject()
                     .put("v", 2)
                     .put("captureId", captureId.toString())
@@ -263,6 +266,7 @@ class CaptureActivity : AppCompatActivity() {
                     .put("securityLevel", key.securityLevel)
                     .put("pubkey", key.publicKeySpkiB64)
                     .put("attestation", org.json.JSONArray(key.attestationChainB64))
+                    .apply { if (tsr != null) put("tsr", tsr) }
                     .put("sig", DeviceKey.signHash(hash))
                 contentResolver.openOutputStream(uri, "wa")!!.use {
                     it.write(ProofTrailer.build(proof))

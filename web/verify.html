@@ -159,7 +159,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     async function verifyTrailer (bytes, t, file, ui) {
       ui.stage.textContent = 'Proof found in the file — verifying the seal on your device…'
       const p = t.proof
-      const { sigValid, attestation, key, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
+      const { sigValid, attestation, key, timestamp, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
 
       // proof v2 carries a capture UUID; v1 carried a small numeric payload
       const markId = p.captureId
@@ -172,6 +172,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
         securityLevel: p.securityLevel,
         attestation,
         key,
+        timestamp,
         capturedAt: p.capturedAt,
         mediaType: p.mediaType,
         sizeBytes: file.size,
@@ -431,6 +432,20 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
           <dt>Signing app</dt>${app}`
     }
 
+    // RFC 3161 token verdict — the one third-party fact in the proof. Absent
+    // on captures sealed offline or by pre-tsr app versions: no row at all.
+    function timestampRow (ts) {
+      if (!ts) return ''
+      switch (ts.status) {
+        case 'verified':
+          return `<dt>Timestamped</dt><dd><span class="badge ok">verified</span> existed no later than ${esc(ts.genTime)} — RFC 3161 token from a trusted timestamp authority</dd>`
+        case 'untrusted-tsa':
+          return `<dt>Timestamped</dt><dd>token reads ${esc(ts.genTime)} but its authority is not one this verifier trusts — treat the time as device-claimed</dd>`
+        default:
+          return '<dt>Timestamped</dt><dd><span class="badge bad">invalid</span> the timestamp token does not check out — treat the time as device-claimed</dd>'
+      }
+    }
+
     function detailRows (d) {
       return `
         <dl>
@@ -439,6 +454,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
           <dt>Key attestation</dt>${attestationRow(d.attestation)}
           ${keyRows(d.key, d.attestation === 'google-root')}
           <dt>Captured at</dt><dd>${esc(d.capturedAt)} <span class="note">(device-claimed)</span></dd>
+          ${timestampRow(d.timestamp)}
           <dt>Media</dt><dd>${esc(d.mediaType)}, ${Number(d.sizeBytes).toLocaleString()} bytes</dd>
           <dt>Mark id</dt><dd>${d.markId}</dd>
           ${d.fingerprint ? `<dt>Fingerprint</dt><dd><code>${esc(d.fingerprint)}</code></dd>` : ''}

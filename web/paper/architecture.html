@@ -298,9 +298,13 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       carried in the file exactly like a C2PA manifest; soft binding = watermark) and
       is built to become C2PA-conformant: the trailer can be re-expressed as a C2PA
       manifest, and the device keys/attestation flow matches the requirements of C2PA
-      Conformance Level 2 (hardware-backed keys). With no server anywhere, capture
-      time is device-claimed only; RFC 3161 timestamp tokens (fetched at capture when
-      online) are the planned upgrade.
+      Conformance Level 2 (hardware-backed keys). Capture time is anchored by an
+      <strong>RFC 3161 timestamp token</strong> fetched at capture (since 1.4.0): the
+      app sends the canonical SHA-256 — never the media — to a public timestamp
+      authority and stores the returned token in the proof; the verifier checks it
+      client-side against a pinned TSA chain and reports "existed no later than".
+      Offline captures simply omit the token and the time stays device-claimed, as
+      the verifier states explicitly.
     </p>
 
     <footer>TrustCam is a project by <a href="https://gregoriogalante.com/">Gregorio Galante</a>.</footer>

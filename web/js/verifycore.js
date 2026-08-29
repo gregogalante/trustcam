@@ -46,9 +46,12 @@
     const seq = derParse(der, 0)
     const [ri, si] = derChildren(der, seq)
     function pad (node) {
-      let start = node.content
-      let len = node.len
-      while (len > size) { start++; len-- } // strip leading zero padding
+      // strip leading zero padding; O(1) and bounds-checked so garbage DER
+      // (e.g. an RSA signature fed to the EC path) throws instead of spinning
+      const skip = Math.max(0, node.len - size)
+      const start = node.content + skip
+      const len = node.len - skip
+      if (!(len >= 0) || start + len > der.length) throw new Error('bad DER signature')
       const out = new Uint8Array(size)
       out.set(der.subarray(start, start + len), size - len)
       return out
@@ -262,6 +265,131 @@
     } catch { return null }
   }
 
+  // ---------- RFC 3161 timestamp token ----------
+  // The app fetches a token for the canonical SHA-256 at capture time (when
+  // online) and stores it in the proof as `tsr` (base64 DER TimeStampToken).
+  // A verified token proves the file existed NO LATER than genTime — the
+  // only third-party fact in an otherwise device-claimed proof.
+  const TSTINFO_OID = '1.2.840.113549.1.9.16.1.4'
+  const MESSAGE_DIGEST_OID = '1.2.840.113549.1.9.4'
+  const HASH_OIDS = {
+    '2.16.840.1.101.3.4.2.1': 'SHA-256',
+    '2.16.840.1.101.3.4.2.2': 'SHA-384',
+    '2.16.840.1.101.3.4.2.3': 'SHA-512'
+  }
+  // trusted TSA certificates, sha256 of the DER — Sectigo public time stamping
+  // CA R41 + Root R46 (the signer leaf rotates; either ancestor pins the chain)
+  const TSA_ROOTS = [
+    '38b52fe70bdde4ecf34d77498d7cbfe48efd83294dca04de01868f7735d2db79',
+    'b53ac15cc1afb6e2ac06828f555bb3bf5bad8b2bac1733ce4cb7aafe729356de'
+  ]
+
+  // "20260829061311Z" (optional fraction) -> "2026-08-29T06:13:11Z"
+  function genTimeToIso (s) {
+    const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(?:\.\d+)?Z$/.exec(s)
+    return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z` : null
+  }
+
+  // verify an RSA/ECDSA signature over `data` with a parsed certificate
+  async function verifySigWithCert (cert, hashName, sig, data) {
+    if (cert.keyKind === 'EC') {
+      if (!cert.curve) return false
+      const key = await crypto.subtle.importKey('spki', cert.spki,
+        { name: 'ECDSA', namedCurve: cert.curve.name }, false, ['verify'])
+      return crypto.subtle.verify({ name: 'ECDSA', hash: hashName }, key,
+        derSigToP1363(sig, cert.curve.size), data)
+    }
+    const key = await crypto.subtle.importKey('spki', cert.spki,
+      { name: 'RSASSA-PKCS1-v1_5', hash: hashName }, false, ['verify'])
+    return crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, sig, data)
+  }
+
+  /**
+   * Verifies an RFC 3161 TimeStampToken (CMS SignedData over TSTInfo) against
+   * the canonical hash: messageImprint match, messageDigest attribute over the
+   * TSTInfo bytes, signer signature over the signed attributes, and the signer
+   * chained to a pinned TSA certificate. Returns:
+   *   { status: 'verified'|'untrusted-tsa'|'invalid', genTime, tsa? }
+   * or null when tsrB64 is absent.
+   */
+  async function verifyTimestamp (tsrB64, hashHex) {
+    if (!tsrB64) return null
+    try {
+      const b = b64ToBytes(tsrB64)
+      // ContentInfo { signedData OID, [0] SignedData }
+      const content = derChildren(b, derParse(b, 0))
+      const sd = derChildren(b, derParse(b, content[1].content))
+      // SignedData: version, digestAlgorithms, encapContentInfo, [0] certs, [1] crls?, signerInfos
+      const encap = derChildren(b, sd[2])
+      if (derOid(b, encap[0]) !== TSTINFO_OID) return { status: 'invalid', genTime: null }
+      const eContent = derParse(b, derChildren(b, encap[1])[0].content) // OCTET STRING wrapping TSTInfo
+      const tstBytes = b.subarray(eContent.start, eContent.end)
+      // TSTInfo: version, policy, messageImprint { algId, hashedMessage }, serial, genTime
+      const tst = derChildren(b, eContent)
+      const imprint = derChildren(b, tst[2])
+      const genTime = genTimeToIso(new TextDecoder().decode(
+        b.subarray(tst[4].content, tst[4].end)))
+      if (toHex(b.subarray(imprint[1].content, imprint[1].end)) !== hashHex || !genTime) {
+        return { status: 'invalid', genTime: null }
+      }
+      // certificates [0] IMPLICIT and signerInfos (last child)
+      const certsNode = sd.find(n => n.tag === 0xa0)
+      const certs = certsNode
+        ? derChildren(b, certsNode).map(n => {
+            const der = b.subarray(n.start, n.end)
+            return { der, parsed: parseCert(der) }
+          })
+        : []
+      // SignerInfo: version, sid, digestAlgorithm, [0] signedAttrs, sigAlg, signature
+      const si = derChildren(b, derChildren(b, sd[sd.length - 1])[0])
+      const hashName = HASH_OIDS[derOid(b, derChildren(b, si[2])[0])]
+      const attrsNode = si.find(n => n.tag === 0xa0)
+      const sigNode = si[si.length - 1]
+      if (!hashName || !attrsNode) return { status: 'invalid', genTime }
+      // messageDigest attribute must hash the TSTInfo bytes
+      let mdOk = false
+      const tstDigest = toHex(await crypto.subtle.digest(hashName, tstBytes))
+      for (const attr of derChildren(b, attrsNode)) {
+        const kids = derChildren(b, attr)
+        if (derOid(b, kids[0]) !== MESSAGE_DIGEST_OID) continue
+        const val = derChildren(b, kids[1])[0]
+        mdOk = toHex(b.subarray(val.content, val.end)) === tstDigest
+      }
+      if (!mdOk) return { status: 'invalid', genTime }
+      // signature is over the signed attributes re-tagged as SET OF (0x31)
+      const attrsDer = b.slice(attrsNode.start, attrsNode.end)
+      attrsDer[0] = 0x31
+      const sig = b.subarray(sigNode.content, sigNode.end)
+      let signer = null
+      for (const c of certs) {
+        // a candidate that throws (unparseable key/signature) is just not the signer
+        try {
+          if (await verifySigWithCert(c.parsed, hashName, sig, attrsDer)) { signer = c; break }
+        } catch {}
+      }
+      if (!signer) return { status: 'invalid', genTime }
+      // walk the chain inside the token; trusted if any link is pinned
+      const chainHashes = []
+      let cur = signer
+      for (let depth = 0; cur && depth < 6; depth++) {
+        chainHashes.push(toHex(await crypto.subtle.digest('SHA-256', cur.der)))
+        let next = null
+        for (const c of certs) {
+          try {
+            if (c !== cur && await verifyCertSig(cur.parsed, c.parsed)) { next = c; break }
+          } catch {}
+        }
+        cur = next
+      }
+      return {
+        status: chainHashes.some(h => TSA_ROOTS.includes(h)) ? 'verified' : 'untrusted-tsa',
+        genTime
+      }
+    } catch {
+      return { status: 'invalid', genTime: null }
+    }
+  }
+
   // matches the attested app identity against the pinned official app
   function appIdentity (key) {
     if (!key || !key.appPackages) return 'unrecorded'
@@ -286,11 +414,14 @@
     // hardware-asserted facts from the leaf's attestation extension
     const key = Array.isArray(proof.attestation) && proof.attestation.length
       ? parseKeyDescription(b64ToBytes(proof.attestation[0])) : null
+    // RFC 3161 token over the same canonical hash (null on pre-tsr proofs)
+    const timestamp = await verifyTimestamp(proof.tsr, toHex(hash))
     return {
       sigValid,
       attestation,
       attested: attestation === 'google-root',
       key,
+      timestamp,
       fingerprint: toHex(hash)
     }
   }
@@ -383,6 +514,7 @@
     parseKeyDescription,
     appIdentity,
     APP_PACKAGE,
+    verifyTimestamp,
     verifySeal,
     toDetectorInput,
     decodePayload,
