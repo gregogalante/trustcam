@@ -269,13 +269,16 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
       const bmp = await createImageBitmap(file)
       const { data, w, h } = grabPixels(bmp, bmp.width, bmp.height)
       let decoded = core.decodePayload(await runDetector(data, w, h))
-      // aspect-restore rescue: platform crops (Instagram 1:1/4:5) misalign the
-      // mark grid — retry with the capture aspect restored by gray padding.
-      // Only the BCH payload is accepted here (its false-accept rate makes
-      // multiple tries safe).
+      // rescue passes at native resolution: first the same frame (tall 9:16
+      // captures lose the BCH margin in the downscaled scan alone), then the
+      // aspect-restore pads for platform crops (Instagram 1:1/4:5). Only the
+      // BCH payload is accepted here (its false-accept rate makes multiple
+      // tries safe).
       if (!decoded) {
-        for (const plan of core.padPlans(bmp.width, bmp.height)) {
-          ui.stage.textContent = 'Mark not found as-is — retrying with the original framing restored…'
+        for (const plan of core.scanPlans(bmp.width, bmp.height)) {
+          ui.stage.textContent = plan.dx || plan.dy
+            ? 'Mark not found as-is — retrying with the original framing restored…'
+            : 'Mark not found as-is — retrying at full resolution…'
           // native-resolution pixels: the regular scan's downscale costs the
           // few bits of margin a cropped copy has left
           const scale = Math.min(1, core.RESCUE_MAX_DIM / Math.max(plan.w, plan.h))

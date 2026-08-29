@@ -475,6 +475,15 @@
     return plans
   }
 
+  // Retry plans when the direct downscaled scan fails: first the SAME frame at
+  // native resolution — tall 9:16 captures come out of the 1536 scan at only
+  // ~864px wide, which alone can cost the BCH margin (measured: a clean 9:16
+  // original decoded with 5 errors at native res and 21 at 1536) — then the
+  // aspect-restore pads for cropped copies.
+  function scanPlans (w, h) {
+    return [{ w, h, dx: 0, dy: 0 }, ...padPlans(w, h)]
+  }
+
   // canonical UUID string -> 32-hex key used by samples.json
   function idKey (uuidOrHex) {
     return String(uuidOrHex || '').toLowerCase().replace(/-/g, '')
@@ -524,6 +533,7 @@
     captureOf,
     markIdHex,
     sampleByMarkId,
-    padPlans
+    padPlans,
+    scanPlans
   }
 })()

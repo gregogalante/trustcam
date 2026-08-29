@@ -30,7 +30,7 @@ const BASE = process.env.TRUSTCAM_URL || 'https://trustcam.gregoriogalante.com'
 const SHARED = {
   'js/codec.js': 'c38ef43250b509d7d3d757074099418eaf049c1b669650bd47beffad6e9ce5e2',
   'js/codec_v3.js': 'cce9236875d72a64c49c832e6ec1ff0e125d02916016d10085bf3e3e268f6989',
-  'js/verifycore.js': '2e5c04326edebbce86d1a53982aaabf4fce980e8447eb8d76e53ffcab607a9f2',
+  'js/verifycore.js': '14cdaeb18afbd0bd169beabb7d52f6187fb5371e9287d723d6e02a86c4a8cdef',
   'ort/ort.min.js': 'be6e560b64c03c99252eedc0e1989e9e51e44d9f191e7655c9bf011bf9f576c8',
   'ort/ort-wasm-simd-threaded.mjs': '745eb7c0ce6f18a6aa521971b2877babc7ffb27eecb58ab3bc6e5ef4692672e8',
   'ort/ort-wasm-simd-threaded.wasm': '207d02be4591c156b0a98f024f3d58005b5b04c92274d759fb390338c63559ea',
@@ -253,17 +253,19 @@ async function main () {
     const { w, h } = scanDims(s.width, s.height, core)
     const rgba = new Uint8ClampedArray(decodeFrames(file, w, h, '').subarray(0, w * h * 4))
     let decoded = core.decodePayload(await runDetector(core, dir, rgba, w, h))
-    // aspect-restore rescue: platform crops misalign the mark grid — retry
-    // with the capture aspect restored by centered gray padding (BCH-only).
-    // Native-resolution pixels: the regular scan's downscale costs the few
-    // bits of margin a cropped copy has left.
+    // rescue passes at native resolution (the regular scan's downscale alone
+    // can cost the BCH margin, especially on tall 9:16 frames): first the same
+    // frame unpadded, then the aspect-restore pads for platform crops
+    // (BCH-only — its false-accept rate makes multiple tries safe).
     if (!decoded) {
       const rs = Math.min(1, core.RESCUE_MAX_DIM / Math.max(s.width, s.height))
       const rw = Math.round(s.width * rs)
       const rh = Math.round(s.height * rs)
       const native = new Uint8ClampedArray(decodeFrames(file, rw, rh, '').subarray(0, rw * rh * 4))
-      for (const plan of core.padPlans(rw, rh)) {
-        console.error('mark not found as-is — retrying with the original framing restored …')
+      for (const plan of core.scanPlans(rw, rh)) {
+        console.error(plan.dx || plan.dy
+          ? 'mark not found as-is — retrying with the original framing restored …'
+          : 'mark not found as-is — retrying at full resolution …')
         const padded = new Uint8ClampedArray(plan.w * plan.h * 4).fill(128)
         for (let y = 0; y < rh; y++) {
           padded.set(native.subarray(y * rw * 4, (y + 1) * rw * 4),
