@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Architecture — TrustCam</title>
+  <meta name="description" content="TrustCam system architecture: capture and signing pipeline, proof-in-file trailer, watermark payload encoding, client-side verification, trust model.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -17,8 +18,21 @@
   </nav>
   <main class="doc">
     <h1>System architecture</h1>
+    <p class="lead">How the capture pipeline, the proof-in-file and the verifier work.
+    For what all of this does — and deliberately does not — prove, jump to the
+    <a href="#trust-model">trust model</a>.</p>
+    <div class="toc" aria-label="Sections on this page">
+      <a href="#layers">Two layers</a>
+      <a href="#pipeline">Capture &amp; signing</a>
+      <a href="#trailer">Proof trailer</a>
+      <a href="#algorithms">Algorithms</a>
+      <a href="#payload">Payload encoding</a>
+      <a href="#verification">Verification</a>
+      <a href="#originals">Verified originals</a>
+      <a href="#trust-model">Trust model</a>
+    </div>
 
-    <h2>Design principle: two integrity layers</h2>
+    <h2 id="layers">Design principle: two integrity layers</h2>
     <p>Signatures and watermarks fail in opposite places, so the design uses both:</p>
     <table>
       <tr><th>Layer</th><th>Proves</th><th>Survives re-encoding?</th></tr>
@@ -55,7 +69,7 @@
       </div>
     </div>
 
-    <h2>Capture &amp; signing pipeline</h2>
+    <h2 id="pipeline">Capture &amp; signing pipeline</h2>
 
     <div class="flow">
       <div class="fnode">
@@ -107,7 +121,7 @@
         the file carries its own proof wherever it goes.</li>
     </ol>
 
-    <h2>Proof trailer &amp; signature convention</h2>
+    <h2 id="trailer">Proof trailer &amp; signature convention</h2>
     <pre>trailer   = [4B box size]["free"][proof JSON][4B json length]["TCPROOF1"]
 canonical = file bytes without the trailer
 H         = SHA-256(canonical)               // 32 bytes
@@ -124,7 +138,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       <em>your</em> browser, not by a service you must trust.
     </p>
 
-    <h2>The algorithms</h2>
+    <h2 id="algorithms">The algorithms</h2>
     <p>
       Every layer is built on published, battle-tested primitives — nothing bespoke
       guards anything important:
@@ -146,7 +160,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
         binding the key to hardware in every proof.</li>
     </ul>
 
-    <h2>Watermark payload encoding</h2>
+    <h2 id="payload">Watermark payload encoding</h2>
     <p>
       The watermark carries a 256-bit message decoded from the pixels. Robustness comes
       from structure, not secrecy. Photos and video use two layouts, each sized to
@@ -210,7 +224,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       <a href="/demos.html">demos page</a>.
     </p>
 
-    <h2>Bitstream signatures for video (next iteration)</h2>
+    <h2 id="bitstream">Bitstream signatures for video (next iteration)</h2>
     <p>
       Whole-file signing is the current baseline. The validated upgrade path embeds a
       <strong>rolling signature per GOP</strong> (group of pictures) directly in the
@@ -222,7 +236,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       Qualcomm <code>c2.qti.avc.encoder</code>).
     </p>
 
-    <h2>Verification — fully client-side</h2>
+    <h2 id="verification">Verification — fully client-side</h2>
     <p>The verifier is a static web page: nothing is uploaded, ever. Given any file it
     resolves in order — each level is weaker than the previous and the UI says so
     explicitly:</p>
@@ -244,7 +258,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
     <p>A command-line verifier (<code>/verify.mjs</code>) runs the same checks for
     scripting and batch workflows.</p>
 
-    <h2>Verified originals: comparing the copy with the capture</h2>
+    <h2 id="originals">Verified originals: comparing the copy with the capture</h2>
     <p>
       The mark alone identifies <strong>origin, never integrity</strong>: it survives
       whatever preserves most of the pixels — platform re-encoding, moderate crops,
@@ -273,7 +287,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       claiming anything from an unreadable signal would be guessing.
     </p>
 
-    <h2>Trust model and standards alignment</h2>
+    <h2 id="trust-model">Trust model and standards alignment</h2>
     <p>
       <strong>The trust boundary is the app, not the sensor.</strong> Android hands
       camera frames to the app in userspace (CameraX), and the secure element signs

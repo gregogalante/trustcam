@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Paper — TrustCam</title>
+  <meta name="description" content="TrustCam project paper: capture-time provenance for photos and video — hardware-signed proofs, robust watermark recovery, honest threat model.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -19,6 +20,20 @@
     <h1>TrustCam: capture-time provenance for photos and video</h1>
     <p class="lead">Project description and technical documentation.</p>
 
+    <div class="card">
+      <ul>
+        <li><strong>Proves</strong> — this exact file came from this specific device
+          at this time: sealed by the phone's secure hardware, timestamped by a
+          third-party authority, verifiable in any browser with no account.</li>
+        <li><strong>Survives</strong> — platforms strip metadata on upload; an
+          invisible watermark still points any surviving copy back to its verified
+          original, shown side by side.</li>
+        <li><strong>Never claims</strong> — that the depicted scene is real, or that
+          a watermark match alone is authentication. The limits are part of the
+          design, and stated.</li>
+      </ul>
+    </div>
+
     <h2>Abstract</h2>
     <p>
       As generative models make fabricated photos and videos indistinguishable
@@ -28,17 +43,23 @@
       watermark (Meta VideoSeal) into the pixels <strong>on the device</strong>,
       then hashes the final file and signs it with an ECDSA P-256 key generated
       inside the phone's secure hardware (StrongBox / TEE), whose attestation
-      chain binds the key to hardware. The signed proof travels <strong>inside the
-      file itself</strong> (a metadata trailer) — there are no accounts and no
-      servers. A fully static, client-side verifier lets anyone confirm <em>who</em>
-      recorded a file, <em>when</em>, and that it is byte-for-byte unmodified —
-      and, because the watermark survives social-media re-encoding, provenance can
-      be recovered even after platforms strip metadata (validated in our
-      feasibility experiments). The watermark carries a <strong>random 128-bit
-      capture id</strong> (BCH-protected): given any surviving copy, the verifier
-      recovers the id, resolves it to the original capture on file, and shows the
-      two <strong>side by side</strong> — so an edited copy can be told from a
-      merely re-shared one even when the cryptographic seal is long gone.
+      chain binds the key to hardware.
+    </p>
+    <p>
+      The signed proof travels <strong>inside the file itself</strong> (a metadata
+      trailer) — there are no accounts and no servers. A fully static, client-side
+      verifier lets anyone confirm <em>who</em> recorded a file, <em>when</em>
+      (anchored by an RFC 3161 trusted timestamp when the capture was online), and
+      that it is byte-for-byte unmodified.
+    </p>
+    <p>
+      Because the watermark survives social-media re-encoding, provenance can be
+      recovered even after platforms strip metadata (validated in our feasibility
+      experiments). The watermark carries a <strong>random 128-bit capture id</strong>
+      (BCH-protected): given any surviving copy, the verifier recovers the id,
+      resolves it to the original capture on file, and shows the two
+      <strong>side by side</strong> — so an edited copy can be told from a merely
+      re-shared one even when the cryptographic seal is long gone.
     </p>
     <p>
       The roadmap adds the cloud registry the capture id points into (devices

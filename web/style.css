@@ -389,16 +389,29 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.5rem }
 .grid2 .card:hover, .grid3 .card:hover, .plain .card:hover { border-color: var(--line-strong) }
 
+/* in-page section index (demos, paper docs) */
+.toc { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.3rem 0 0 }
+.toc a {
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .04em;
+  color: var(--muted); text-decoration: none; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 99px; padding: .32rem .8rem;
+}
+.toc a:hover { color: var(--fg); border-color: var(--line-strong) }
+[id] { scroll-margin-top: 4.5rem } /* anchors land clear of the sticky nav */
+
 /* side-by-side copy vs verified original */
 .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.4rem 0 }
 .compare.three { grid-template-columns: 1fr 1fr 1fr }
+/* one tall figure beside its explainer card (trusted-timestamp demo) */
+.compare.single { grid-template-columns: minmax(0, 320px) 1fr; align-items: start }
+.compare.single .card { margin: 0 }
 .compare figure { margin: 0 }
 .compare img, .compare video {
   width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line);
   background: #000;
 }
 .compare figcaption { font-size: .82rem; color: var(--muted); margin-top: .55rem; text-align: center; line-height: 1.55 }
-@media (max-width: 640px) { .compare, .compare.three { grid-template-columns: 1fr } }
+@media (max-width: 640px) { .compare, .compare.three, .compare.single { grid-template-columns: 1fr } }
 
 /* ---------- flow diagrams ----------
    HTML, not SVG: a fixed viewBox cannot reflow, so these lay out with flexbox

@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Research &amp; feasibility — TrustCam</title>
+  <meta name="description" content="Research behind TrustCam: the provenance ecosystem (C2PA, in-camera signing), key literature, our lab and live results, threat model and honest limits.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -44,21 +45,21 @@
 
     <h2>Key literature</h2>
     <table>
-      <tr><th>Work</th><th>Year</th><th>Relevance</th></tr>
-      <tr><td><a href="https://arxiv.org/abs/2412.09492">VideoSeal</a> (Meta)</td><td>2024</td><td>Open-source robust video watermarking, 256-bit payload — our watermark layer</td></tr>
-      <tr><td><a href="https://arxiv.org/html/2604.23016">DeepSignature</a></td><td>2026</td><td>Ed25519 signature embedded as a neural watermark</td></tr>
-      <tr><td><a href="https://arxiv.org/pdf/2510.09656">Signing Right Away</a></td><td>2025</td><td>Signing raw sensor output before the ISP (anti-injection)</td></tr>
-      <tr><td>ETH Zurich sensor chip (Nature Electronics)</td><td>2026</td><td>Signature inside the sensor die</td></tr>
-      <tr><td><a href="https://eprint.iacr.org/2024/1066">VerITAS</a></td><td>2024</td><td>zk-SNARK proofs that edits of signed media were permitted ones</td></tr>
-      <tr><td><a href="https://eprint.iacr.org/2026/1598">zk-Cinema</a></td><td>2026</td><td>First zero-knowledge provenance for video</td></tr>
-      <tr><td><a href="https://developer.axis.com/video-streaming-and-recording/signed-video/">Axis Signed Video / ONVIF Media Signing</a></td><td>2021–</td><td>Per-GOP rolling signatures in SEI NAL units, deployed in production cameras</td></tr>
-      <tr><td><a href="https://github.com/facebook/ThreatExchange/tree/main/pdq">PDQ</a> (Meta)</td><td>2019</td><td>Production perceptual hash, robust to recompression — evaluated for an in-band content checksum (explored, not shipped)</td></tr>
-      <tr><td><a href="https://contentauthenticity.org/blog/durable-content-credentials">Durable Content Credentials</a> (CAI)</td><td>2024</td><td>Signed metadata + watermark + recovery lookup, each covering the others — the pattern our capture-id payload follows</td></tr>
-      <tr><td><a href="https://arxiv.org/abs/2204.01960">FaceSigns</a></td><td>2022</td><td>Semi-fragile neural watermark that dies on deepfake edits — an alternative integrity design we evaluated</td></tr>
+      <tr><th>Work</th><th>Relevance</th></tr>
+      <tr><td><a href="https://arxiv.org/abs/2412.09492">VideoSeal</a> (Meta) <span class="note">(2024)</span></td><td>Open-source robust video watermarking, 256-bit payload — our watermark layer</td></tr>
+      <tr><td><a href="https://arxiv.org/html/2604.23016">DeepSignature</a> <span class="note">(2026)</span></td><td>Ed25519 signature embedded as a neural watermark</td></tr>
+      <tr><td><a href="https://arxiv.org/pdf/2510.09656">Signing Right Away</a> <span class="note">(2025)</span></td><td>Signing raw sensor output before the ISP (anti-injection)</td></tr>
+      <tr><td>ETH Zurich sensor chip (Nature Electronics) <span class="note">(2026)</span></td><td>Signature inside the sensor die</td></tr>
+      <tr><td><a href="https://eprint.iacr.org/2024/1066">VerITAS</a> <span class="note">(2024)</span></td><td>zk-SNARK proofs that edits of signed media were permitted ones</td></tr>
+      <tr><td><a href="https://eprint.iacr.org/2026/1598">zk-Cinema</a> <span class="note">(2026)</span></td><td>First zero-knowledge provenance for video</td></tr>
+      <tr><td><a href="https://developer.axis.com/video-streaming-and-recording/signed-video/">Axis Signed Video / ONVIF Media Signing</a> <span class="note">(2021–)</span></td><td>Per-GOP rolling signatures in SEI NAL units, deployed in production cameras</td></tr>
+      <tr><td><a href="https://github.com/facebook/ThreatExchange/tree/main/pdq">PDQ</a> (Meta) <span class="note">(2019)</span></td><td>Production perceptual hash, robust to recompression — evaluated for an in-band content checksum (explored, not shipped)</td></tr>
+      <tr><td><a href="https://contentauthenticity.org/blog/durable-content-credentials">Durable Content Credentials</a> (CAI) <span class="note">(2024)</span></td><td>Signed metadata + watermark + recovery lookup, each covering the others — the pattern our capture-id payload follows</td></tr>
+      <tr><td><a href="https://arxiv.org/abs/2204.01960">FaceSigns</a> <span class="note">(2022)</span></td><td>Semi-fragile neural watermark that dies on deepfake edits — an alternative integrity design we evaluated</td></tr>
     </table>
 
     <h2>Our feasibility results (lab)</h2>
-    <h2 style="font-size:1rem">Watermark robustness</h2>
+    <h3>Watermark robustness</h3>
     <p>
       A 256-bit VideoSeal payload embedded in 1080p video (measured PSNR
       46.8&nbsp;dB) survived <em>simulated</em> re-encode ladders (1080p down to a
@@ -67,13 +68,13 @@
       upload/download 99.61% bit accuracy, WhatsApp 100% (early prototype), and the
       shipped system's live results below.
     </p>
-    <h2 style="font-size:1rem">Bitstream signature transport</h2>
+    <h3>Bitstream signature transport</h3>
     <p>
       Custom SEI NAL units prepended to every access unit passed through a consumer
       phone's hardware H.264 encoder and MP4 muxer intact (60/60, Motorola Moto G75,
       Qualcomm encoder) — per-GOP signatures need no custom media stack.
     </p>
-    <h2 style="font-size:1rem">Content checksum (explored, not shipped)</h2>
+    <h3>Content checksum (explored, not shipped)</h3>
     <p>
       We prototyped a 104-bit truncated PDQ hash inside the watermark payload: it
       separated benign sharing from semantic edits with no overlap in our tests
@@ -86,7 +87,7 @@
       Data: <code>spikes/results/</code> in the repo.
     </p>
 
-    <h2 style="font-size:1rem">Live end-to-end results (shipped system)</h2>
+    <h3>Live end-to-end results (shipped system)</h3>
     <p>
       Real captures (Motorola moto g75, TEE-backed key) pushed through real
       platforms and verified with the production verifier — copies and originals are
@@ -118,7 +119,7 @@
       and was replaced by an fp16 export that tracks fp32 within a few bits.
     </p>
 
-    <h2 style="font-size:1rem">On-device embedding cost</h2>
+    <h3>On-device embedding cost</h3>
     <p>
       The watermark embedder (23.7M params, 28.3 GFLOPs at fp32) runs at
       ~1.0&nbsp;s/inference on a mid-range phone CPU — about 2× short of real-time
@@ -139,9 +140,11 @@
       <li><strong>Key compromise</strong> — hardware-backed, non-exportable per-device
         keys limit blast radius to one device; the attestation chain travels inside
         every proof, so verifiers can weigh unattested keys accordingly.</li>
-      <li><strong>Clock trust</strong> — capture time is device-claimed (there is no
-        server to attest anything). RFC 3161 timestamp tokens, fetched at capture when
-        online, close the gap.</li>
+      <li><strong>Clock trust</strong> — the device clock is self-claimed, so since
+        app 1.4.0 the proof carries an <strong>RFC 3161 token</strong> from a public
+        timestamp authority (fetched at capture when online, verified client-side
+        against a pinned chain): a third party attests the file existed no later
+        than that moment. Offline captures stay honestly device-claimed.</li>
       <li><strong>Mark forgery</strong> — the watermark model is open source, so the
         mark (and the capture id it carries: 256 bits cannot hold a signature) is
         forgeable by construction. This is why mark-only recovery is an
