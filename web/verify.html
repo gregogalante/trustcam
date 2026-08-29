@@ -95,6 +95,19 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     })
     input.addEventListener('change', () => { if (!busy && input.files[0]) check(input.files[0]) })
 
+    // deep link: /verify.html?file=/demos/… — fetch the file and run the normal
+    // flow, so the demos page can link straight into a live verification.
+    // Same-origin paths only: this must never become a proxy for arbitrary URLs.
+    const linked = new URLSearchParams(window.location.search).get('file')
+    if (linked && linked.startsWith('/') && !linked.startsWith('//')) {
+      fetch(linked).then(async r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status)
+        const blob = await r.blob()
+        check(new File([blob], linked.split('/').pop(), { type: blob.type }))
+      }).catch(() => verdictCard('✕', 'bad', 'Linked file not found',
+        'The file this link points to could not be loaded — drop one manually instead.', ''))
+    }
+
     function fmtSize (n) {
       if (n > 1e6) return (n / 1e6).toFixed(1) + ' MB'
       if (n > 1e3) return (n / 1e3).toFixed(0) + ' KB'
