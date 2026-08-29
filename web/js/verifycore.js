@@ -62,15 +62,23 @@
   // ---------- minimal DER / X.509 ----------
   function derParse (b, pos) {
     const tag = b[pos]
-    let len = b[pos + 1]
-    let head = 2
+    let head = 1
+    let tagNum = tag & 0x1f
+    if (tagNum === 0x1f) { // high-tag-number form (attestation authorization tags >= 31)
+      tagNum = 0
+      while (b[pos + head] & 0x80) { tagNum = tagNum * 128 + (b[pos + head] & 0x7f); head++ }
+      tagNum = tagNum * 128 + b[pos + head]
+      head++
+    }
+    let len = b[pos + head]
+    head++
     if (len & 0x80) {
       const n = len & 0x7f
       len = 0
-      for (let i = 0; i < n; i++) len = len * 256 + b[pos + 2 + i]
-      head = 2 + n
+      for (let i = 0; i < n; i++) len = len * 256 + b[pos + head + i]
+      head += n
     }
-    return { tag, start: pos, content: pos + head, len, end: pos + head + len }
+    return { tag, tagNum, start: pos, content: pos + head, len, end: pos + head + len }
   }
 
   function derChildren (b, node) {
@@ -185,6 +193,82 @@
     }
   }
 
+  // ---------- Android Key Attestation extension (leaf certificate) ----------
+  // The extension is authenticated by the chain itself: its values are only
+  // meaningful when verifyAttestation returned 'google-root'.
+  const KEY_DESCRIPTION_OID = '1.3.6.1.4.1.11129.2.1.17'
+  const SECURITY_LEVELS = ['software', 'tee', 'strongbox']
+  const BOOT_STATES = ['verified', 'self-signed', 'unverified', 'failed']
+  // identity of the official capture app, pinned like the Google roots above:
+  // package name + SHA-256 of the APK signing certificate (apksigner --print-certs)
+  const APP_PACKAGE = 'app.trustcam'
+  const APP_CERT_SHA256 = '9a5519ad61bdc5caaa8be4af2e2efc6417ac4a40ecc35c9957a752699938648b'
+
+  function derInt (b, node) {
+    let v = 0
+    for (let i = node.content; i < node.end; i++) v = v * 256 + b[i]
+    return v
+  }
+
+  /**
+   * Parses the Android Key Attestation extension of the leaf certificate:
+   * hardware-asserted security level, verified-boot state / bootloader lock
+   * (rootOfTrust, teeEnforced) and the identity of the app that created the
+   * key (attestationApplicationId, asserted by the platform). Returns null
+   * when the extension is missing or unreadable.
+   */
+  function parseKeyDescription (leafDer) {
+    try {
+      const tbs = derChildren(leafDer, derParse(leafDer, 0))[0]
+      const extBlock = derChildren(leafDer, tbs).find(n => n.tag === 0xa3) // extensions [3]
+      if (!extBlock) return null
+      let desc = null
+      for (const ext of derChildren(leafDer, derChildren(leafDer, extBlock)[0])) {
+        const kids = derChildren(leafDer, ext) // extnID, [critical,] extnValue
+        if (derOid(leafDer, kids[0]) !== KEY_DESCRIPTION_OID) continue
+        desc = derParse(leafDer, kids[kids.length - 1].content) // KeyDescription inside the OCTET STRING
+        break
+      }
+      if (!desc) return null
+      // KeyDescription: version, securityLevel, keymintVersion, keymintSecurityLevel,
+      // challenge, uniqueId, softwareEnforced [6], teeEnforced [7]
+      const kd = derChildren(leafDer, desc)
+      const out = {
+        securityLevel: SECURITY_LEVELS[derInt(leafDer, kd[1])] || 'unknown',
+        bootState: null,
+        deviceLocked: null,
+        appPackages: null,
+        appDigests: null
+      }
+      for (const list of [kd[6], kd[7]]) {
+        for (const entry of derChildren(leafDer, list)) {
+          if (entry.tagNum === 704) { // rootOfTrust [704]
+            const rot = derChildren(leafDer, derChildren(leafDer, entry)[0])
+            out.deviceLocked = leafDer[rot[1].content] !== 0
+            out.bootState = BOOT_STATES[derInt(leafDer, rot[2])] || 'unknown'
+          } else if (entry.tagNum === 709) { // attestationApplicationId [709]
+            const inner = derParse(leafDer, derChildren(leafDer, entry)[0].content)
+            const [pkgs, digests] = derChildren(leafDer, inner)
+            out.appPackages = derChildren(leafDer, pkgs).map(p => {
+              const name = derChildren(leafDer, p)[0]
+              return new TextDecoder().decode(leafDer.subarray(name.content, name.end))
+            })
+            out.appDigests = derChildren(leafDer, digests).map(d =>
+              toHex(leafDer.subarray(d.content, d.end)))
+          }
+        }
+      }
+      return out
+    } catch { return null }
+  }
+
+  // matches the attested app identity against the pinned official app
+  function appIdentity (key) {
+    if (!key || !key.appPackages) return 'unrecorded'
+    return key.appPackages.includes(APP_PACKAGE) && (key.appDigests || []).includes(APP_CERT_SHA256)
+      ? 'official' : 'mismatch'
+  }
+
   // Verifies the trailer seal against the canonical bytes (file minus trailer).
   async function verifySeal (bytes, proof, canonicalEnd) {
     const canonical = bytes.subarray(0, canonicalEnd)
@@ -199,10 +283,14 @@
     } catch {}
     // full chain validation: leaf key match, cert-by-cert signatures, pinned root
     const attestation = await verifyAttestation(proof.attestation, proof.pubkey)
+    // hardware-asserted facts from the leaf's attestation extension
+    const key = Array.isArray(proof.attestation) && proof.attestation.length
+      ? parseKeyDescription(b64ToBytes(proof.attestation[0])) : null
     return {
       sigValid,
       attestation,
       attested: attestation === 'google-root',
+      key,
       fingerprint: toHex(hash)
     }
   }
@@ -292,6 +380,9 @@
     parseTrailer,
     derSigToP1363,
     verifyAttestation,
+    parseKeyDescription,
+    appIdentity,
+    APP_PACKAGE,
     verifySeal,
     toDetectorInput,
     decodePayload,

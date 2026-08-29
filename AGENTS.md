@@ -101,6 +101,14 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   verifycore.js, source https://android.googleapis.com/attestation/root).
   Certificate validity dates and the revocation list are NOT checked (offline
   verifier) — tracked as future work.
+- Attestation extension: `parseKeyDescription` in verifycore.js reads the leaf's
+  Android Key Attestation extension (verified-boot state, bootloader lock,
+  attestationApplicationId) and `appIdentity` matches it against the pinned
+  official app: `APP_PACKAGE` + `APP_CERT_SHA256` (SHA-256 of the APK signing
+  cert, `apksigner verify --print-certs web/trustcam.apk`). A NEW release
+  keystore means a new digest — update the pin or every new capture reports
+  "mismatch". Extension values are authenticated by the chain: UIs flag them
+  when the chain didn't verify to a Google root.
 
 ## Testing on devices
 

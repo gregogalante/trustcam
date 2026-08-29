@@ -159,7 +159,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     async function verifyTrailer (bytes, t, file, ui) {
       ui.stage.textContent = 'Proof found in the file — verifying the seal on your device…'
       const p = t.proof
-      const { sigValid, attestation, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
+      const { sigValid, attestation, key, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
 
       // proof v2 carries a capture UUID; v1 carried a small numeric payload
       const markId = p.captureId
@@ -171,6 +171,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
         model: p.model || 'unknown',
         securityLevel: p.securityLevel,
         attestation,
+        key,
         capturedAt: p.capturedAt,
         mediaType: p.mediaType,
         sizeBytes: file.size,
@@ -412,12 +413,31 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
       }
     }
 
+    // hardware-asserted facts from the leaf's attestation extension — the chain
+    // authenticates them, so they carry weight only when it verified (attested)
+    function keyRows (key, attested) {
+      if (!key) return '<dt>Verified boot</dt><dd>attestation extension not present in the proof</dd>'
+      const caveat = attested ? '' : ' <span class="note">(chain unverified — value unauthenticated)</span>'
+      const boot = key.bootState === 'verified' && key.deviceLocked
+        ? `<dd><span class="badge ok">verified</span> bootloader locked, system integrity attested at key creation${caveat}</dd>`
+        : `<dd><span class="badge bad">${esc(key.bootState || 'unknown')}</span> the device did not pass verified boot — a compromised system can sign arbitrary images${caveat}</dd>`
+      const app = {
+        official: `<dd><span class="badge ok">official</span> key created by ${esc(core.APP_PACKAGE)}, signing certificate matches${caveat}</dd>`,
+        mismatch: `<dd><span class="badge bad">mismatch</span> key created by ${esc((key.appPackages || []).join(', ') || 'unknown app')} — not the official TrustCam build${caveat}</dd>`,
+        unrecorded: '<dd>not recorded in the attestation</dd>'
+      }[core.appIdentity(key)]
+      return `
+          <dt>Verified boot</dt>${boot}
+          <dt>Signing app</dt>${app}`
+    }
+
     function detailRows (d) {
       return `
         <dl>
           <dt>Recorded by</dt><dd>${esc(d.name)}</dd>
           <dt>Device</dt><dd>${esc(d.model)} (${esc(d.securityLevel)})</dd>
           <dt>Key attestation</dt>${attestationRow(d.attestation)}
+          ${keyRows(d.key, d.attestation === 'google-root')}
           <dt>Captured at</dt><dd>${esc(d.capturedAt)} <span class="note">(device-claimed)</span></dd>
           <dt>Media</dt><dd>${esc(d.mediaType)}, ${Number(d.sizeBytes).toLocaleString()} bytes</dd>
           <dt>Mark id</dt><dd>${d.markId}</dd>
