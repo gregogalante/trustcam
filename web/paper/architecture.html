@@ -275,6 +275,25 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
 
     <h2>Trust model and standards alignment</h2>
     <p>
+      <strong>The trust boundary is the app, not the sensor.</strong> Android hands
+      camera frames to the app in userspace (CameraX), and the secure element signs
+      whatever hash the app presents — it cannot see where the bytes came from. Key
+      attestation narrows this: the chain proves the signing key lives in genuine
+      hardware on a real device, and the attestation extension records bootloader
+      lock, verified-boot state, and the identity of the app that created the key.
+      The verifier validates the chain up to Google's pinned hardware roots and reads
+      that extension: it reports verified-boot state and bootloader lock, and matches
+      the key-creating app against the official package name and APK signing
+      certificate, pinned like the roots. Even with these checks, the chain from
+      sensor to signature is not end to end: an attacker who compromises the device
+      or the app while still passing them could have the secure element sign an injected
+      image. Closing that gap requires a hardware-protected camera pipeline, which no
+      Android platform currently exposes to third-party apps. A TrustCam proof
+      therefore asserts capture by a genuine device through an app-level pipeline —
+      not a sensor-level guarantee. This is the same weak point that broke the first
+      C2PA cameras: what gets signed, not the cryptography.
+    </p>
+    <p>
       The design maps onto C2PA concepts (hard binding = content hash + signature,
       carried in the file exactly like a C2PA manifest; soft binding = watermark) and
       is built to become C2PA-conformant: the trailer can be re-expressed as a C2PA

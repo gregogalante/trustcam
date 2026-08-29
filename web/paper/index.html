@@ -67,6 +67,11 @@
       not authentication</strong>: the side-by-side comparison with the verified
       original is evidence for human judgement, but only the signed trailer is
       cryptographic proof.
+      The proof also assumes an uncompromised device: camera frames reach the app in
+      userspace, so software that defeats the attestation checks can hand the secure
+      element a foreign image to sign — the
+      <a href="/paper/architecture.html">trust model</a> spells out what key
+      attestation covers and what only a hardware camera pipeline could close.
       Systems that overclaim here have failed publicly; we scope claims to what the
       cryptography actually proves.
     </p>
