@@ -746,6 +746,34 @@
     }
   }
 
+  // ---------- C2PA / Content Credentials presence ----------
+  // Presence-only: full manifest validation belongs to any C2PA validator.
+  // JPEG carries the store in APP11 JUMBF segments, MP4 in a top-level uuid box.
+  function hasC2pa (bytes) {
+    const dec = new TextDecoder()
+    if (bytes[0] === 0xff && bytes[1] === 0xd8) {
+      let p = 2
+      while (p + 4 < bytes.length) {
+        if (bytes[p] !== 0xff) break
+        const marker = bytes[p + 1]
+        if (marker === 0xda) break // start of scan: no more headers
+        const len = (bytes[p + 2] << 8) | bytes[p + 3]
+        if (marker === 0xeb) {
+          const head = dec.decode(bytes.subarray(p + 4, p + 4 + Math.min(64, len)))
+          if (head.includes('jumb') || head.includes('c2pa')) return true
+        }
+        p += 2 + len
+      }
+      return false
+    }
+    for (const box of mp4Boxes(bytes, 0, bytes.length)) {
+      if (box.type !== 'uuid') continue
+      const head = dec.decode(bytes.subarray(box.content, Math.min(box.content + 64, box.end)))
+      if (head.includes('c2pa') || head.includes('jumb')) return true
+    }
+    return false
+  }
+
   // ---------- invisible-mark payload ----------
   // RGBA pixels -> CHW float tensor data for the detector graph
   function toDetectorInput (rgba, w, h) {
@@ -852,6 +880,7 @@
     mp4VideoSamples,
     parseGopSei,
     verifyBitstream,
+    hasC2pa,
     idKey,
     idPretty,
     deviceIdOf,

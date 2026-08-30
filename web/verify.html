@@ -191,7 +191,9 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
         ? `capture ${esc(p.captureId)}`
         : `device #${core.deviceIdOf(p.payload || 0)} · capture #${core.captureOf(p.payload || 0)}`
 
+      const c2pa = core.hasC2pa(bytes)
       const details = detailRows({
+        c2pa,
         name: p.name,
         model: p.model || 'unknown',
         securityLevel: p.securityLevel,
@@ -502,6 +504,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
           ${timestampRow(d.timestamp)}
           <dt>Media</dt><dd>${esc(d.mediaType)}, ${Number(d.sizeBytes).toLocaleString()} bytes</dd>
           <dt>Mark id</dt><dd>${d.markId}</dd>
+          ${d.c2pa ? '<dt>Content Credentials</dt><dd>C2PA manifest embedded — inspect it with any Content Credentials validator <span class="note">(signed with development credentials for now: external validators will show the chain as untrusted)</span></dd>' : ''}
           ${d.fingerprint ? `<dt>Fingerprint</dt><dd><code>${esc(d.fingerprint)}</code></dd>` : ''}
         </dl>`
     }

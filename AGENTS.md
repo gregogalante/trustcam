@@ -120,6 +120,23 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   "mismatch". Extension values are authenticated by the chain: UIs flag them
   when the chain didn't verify to a Google root.
 
+- **Per-GOP bitstream signatures** (video, app ≥ 1.5.0): each GOP's VCL NALs
+  are SHA-256'd and the hash signed like the trailer seal; the record travels
+  in a `TrustCamGopSig01` user_data_unregistered SEI inside the NEXT GOP's
+  keyframe, the final GOP's record in the proof (`gopSig`). Contract lives in
+  `GopSigner.kt` (app) + `verifyBitstream` in verifycore.js; the reference
+  implementation and fixture generator is `spikes/make_gopsig_fixture.mjs`
+  (run it before `spikes/test_gopsig_js.mjs` — fixtures are not committed).
+  A losslessly trimmed copy keeps intact interior GOPs verifiable.
+- **C2PA manifests** (app ≥ 1.5.0, `ContentCredentials.kt`): embedded after
+  watermarking and before hashing, so the trailer covers the manifest. Signed
+  with DEVELOPMENT credentials (`assets/c2pa_dev_key.pem` + cert — sacrificial
+  self-signed pair, external validators show untrusted) — replace with a
+  CA-issued credential when procured; the web verifier only reports manifest
+  PRESENCE (`hasC2pa`), validation is any C2PA validator's job.
+- Android toolchain: AGP 8.9.1 / Kotlin 2.2.10 / compileSdk 36 (forced by
+  c2pa-android 0.0.9 from JitPack — 1.0.0 is not built there).
+
 ## Release flow
 
 Project version = shipped app version (single number). To release:
