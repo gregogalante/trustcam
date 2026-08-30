@@ -317,8 +317,11 @@ class CaptureActivity : AppCompatActivity() {
                 // compare accelerated vs CPU embedding without extra tooling
                 val secs = (System.currentTimeMillis() - t0) / 1000.0
                 runOnUiThread {
+                    // surface the timestamp outcome: without it the only hint of an
+                    // offline capture would be a missing row in the verifier later
                     finishSealing(getString(R.string.sealed,
-                        captureId.toString().substring(0, 8), secs))
+                        captureId.toString().substring(0, 8), secs,
+                        getString(if (tsr != null) R.string.ts_ok else R.string.ts_missing)))
                 }
             } catch (e: Exception) {
                 runOnUiThread { finishSealing("Sealing failed: ${e.message}") }
