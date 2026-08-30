@@ -120,6 +120,14 @@
     '1.2.840.113549.1.1.13': { kind: 'RSA', hash: 'SHA-512' }
   }
 
+  // "YYMMDDHHMMSSZ" (UTCTime) / "YYYYMMDDHHMMSSZ" (GeneralizedTime) -> ms epoch
+  function derTime (b, node) {
+    let s = new TextDecoder().decode(b.subarray(node.content, node.end))
+    if (node.tag === 0x17) s = (s < '50' ? '20' : '19') + s // UTCTime pivot
+    const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})Z$/.exec(s)
+    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : null
+  }
+
   // Certificate ::= SEQUENCE { tbsCertificate, signatureAlgorithm, signatureValue }
   function parseCert (der) {
     const cert = derParse(der, 0)
@@ -127,6 +135,12 @@
     const alg = SIG_ALGS[derOid(der, derChildren(der, sigAlg)[0])]
     const tbsKids = derChildren(der, tbs)
     const shift = tbsKids[0].tag === 0xa0 ? 1 : 0 // optional version [0]
+    // serial (revocation-list key) and validity window
+    let serial = der.subarray(tbsKids[shift].content, tbsKids[shift].end)
+    let z = 0
+    while (z < serial.length - 1 && serial[z] === 0) z++ // strip DER sign padding
+    serial = serial.subarray(z)
+    const [nb, na] = derChildren(der, tbsKids[shift + 3])
     const spkiNode = tbsKids[shift + 5]
     const spki = der.subarray(spkiNode.start, spkiNode.end)
     // curve of the SUBJECT key (used to verify the NEXT cert down the chain)
@@ -141,7 +155,10 @@
       sig: der.subarray(sigVal.content + 1, sigVal.end), // BIT STRING, skip pad byte
       spki,
       keyKind: keyOid === '1.2.840.10045.2.1' ? 'EC' : 'RSA',
-      curve
+      curve,
+      serialHex: toHex(serial),
+      notBefore: derTime(der, nb),
+      notAfter: derTime(der, na)
     }
   }
 
@@ -194,6 +211,54 @@
     } catch {
       return 'invalid'
     }
+  }
+
+  // ---------- attestation chain health: revocation + validity windows ----------
+  const CRL_URL = 'https://android.googleapis.com/attestation/status'
+  let crlPromise = null
+
+  /**
+   * Best-effort fetch of Google's attestation revocation list (cached for the
+   * session, 4s timeout). Returns the `entries` map or null — the verifier is
+   * offline-first, so unavailability is reported, never fatal.
+   */
+  function fetchAttestationCrl () {
+    if (!crlPromise) {
+      const ctl = new AbortController()
+      const timer = setTimeout(() => ctl.abort(), 4000)
+      crlPromise = fetch(CRL_URL, { signal: ctl.signal })
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => (j && j.entries) || null)
+        .catch(() => null)
+        .finally(() => clearTimeout(timer))
+    }
+    return crlPromise
+  }
+
+  /**
+   * Revocation + validity check of an attestation chain. The live list keys
+   * serials in BOTH lowercase hex and decimal — check each serial both ways.
+   * Expiry is informational (point-in-time captures outlive their certs);
+   * revocation is a hard signal.
+   */
+  function attestationHealth (chainB64, crlEntries, nowMs) {
+    if (!Array.isArray(chainB64) || chainB64.length === 0) return null
+    try {
+      const certs = chainB64.map(c => parseCert(b64ToBytes(c)))
+      const revoked = []
+      let validity = 'ok'
+      for (const c of certs) {
+        if (crlEntries) {
+          const hex = c.serialHex.replace(/^0+(?=.)/, '')
+          const dec = BigInt('0x' + c.serialHex).toString(10)
+          const hit = crlEntries[hex] || crlEntries[dec]
+          if (hit && hit.status !== 'OK') revoked.push(hex)
+        }
+        if (c.notBefore != null && nowMs < c.notBefore) validity = 'not-yet-valid'
+        else if (c.notAfter != null && nowMs > c.notAfter && validity === 'ok') validity = 'expired'
+      }
+      return { validity, revoked, crl: crlEntries ? 'checked' : 'unavailable' }
+    } catch { return null }
   }
 
   // ---------- Android Key Attestation extension (leaf certificate) ----------
@@ -416,11 +481,15 @@
       ? parseKeyDescription(b64ToBytes(proof.attestation[0])) : null
     // RFC 3161 token over the same canonical hash (null on pre-tsr proofs)
     const timestamp = await verifyTimestamp(proof.tsr, toHex(hash))
+    // revocation + validity of the chain (CRL fetched best-effort, offline-safe)
+    const health = attestationHealth(proof.attestation,
+      await fetchAttestationCrl(), Date.now())
     return {
       sigValid,
       attestation,
       attested: attestation === 'google-root',
       key,
+      health,
       timestamp,
       fingerprint: toHex(hash)
     }
@@ -520,6 +589,8 @@
     parseTrailer,
     derSigToP1363,
     verifyAttestation,
+    attestationHealth,
+    fetchAttestationCrl,
     parseKeyDescription,
     appIdentity,
     APP_PACKAGE,

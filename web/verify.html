@@ -171,7 +171,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     async function verifyTrailer (bytes, t, file, ui) {
       ui.stage.textContent = 'Proof found in the file — verifying the seal on your device…'
       const p = t.proof
-      const { sigValid, attestation, key, timestamp, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
+      const { sigValid, attestation, key, health, timestamp, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
 
       // proof v2 carries a capture UUID; v1 carried a small numeric payload
       const markId = p.captureId
@@ -184,6 +184,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
         securityLevel: p.securityLevel,
         attestation,
         key,
+        health,
         timestamp,
         capturedAt: p.capturedAt,
         mediaType: p.mediaType,
@@ -447,6 +448,21 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
           <dt>Signing app</dt>${app}`
     }
 
+    // chain health: revocation is a hard signal; expiry is expected on older
+    // captures (point-in-time proofs outlive their certs) and only noted
+    function healthRow (h) {
+      if (!h) return ''
+      if (h.revoked.length) {
+        return '<dt>Chain health</dt><dd><span class="badge bad">revoked</span> a certificate in this chain was revoked by Google — treat the hardware claim as broken</dd>'
+      }
+      const bits = []
+      if (h.validity === 'expired') bits.push('certificate window closed — attestation certs are short-lived by design and cover key creation, not verification; the chain signatures still check out')
+      if (h.validity === 'not-yet-valid') bits.push('certificate window opens in the future — check your device clock')
+      if (h.crl === 'unavailable') bits.push('revocation list unreachable (offline) — not checked')
+      if (!bits.length) return '<dt>Chain health</dt><dd><span class="badge ok">clean</span> not revoked, certificate windows valid</dd>'
+      return `<dt>Chain health</dt><dd>${esc(bits.join('; '))}</dd>`
+    }
+
     // RFC 3161 token verdict — the one third-party fact in the proof. Absent
     // on captures sealed offline or by pre-tsr app versions: no row at all.
     function timestampRow (ts) {
@@ -467,6 +483,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
           <dt>Recorded by</dt><dd>${esc(d.name)}</dd>
           <dt>Device</dt><dd>${esc(d.model)} (${esc(d.securityLevel)})</dd>
           <dt>Key attestation</dt>${attestationRow(d.attestation)}
+          ${healthRow(d.health)}
           ${keyRows(d.key, d.attestation === 'google-root')}
           <dt>Captured at</dt><dd>${esc(d.capturedAt)} <span class="note">(device-claimed)</span></dd>
           ${timestampRow(d.timestamp)}
