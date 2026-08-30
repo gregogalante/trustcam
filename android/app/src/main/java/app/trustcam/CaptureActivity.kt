@@ -88,20 +88,22 @@ class CaptureActivity : AppCompatActivity() {
 
     private fun bindCamera() {
         val provider = cameraProvider ?: return
-        // WYSIWYG: preview and photo share the video's 16:9 ratio, and the
-        // preview letterboxes instead of cropping — what you see is exactly
-        // the frame that gets sealed
-        val ratio16x9 = androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+        // Photos use the sensor's native 4:3: full resolution AND the margin the
+        // watermark strength was calibrated on (16:9 crops 25% of the pixels and
+        // measurably erodes the BCH decode margin). WYSIWYG holds: the preview
+        // letterboxes the same 4:3 frame that gets sealed; while RECORDING, side
+        // bands dim everything outside the video's 16:9 crop (see toggleRecording).
+        val ratio4x3 = androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
             .setAspectRatioStrategy(androidx.camera.core.resolutionselector
-                .AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
             .build()
         b.preview.scaleType = androidx.camera.view.PreviewView.ScaleType.FIT_CENTER
         val preview = Preview.Builder()
-            .setResolutionSelector(ratio16x9)
+            .setResolutionSelector(ratio4x3)
             .build()
             .also { it.surfaceProvider = b.preview.surfaceProvider }
         imageCapture = ImageCapture.Builder()
-            .setResolutionSelector(ratio16x9)
+            .setResolutionSelector(ratio4x3)
             .build()
         val recorder = Recorder.Builder()
             .setQualitySelector(QualitySelector.from(Quality.FHD))
@@ -162,6 +164,7 @@ class CaptureActivity : AppCompatActivity() {
                     is VideoRecordEvent.Start -> {
                         b.status.visibility = View.VISIBLE
                         b.status.text = getString(R.string.rec_elapsed, 0L, 0L)
+                        showVideoCropBands(true)
                     }
                     is VideoRecordEvent.Status -> {
                         val secs = event.recordingStats.recordedDurationNanos / 1_000_000_000L
@@ -170,11 +173,49 @@ class CaptureActivity : AppCompatActivity() {
                     is VideoRecordEvent.Finalize -> {
                         b.videoBtn.setImageResource(R.drawable.ic_record)
                         b.status.visibility = View.GONE
+                        showVideoCropBands(false)
                         if (event.hasError()) toast("Recording failed: ${event.error}")
                         else sealCapture(event.outputResults.outputUri, "video")
                     }
                 }
             }
+    }
+
+    /**
+     * WYSIWYG for video: the preview shows the photo's full 4:3 frame; while
+     * recording, dim the two strips the video's 16:9 crop excludes (an eighth
+     * of the frame per side), so what stays bright is exactly what gets sealed.
+     */
+    private fun showVideoCropBands(show: Boolean) {
+        if (!show) {
+            b.recBandStart.visibility = View.GONE
+            b.recBandEnd.visibility = View.GONE
+            return
+        }
+        val vw = b.preview.width.toFloat()
+        val vh = b.preview.height.toFloat()
+        if (vw == 0f || vh == 0f) return
+        val portrait = vh >= vw
+        // FIT_CENTER rect of the 4:3 (3:4 in portrait) preview content
+        val contentW = if (portrait) minOf(vw, vh * 3f / 4f) else minOf(vw, vh * 4f / 3f)
+        val contentH = if (portrait) contentW * 4f / 3f else contentW * 3f / 4f
+        val offX = (vw - contentW) / 2f
+        val offY = (vh - contentH) / 2f
+        fun place(v: View, x: Float, y: Float, w: Int, h: Int) {
+            v.layoutParams = v.layoutParams.apply { width = w; height = h }
+            v.x = x
+            v.y = y
+            v.visibility = View.VISIBLE
+        }
+        if (portrait) {
+            val band = contentW / 8f
+            place(b.recBandStart, offX, offY, band.toInt(), contentH.toInt())
+            place(b.recBandEnd, offX + contentW - band, offY, band.toInt(), contentH.toInt())
+        } else {
+            val band = contentH / 8f
+            place(b.recBandStart, offX, offY, contentW.toInt(), band.toInt())
+            place(b.recBandEnd, offX, offY + contentH - band, contentW.toInt(), band.toInt())
+        }
     }
 
     /**

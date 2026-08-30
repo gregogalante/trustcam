@@ -15,6 +15,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- WYSIWYG while recording: the preview shows the photo's full 4:3 frame,
+         video crops it to 16:9 — these bands dim the excluded sides so what
+         stays bright is exactly what gets sealed. Sized/positioned in code. -->
+    <View
+        android:id="@+id/recBandStart"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:background="#B3000000"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+    <View
+        android:id="@+id/recBandEnd"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:background="#B3000000"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <!-- identity floats top-right over the viewfinder; top margin grows with
          the status-bar inset at runtime -->
     <ImageButton
