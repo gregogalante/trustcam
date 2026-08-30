@@ -133,9 +133,10 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   A losslessly trimmed copy keeps intact interior GOPs verifiable.
 - **C2PA manifests** (app ≥ 1.5.0, `ContentCredentials.kt`): embedded after
   watermarking and before hashing, so the trailer covers the manifest. Signed
-  with DEVELOPMENT credentials (`assets/c2pa_dev_key.pem` + cert — sacrificial
-  self-signed pair, external validators show untrusted) — replace with a
-  CA-issued credential when procured; the web verifier only reports manifest
+  with DEVELOPMENT credentials (`assets/c2pa_dev_key.pem` PKCS#8 + cert chain:
+  leaf issued by a throwaway dev root CA — c2pa-rs REFUSES self-signed leaf
+  certs at signing time, and wants PKCS#8 keys; external validators still show
+  the chain as untrusted) — replace with a CA-issued credential when procured; the web verifier only reports manifest
   PRESENCE (`hasC2pa`), validation is any C2PA validator's job.
 - Android toolchain: AGP 8.9.1 / Kotlin 2.2.10 / compileSdk 36 (forced by
   c2pa-android 0.0.9 from JitPack — 1.0.0 is not built there).
