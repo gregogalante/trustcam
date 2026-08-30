@@ -12,7 +12,6 @@
   <nav>
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
-    <a href="/demos.html">Demos</a>
     <a href="/paper/" aria-current="page">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
@@ -37,7 +36,7 @@
     <table>
       <tr><th>Layer</th><th>Proves</th><th>Survives re-encoding?</th></tr>
       <tr><td>Cryptographic signature over content hashes</td><td>Exact integrity, device identity, capture time</td><td>No — any transcode invalidates it, by design</td></tr>
-      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the capture (random 128-bit capture id) — the key that finds the verified original for comparison</td><td>Yes — ids recovered from real WhatsApp and YouTube round-trips (<a href="/demos.html">demos</a>)</td></tr>
+      <tr><td>Robust invisible watermark (VideoSeal)</td><td>Pointer to the capture (random 128-bit capture id) — the key that finds the verified original for comparison</td><td>Yes — ids recovered from real WhatsApp and YouTube round-trips</td></tr>
     </table>
 
     <div class="flow branch">
@@ -220,8 +219,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       eight copies of each bit, and accepts the result only if the CRC validates and
       signal agreement exceeds a threshold. Measured end-to-end on real round-trips:
       the mark id came back from WhatsApp (89% signal) and from a YouTube Short
-      re-encoded to AV1 (91%) — copies published on the
-      <a href="/demos.html">demos page</a>.
+      re-encoded to AV1 (91%).
     </p>
 
     <h2 id="bitstream">Bitstream signatures for video (next iteration)</h2>
@@ -313,7 +311,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       is built to become C2PA-conformant: the trailer can be re-expressed as a C2PA
       manifest, and the device keys/attestation flow matches the requirements of C2PA
       Conformance Level 2 (hardware-backed keys). Capture time is anchored by an
-      <strong>RFC 3161 timestamp token</strong> fetched at capture (since 1.4.0): the
+      <strong>RFC 3161 timestamp token</strong> fetched at capture: the
       app sends the canonical SHA-256 — never the media — to a public timestamp
       authority and stores the returned token in the proof; the verifier checks it
       client-side against a pinned TSA chain and reports "existed no later than".

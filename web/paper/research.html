@@ -12,7 +12,6 @@
   <nav>
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
-    <a href="/demos.html">Demos</a>
     <a href="/paper/" aria-current="page">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
@@ -90,8 +89,7 @@
     <h3>Live end-to-end results (shipped system)</h3>
     <p>
       Real captures (Motorola moto g75, TEE-backed key) pushed through real
-      platforms and verified with the production verifier — copies and originals are
-      published on the <a href="/demos.html">demos page</a>:
+      platforms and verified with the production verifier:
     </p>
     <ul>
       <li><strong>Photo → WhatsApp</strong> (3072×4096 → 1536×2048, 8× smaller): the
@@ -140,8 +138,8 @@
       <li><strong>Key compromise</strong> — hardware-backed, non-exportable per-device
         keys limit blast radius to one device; the attestation chain travels inside
         every proof, so verifiers can weigh unattested keys accordingly.</li>
-      <li><strong>Clock trust</strong> — the device clock is self-claimed, so since
-        app 1.4.0 the proof carries an <strong>RFC 3161 token</strong> from a public
+      <li><strong>Clock trust</strong> — the device clock is self-claimed, so the
+        proof carries an <strong>RFC 3161 token</strong> from a public
         timestamp authority (fetched at capture when online, verified client-side
         against a pinned chain): a third party attests the file existed no later
         than that moment. Offline captures stay honestly device-claimed.</li>
