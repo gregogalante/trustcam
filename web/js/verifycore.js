@@ -495,6 +495,257 @@
     }
   }
 
+  // ---------- per-GOP bitstream signatures (video) ----------
+  // Each GOP's VCL NAL units (types 1 and 5, raw bytes incl. emulation
+  // prevention, no transport framing) are SHA-256'd; the device key signs the
+  // 32-byte hash exactly like the trailer seal. The signature travels in a
+  // user_data_unregistered SEI prepended to the NEXT GOP's keyframe:
+  //   [16B "TrustCamGopSig01"][ver u8][gopIndex u32be]
+  //   [spkiLen u16be][spki][sigLen u16be][DER sig]
+  // The final GOP's record rides in the proof trailer (gopSig). A losslessly
+  // trimmed copy keeps interior GOPs verifiable even with the trailer gone.
+  const GOPSIG_UUID = 'TrustCamGopSig01'
+
+  // minimal MP4 box walk: iterate boxes in [start, end)
+  function * mp4Boxes (b, start, end) {
+    let p = start
+    while (p + 8 <= end) {
+      const dv = new DataView(b.buffer, b.byteOffset + p)
+      let size = dv.getUint32(0)
+      const type = new TextDecoder().decode(b.subarray(p + 4, p + 8))
+      let head = 8
+      if (size === 1) { size = Number(dv.getBigUint64(8)); head = 16 }
+      if (size === 0) size = end - p
+      if (size < head || p + size > end) return
+      yield { type, start: p, content: p + head, end: p + size }
+      p += size
+    }
+  }
+
+  function mp4Find (b, path, start, end) {
+    let range = { content: start, end }
+    for (const want of path) {
+      let hit = null
+      for (const box of mp4Boxes(b, range.content, range.end)) {
+        if (box.type === want) { hit = box; break }
+      }
+      if (!hit) return null
+      range = hit
+    }
+    return range
+  }
+
+  // sample table of the AVC video trak: offsets, sizes, sync flags, timing
+  function mp4VideoSamples (b) {
+    const moov = mp4Find(b, ['moov'], 0, b.length)
+    if (!moov) return null
+    for (const trak of mp4Boxes(b, moov.content, moov.end)) {
+      if (trak.type !== 'trak') continue
+      const hdlr = mp4Find(b, ['mdia', 'hdlr'], trak.content, trak.end)
+      if (!hdlr || new TextDecoder().decode(b.subarray(hdlr.content + 8, hdlr.content + 12)) !== 'vide') continue
+      const stbl = mp4Find(b, ['mdia', 'minf', 'stbl'], trak.content, trak.end)
+      const mdhd = mp4Find(b, ['mdia', 'mdhd'], trak.content, trak.end)
+      if (!stbl) return null
+      const box = {}
+      for (const x of mp4Boxes(b, stbl.content, stbl.end)) box[x.type] = x
+      if (!box.stsd || !box.stsz || !box.stsc || !(box.stco || box.co64)) return null
+      const dv = (node, off) => new DataView(b.buffer, b.byteOffset + node.content + off)
+      // avcC: NAL length prefix size (inside the avc1 visual sample entry)
+      const avc1 = mp4Find(b, ['avc1'], box.stsd.content + 8, box.stsd.end) ||
+        mp4Find(b, ['avc3'], box.stsd.content + 8, box.stsd.end)
+      if (!avc1) return null
+      const avcC = mp4Find(b, ['avcC'], avc1.content + 78, avc1.end)
+      if (!avcC) return null
+      const nalLen = (b[avcC.content + 4] & 0x03) + 1
+      // sizes
+      const stszDv = dv(box.stsz, 0)
+      const fixedSize = stszDv.getUint32(4)
+      const count = stszDv.getUint32(8)
+      const sizes = new Array(count)
+      for (let i = 0; i < count; i++) sizes[i] = fixedSize || stszDv.getUint32(12 + i * 4)
+      // chunk offsets
+      const co = box.stco || box.co64
+      const coDv = dv(co, 0)
+      const nChunks = coDv.getUint32(4)
+      const chunkOff = new Array(nChunks)
+      for (let i = 0; i < nChunks; i++) {
+        chunkOff[i] = box.stco ? coDv.getUint32(8 + i * 4) : Number(coDv.getBigUint64(8 + i * 8))
+      }
+      // samples per chunk runs
+      const scDv = dv(box.stsc, 0)
+      const nRuns = scDv.getUint32(4)
+      const runs = []
+      for (let i = 0; i < nRuns; i++) {
+        runs.push({ first: scDv.getUint32(8 + i * 12), per: scDv.getUint32(12 + i * 12) })
+      }
+      // sync samples (1-based); absent box = every sample is sync
+      const sync = new Set()
+      if (box.stss) {
+        const ssDv = dv(box.stss, 0)
+        const n = ssDv.getUint32(4)
+        for (let i = 0; i < n; i++) sync.add(ssDv.getUint32(8 + i * 4))
+      }
+      // per-sample duration (stts) and timescale, for reporting time ranges
+      const timescale = mdhd
+        ? new DataView(b.buffer, b.byteOffset + mdhd.content).getUint32(b[mdhd.content] === 1 ? 20 : 12)
+        : 0
+      const durations = new Array(count).fill(0)
+      if (box.stts) {
+        const ttDv = dv(box.stts, 0)
+        const n = ttDv.getUint32(4)
+        let s = 0
+        for (let i = 0; i < n && s < count; i++) {
+          const c = ttDv.getUint32(8 + i * 8)
+          const d = ttDv.getUint32(12 + i * 8)
+          for (let j = 0; j < c && s < count; j++) durations[s++] = d
+        }
+      }
+      // resolve offsets chunk by chunk
+      const samples = new Array(count)
+      let sample = 0
+      for (let chunk = 0; chunk < nChunks && sample < count; chunk++) {
+        let per = runs[0].per
+        for (const r of runs) { if (chunk + 1 >= r.first) per = r.per }
+        let off = chunkOff[chunk]
+        for (let k = 0; k < per && sample < count; k++) {
+          samples[sample] = { off, size: sizes[sample], sync: sync.size === 0 || sync.has(sample + 1) }
+          off += sizes[sample]
+          sample++
+        }
+      }
+      return { samples, nalLen, timescale, durations }
+    }
+    return null
+  }
+
+  // remove H.264 emulation-prevention bytes (00 00 03 xx -> 00 00 xx)
+  function unescapeRbsp (nal) {
+    const out = new Uint8Array(nal.length)
+    let n = 0
+    for (let i = 0; i < nal.length; i++) {
+      if (i >= 2 && nal[i] === 3 && nal[i - 1] === 0 && nal[i - 2] === 0) continue
+      out[n++] = nal[i]
+    }
+    return out.subarray(0, n)
+  }
+
+  // parse a TrustCam gop-signature record out of a type-6 NAL, or null
+  function parseGopSei (nal) {
+    const rbsp = unescapeRbsp(nal.subarray(1)) // skip the NAL header byte
+    let p = 0
+    while (p < rbsp.length - 1) {
+      let type = 0
+      while (rbsp[p] === 0xff) { type += 255; p++ }
+      type += rbsp[p++]
+      let size = 0
+      while (rbsp[p] === 0xff) { size += 255; p++ }
+      size += rbsp[p++]
+      const payload = rbsp.subarray(p, p + size)
+      p += size
+      if (type !== 5 || size < 16) continue
+      if (new TextDecoder().decode(payload.subarray(0, 16)) !== GOPSIG_UUID) continue
+      const dv = new DataView(payload.buffer, payload.byteOffset)
+      if (payload[16] !== 1) return null // unknown version
+      const gopIndex = dv.getUint32(17)
+      const spkiLen = dv.getUint16(21)
+      const spki = payload.slice(23, 23 + spkiLen)
+      const sigLen = dv.getUint16(23 + spkiLen)
+      const sig = payload.slice(25 + spkiLen, 25 + spkiLen + sigLen)
+      return { gopIndex, spki, sig }
+    }
+    return null
+  }
+
+  /**
+   * Verifies per-GOP bitstream signatures in an AVC MP4. Each record (SEI in
+   * the following GOP's keyframe, or the trailer's gopSig for the final GOP)
+   * signs the previous GOP's VCL hash. Survives lossless trims: interior GOPs
+   * keep verifying with the trailer long gone. Returns null when the file has
+   * no video samples or carries no records at all.
+   */
+  async function verifyBitstream (bytes, gopSigFromProof) {
+    const vt = mp4VideoSamples(bytes)
+    if (!vt) return null
+    // split every sample into NALs; group into GOPs at sync samples
+    const gops = [] // { hashInput: [nals], sei: record|null, startT, endT }
+    let cur = null
+    let t = 0
+    for (let si = 0; si < vt.samples.length; si++) {
+      const s = vt.samples[si]
+      if (s.sync) {
+        cur = { nals: [], sei: null, startT: t, endT: t, frames: 0 }
+        gops.push(cur)
+      }
+      if (!cur) { t += vt.durations[si] || 0; continue } // pre-sync: ignore
+      let p = s.off
+      const end = s.off + s.size
+      while (p + vt.nalLen <= end) {
+        let len = 0
+        for (let i = 0; i < vt.nalLen; i++) len = len * 256 + bytes[p + i]
+        p += vt.nalLen
+        if (len <= 0 || p + len > end) break
+        const nal = bytes.subarray(p, p + len)
+        const type = nal[0] & 0x1f
+        if (type === 1 || type === 5) cur.nals.push(nal)
+        else if (type === 6 && !cur.sei) cur.sei = parseGopSei(nal)
+        p += len
+      }
+      cur.frames++
+      t += vt.durations[si] || 0
+      cur.endT = t
+    }
+    // any records at all?
+    const anySei = gops.some(g => g.sei) || !!gopSigFromProof
+    if (!anySei) return null
+    // hash each GOP and match records: SEI in gop k covers gop k-1;
+    // the proof's gopSig covers the last gop
+    const out = []
+    for (let k = 0; k < gops.length; k++) {
+      const g = gops[k]
+      const total = g.nals.reduce((a, n) => a + n.length, 0)
+      const cat = new Uint8Array(total)
+      let o = 0
+      for (const n of g.nals) { cat.set(n, o); o += n.length }
+      g.hash = new Uint8Array(await crypto.subtle.digest('SHA-256', cat))
+      let rec = null
+      if (k + 1 < gops.length && gops[k + 1].sei) rec = gops[k + 1].sei
+      else if (k === gops.length - 1 && gopSigFromProof) {
+        rec = {
+          gopIndex: gopSigFromProof.i,
+          spki: b64ToBytes(gopSigFromProof.spki),
+          sig: b64ToBytes(gopSigFromProof.sig)
+        }
+      }
+      let ok = false
+      let keyB64 = null
+      if (rec) {
+        try {
+          const key = await crypto.subtle.importKey('spki', rec.spki,
+            { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
+          ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key,
+            derSigToP1363(rec.sig), g.hash)
+          keyB64 = btoa(String.fromCharCode(...rec.spki))
+        } catch {}
+      }
+      out.push({
+        index: rec ? rec.gopIndex : null,
+        signed: !!rec,
+        ok,
+        keyB64,
+        startS: vt.timescale ? g.startT / vt.timescale : null,
+        endS: vt.timescale ? g.endT / vt.timescale : null
+      })
+    }
+    const keys = new Set(out.filter(g => g.ok).map(g => g.keyB64))
+    return {
+      gops: out,
+      verified: out.filter(g => g.ok).length,
+      signed: out.filter(g => g.signed).length,
+      total: out.length,
+      keyB64: keys.size === 1 ? [...keys][0] : null
+    }
+  }
+
   // ---------- invisible-mark payload ----------
   // RGBA pixels -> CHW float tensor data for the detector graph
   function toDetectorInput (rgba, w, h) {
@@ -598,6 +849,9 @@
     verifySeal,
     toDetectorInput,
     decodePayload,
+    mp4VideoSamples,
+    parseGopSei,
+    verifyBitstream,
     idKey,
     idPretty,
     deviceIdOf,

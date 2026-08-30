@@ -249,6 +249,7 @@ class CaptureActivity : AppCompatActivity() {
                 // to the capture id
                 val captureId = java.util.UUID.randomUUID()
                 var markId = 0
+                var gopFinal: GopSigner.Final? = null
                 if (mediaType == "photo") {
                     val idBytes = java.nio.ByteBuffer.allocate(16)
                         .putLong(captureId.mostSignificantBits)
@@ -260,7 +261,11 @@ class CaptureActivity : AppCompatActivity() {
                     markId = java.security.SecureRandom().nextInt(PayloadCodec.MAX_ID - 1) + 1
                     val msg = PayloadCodec.encode(markId)
                     val tmp = File(cacheDir, "wm_$captureId.mp4")
-                    VideoWatermarker.process(this, uri, tmp, eng, msg) { pct ->
+                    // per-GOP rolling signatures ride inside the bitstream (SEI):
+                    // a trimmed copy keeps its intact segments verifiable
+                    val gop = GopSigner(android.util.Base64.decode(
+                        DeviceKey.ensure().publicKeySpkiB64, android.util.Base64.DEFAULT))
+                    gopFinal = VideoWatermarker.process(this, uri, tmp, eng, msg, gop) { pct ->
                         runOnUiThread {
                             showProgress(indeterminate = false, percent = pct)
                             b.sealStatus.text = getString(R.string.watermarking_pct, pct)
@@ -308,6 +313,16 @@ class CaptureActivity : AppCompatActivity() {
                     .put("pubkey", key.publicKeySpkiB64)
                     .put("attestation", org.json.JSONArray(key.attestationChainB64))
                     .apply { if (tsr != null) put("tsr", tsr) }
+                    .apply {
+                        // the final GOP's bitstream signature has no next keyframe
+                        // to ride in — it travels here instead
+                        gopFinal?.let {
+                            put("gopSig", org.json.JSONObject()
+                                .put("i", it.i)
+                                .put("sig", it.sigB64)
+                                .put("spki", key.publicKeySpkiB64))
+                        }
+                    }
                     .put("sig", DeviceKey.signHash(hash))
                 contentResolver.openOutputStream(uri, "wa")!!.use {
                     it.write(ProofTrailer.build(proof))

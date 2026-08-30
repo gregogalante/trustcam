@@ -24,7 +24,8 @@ object VideoWatermarker {
 
     fun process(context: Context, srcUri: Uri, dst: File,
                 engine: WatermarkEngine, msg: FloatArray,
-                onProgress: (Int) -> Unit) {
+                gop: GopSigner? = null,
+                onProgress: (Int) -> Unit): GopSigner.Final? {
         val extractor = MediaExtractor()
         extractor.setDataSource(context, srcUri, null)
         var videoTrack = -1
@@ -69,6 +70,23 @@ object VideoWatermarker {
         var muxVideo = -1
         var muxAudio = -1
         var muxerStarted = false
+
+        // per-GOP signing taps the encoded access units on their way to the muxer
+        val writeVideo = { b: ByteBuffer, i: MediaCodec.BufferInfo ->
+            if (muxerStarted) {
+                if (gop != null) {
+                    val bytes = ByteArray(i.size)
+                    b.position(i.offset)
+                    b.get(bytes)
+                    val out = gop.onSample(bytes, GopSigner.isKeyFrame(i))
+                    val ni = MediaCodec.BufferInfo()
+                    ni.set(0, out.size, i.presentationTimeUs, i.flags)
+                    muxer.writeSampleData(muxVideo, ByteBuffer.wrap(out), ni)
+                } else {
+                    muxer.writeSampleData(muxVideo, b, i)
+                }
+            }
+        }
 
         extractor.selectTrack(videoTrack)
         val info = MediaCodec.BufferInfo()
@@ -117,7 +135,7 @@ object VideoWatermarker {
                                     }
                                     muxer.start(); muxerStarted = true
                                 },
-                                write = { b, i -> if (muxerStarted) muxer.writeSampleData(muxVideo, b, i) })
+                                write = writeVideo)
                         }
                         val encImage = encoder.getInputImage(encIdx)!!
 
@@ -158,7 +176,7 @@ object VideoWatermarker {
                     }
                     muxer.start(); muxerStarted = true
                 },
-                write = { b, i -> if (muxerStarted) muxer.writeSampleData(muxVideo, b, i) })
+                write = writeVideo)
             if (done && decoderDone) break
         }
 
@@ -187,6 +205,9 @@ object VideoWatermarker {
         if (muxerStarted) muxer.stop()
         muxer.release()
         onProgress(100)
+        // last GOP's record: no next keyframe to carry it — the caller seals
+        // it into the proof trailer instead
+        return gop?.finish()
     }
 
     /** Drains all currently available encoder output; true when EOS was seen. */

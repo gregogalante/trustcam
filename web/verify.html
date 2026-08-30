@@ -83,6 +83,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     const input = document.getElementById('file')
     const result = document.getElementById('result')
     let busy = false
+    let bitsig = null // per-GOP bitstream result of the current video, if any
 
     drop.addEventListener('click', () => input.click())
     drop.addEventListener('dragover', e => { e.preventDefault(); if (!busy) drop.classList.add('hover') })
@@ -145,10 +146,15 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
       busy = true
       drop.classList.add('disabled')
       const ui = progressCard(file)
+      bitsig = null
       try {
         const bytes = new Uint8Array(await file.arrayBuffer())
 
         const t = core.parseTrailer(bytes)
+        if (!(file.type || '').startsWith('image')) {
+          // per-GOP bitstream signatures, when the video carries them
+          bitsig = await core.verifyBitstream(bytes, t ? t.proof.gopSig : null)
+        }
         if (t) return await verifyTrailer(bytes, t, file, ui)
 
         if ((file.type || '').startsWith('image')) {
@@ -157,7 +163,14 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
           return noProof('No invisible mark could be recovered from this image.')
         }
         const found = await videoScan(file, ui)
-        if (!found) noProof('No invisible mark could be recovered from this video.')
+        if (!found) {
+          if (bitsig && bitsig.verified > 0) {
+            verdictCard('!', 'warn', 'Signed segments — origin mark unreadable',
+              'Parts of this video carry valid TrustCam bitstream signatures, but the invisible origin mark could not be decoded, so the capture cannot be identified.', '')
+          } else {
+            noProof('No invisible mark could be recovered from this video.')
+          }
+        }
       } catch (e) {
         console.warn(e)
         noProof('The file could not be analyzed in this browser.')
@@ -498,6 +511,27 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
         ' Either the file was never captured with TrustCam, or too little of the original is left.', '')
     }
 
+    function fmtT (s) {
+      return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+    }
+
+    // per-GOP bitstream signatures: shown with whatever verdict the file gets
+    function bitsigNote () {
+      if (!bitsig) return ''
+      const ok = bitsig.gops.filter(g => g.ok)
+      const rng = ok.length && ok[0].startS != null
+        ? ` — verified span ${fmtT(ok[0].startS)}–${fmtT(ok[ok.length - 1].endS)}` : ''
+      const all = bitsig.verified === bitsig.total
+      const head = all
+        ? `every video segment individually signed and verified (${bitsig.verified}/${bitsig.total})`
+        : `${bitsig.verified} of ${bitsig.total} video segments verified${rng}`
+      return `<div class="card ${all ? 'tint-ok' : 'tint-warn'}" style="margin:1rem 0 0">
+        <p class="note" style="margin:0"><strong>Bitstream signatures:</strong> ${head}.
+        Segments are signed one by one in the secure element — a losslessly trimmed
+        copy keeps its intact segments verifiable even without the seal.</p>
+      </div>`
+    }
+
     function verdictCard (icon, cls, title, sub, details, extra = '') {
       result.innerHTML = `
         <div class="card fadeup">
@@ -506,6 +540,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
             <div><h3>${title}</h3><p>${sub}</p></div>
           </div>
           ${extra}
+          ${bitsigNote()}
           ${details}
           <p style="margin-bottom:0"><a href="#" id="again">Verify another file</a></p>
         </div>`

@@ -30,7 +30,7 @@ const BASE = process.env.TRUSTCAM_URL || 'https://trustcam.gregoriogalante.com'
 const SHARED = {
   'js/codec.js': 'c38ef43250b509d7d3d757074099418eaf049c1b669650bd47beffad6e9ce5e2',
   'js/codec_v3.js': 'cce9236875d72a64c49c832e6ec1ff0e125d02916016d10085bf3e3e268f6989',
-  'js/verifycore.js': 'e956536928377aac3fd67d121823817eb305c17f545cc53ba44099675edaf8df',
+  'js/verifycore.js': 'e17de0d75e9f7841797057261e874250a98a834b2cc99fb20d9c42e3ef855419',
   'ort/ort.min.js': 'be6e560b64c03c99252eedc0e1989e9e51e44d9f191e7655c9bf011bf9f576c8',
   'ort/ort-wasm-simd-threaded.mjs': '745eb7c0ce6f18a6aa521971b2877babc7ffb27eecb58ab3bc6e5ef4692672e8',
   'ort/ort-wasm-simd-threaded.wasm': '207d02be4591c156b0a98f024f3d58005b5b04c92274d759fb390338c63559ea',
@@ -199,6 +199,8 @@ async function main () {
   if (t) {
     const p = t.proof
     const { sigValid, attestation, key, health, timestamp, fingerprint } = await core.verifySeal(bytes, p, t.canonicalEnd)
+    const bitsig = p.mediaType === 'video'
+      ? await core.verifyBitstream(bytes, p.gopSig) : null
     const ATT = {
       'google-root': 'chain verified to Google hardware attestation root',
       'unverified-root': 'chain valid, root NOT a Google hardware root',
@@ -242,6 +244,9 @@ async function main () {
         invalid: 'token INVALID — treat the time as device-claimed'
       }
       console.log(`  timestamped : ${TS[timestamp.status]}`)
+    }
+    if (bitsig) {
+      console.log(`  segments    : ${bitsig.verified}/${bitsig.total} GOPs individually signed & verified`)
     }
     console.log(`  mark id     : ${markId(core, p)}`)
     console.log(`  fingerprint : ${fingerprint}`)
@@ -291,7 +296,19 @@ async function main () {
     await printMarkVerdict(core, decoded)
   }
 
-  // video: sample frames evenly, average soft bits — same flow as the browser
+  // video: per-GOP bitstream signatures first — they survive lossless trims
+  const bytes2 = new Uint8Array(fs.readFileSync(file))
+  const bitsig = await core.verifyBitstream(bytes2, null)
+  if (bitsig) {
+    const ok = bitsig.gops.filter(g => g.ok)
+    console.log(`BITSTREAM: ${bitsig.verified}/${bitsig.total} video segments carry valid TrustCam signatures.`)
+    if (ok.length && ok[0].startS != null) {
+      const t = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+      console.log(`  verified span: ${t(ok[0].startS)}-${t(ok[ok.length - 1].endS)}`)
+    }
+  }
+
+  // sample frames evenly, average soft bits — same flow as the browser
   const info = ffprobe(file, 'stream=width,height:format=duration')
   const s = info.streams[0]
   const dur = parseFloat(info.format?.duration || '0') ||
