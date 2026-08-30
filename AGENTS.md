@@ -25,8 +25,11 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
 
 - **Proof trailer** (app ⇄ verifier contract, do not change unilaterally):
   `[4B box size]["free"][proof JSON][4B json length]["TCPROOF1"]` appended to the
-  file; canonical bytes = file minus trailer; `sig = ECDSA-P256(SHA256(H))` where
-  `H` = 32 raw bytes of the canonical SHA-256. App side:
+  file; canonical bytes = file minus trailer — and for JPEG, minus the C2PA
+  APP11 store (`stripJpegC2pa` in verifycore.js): photos embed the manifest
+  AFTER sealing because the JPEG hard binding hashes to EOF, videos BEFORE
+  (BMFF hashing ignores the trailing free box). `sig = ECDSA-P256(SHA256(H))`
+  where `H` = 32 raw bytes of the canonical SHA-256. App side:
   `Signature("SHA256withECDSA").update(H)` in `android/.../DeviceKey.kt` +
   `ProofTrailer.kt`. Verifier side: WebCrypto in `web/verify.html`
   (DER→P1363 signature conversion required).

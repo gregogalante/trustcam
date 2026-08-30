@@ -462,17 +462,26 @@
       ? 'official' : 'mismatch'
   }
 
-  // Verifies the trailer seal against the canonical bytes (file minus trailer).
+  // Verifies the trailer seal against the canonical bytes (file minus trailer;
+  // JPEGs try the C2PA-stripped canonicalization first — photos embed the
+  // manifest after sealing — and fall back to the full bytes for files whose
+  // manifest predates that order and is covered by the seal).
   async function verifySeal (bytes, proof, canonicalEnd) {
-    const canonical = bytes.subarray(0, canonicalEnd)
-    const hash = await crypto.subtle.digest('SHA-256', canonical)
+    const full = bytes.subarray(0, canonicalEnd)
+    const stripped = stripJpegC2pa(full)
+    let hash = await crypto.subtle.digest('SHA-256', stripped)
     let sigValid = false
     try {
       const spki = b64ToBytes(proof.pubkey)
       const key = await crypto.subtle.importKey('spki', spki,
         { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
-      sigValid = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key,
-        derSigToP1363(b64ToBytes(proof.sig)), hash)
+      const check = h => crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key,
+        derSigToP1363(b64ToBytes(proof.sig)), h)
+      sigValid = await check(hash)
+      if (!sigValid && stripped.length !== full.length) {
+        const fullHash = await crypto.subtle.digest('SHA-256', full)
+        if (await check(fullHash)) { sigValid = true; hash = fullHash }
+      }
     } catch {}
     // full chain validation: leaf key match, cert-by-cert signatures, pinned root
     const attestation = await verifyAttestation(proof.attestation, proof.pubkey)
@@ -746,6 +755,39 @@
     }
   }
 
+  // JPEG canonicalization: photos embed the C2PA store AFTER sealing (the
+  // JPEG hard binding hashes to EOF, so the trailer must exist first) — the
+  // canonical bytes therefore exclude APP11 JUMBF segments. Photos without a
+  // manifest pass through untouched, so pre-C2PA proofs keep verifying.
+  function stripJpegC2pa (bytes) {
+    if (!(bytes[0] === 0xff && bytes[1] === 0xd8)) return bytes
+    const keep = []
+    let p = 2
+    let cut = 2 // start of the current kept run
+    while (p + 4 < bytes.length) {
+      if (bytes[p] !== 0xff) break
+      const marker = bytes[p + 1]
+      if (marker === 0xda) break
+      const len = (bytes[p + 2] << 8) | bytes[p + 3]
+      if (marker === 0xeb) {
+        const head = new TextDecoder().decode(bytes.subarray(p + 4, p + 4 + Math.min(32, len)))
+        if (head.includes('JP') || head.includes('jumb') || head.includes('c2pa')) {
+          keep.push(bytes.subarray(cut, p))
+          cut = p + 2 + len
+        }
+      }
+      p += 2 + len
+    }
+    if (cut === 2) return bytes // nothing stripped
+    keep.unshift(bytes.subarray(0, 2))
+    keep.push(bytes.subarray(cut))
+    const total = keep.reduce((a, k) => a + k.length, 0)
+    const out = new Uint8Array(total)
+    let o = 0
+    for (const k of keep) { out.set(k, o); o += k.length }
+    return out
+  }
+
   // ---------- C2PA / Content Credentials presence ----------
   // Presence-only: full manifest validation belongs to any C2PA validator.
   // JPEG carries the store in APP11 JUMBF segments, MP4 in a top-level uuid box.
@@ -881,6 +923,7 @@
     parseGopSei,
     verifyBitstream,
     hasC2pa,
+    stripJpegC2pa,
     idKey,
     idPretty,
     deviceIdOf,

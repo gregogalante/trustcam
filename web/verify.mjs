@@ -30,7 +30,7 @@ const BASE = process.env.TRUSTCAM_URL || 'https://trustcam.gregoriogalante.com'
 const SHARED = {
   'js/codec.js': 'c38ef43250b509d7d3d757074099418eaf049c1b669650bd47beffad6e9ce5e2',
   'js/codec_v3.js': 'cce9236875d72a64c49c832e6ec1ff0e125d02916016d10085bf3e3e268f6989',
-  'js/verifycore.js': 'b907c5f90d4883198297daeea2be5bef06d513d41220b6f3c277033bff8281b9',
+  'js/verifycore.js': 'b6e182e361021f6f0103b0984fc97c720e6516b0381a922d8640f76d0badc1d0',
   'ort/ort.min.js': 'be6e560b64c03c99252eedc0e1989e9e51e44d9f191e7655c9bf011bf9f576c8',
   'ort/ort-wasm-simd-threaded.mjs': '745eb7c0ce6f18a6aa521971b2877babc7ffb27eecb58ab3bc6e5ef4692672e8',
   'ort/ort-wasm-simd-threaded.wasm': '207d02be4591c156b0a98f024f3d58005b5b04c92274d759fb390338c63559ea',

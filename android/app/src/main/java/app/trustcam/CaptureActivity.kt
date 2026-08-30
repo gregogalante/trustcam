@@ -279,20 +279,6 @@ class CaptureActivity : AppCompatActivity() {
                         .array()
                     PhotoWatermarker.watermarkInPlace(contentResolver, uri, eng,
                         PayloadCodecV3.encode(idBytes))
-                    // C2PA manifest AFTER watermarking (hard binding covers the
-                    // final pixels) and BEFORE hashing (trailer covers the manifest)
-                    val cIn = File(cacheDir, "cc_$captureId.jpg")
-                    val cOut = File(cacheDir, "cc_${captureId}_m.jpg")
-                    contentResolver.openInputStream(uri)!!.use { ins ->
-                        cIn.outputStream().use { ins.copyTo(it) }
-                    }
-                    if (ContentCredentials.embed(this, cIn, cOut,
-                            captureId.toString(), device.deviceId)) {
-                        contentResolver.openOutputStream(uri, "wt")!!.use { out ->
-                            cOut.inputStream().use { it.copyTo(out, 1 shl 16) }
-                        }
-                    }
-                    cIn.delete(); cOut.delete()
                 } else {
                     markId = java.security.SecureRandom().nextInt(PayloadCodec.MAX_ID - 1) + 1
                     val msg = PayloadCodec.encode(markId)
@@ -367,6 +353,23 @@ class CaptureActivity : AppCompatActivity() {
                     .put("sig", DeviceKey.signHash(hash))
                 contentResolver.openOutputStream(uri, "wa")!!.use {
                     it.write(ProofTrailer.build(proof))
+                }
+                if (mediaType == "photo") {
+                    // photos embed the C2PA manifest AFTER sealing: the JPEG hard
+                    // binding hashes to EOF, so the trailer must exist first (the
+                    // verifier strips the C2PA store when canonicalizing JPEGs)
+                    val cIn = File(cacheDir, "cc_$captureId.jpg")
+                    val cOut = File(cacheDir, "cc_${captureId}_m.jpg")
+                    contentResolver.openInputStream(uri)!!.use { ins ->
+                        cIn.outputStream().use { ins.copyTo(it) }
+                    }
+                    if (ContentCredentials.embed(this, cIn, cOut,
+                            captureId.toString(), device.deviceId)) {
+                        contentResolver.openOutputStream(uri, "wt")!!.use { out ->
+                            cOut.inputStream().use { it.copyTo(out, 1 shl 16) }
+                        }
+                    }
+                    cIn.delete(); cOut.delete()
                 }
 
                 // sealing time in the completion message: lets field tests
