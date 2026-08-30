@@ -115,7 +115,22 @@ class CaptureActivity : AppCompatActivity() {
             preview, imageCapture, videoCapture)
     }
 
+    /**
+     * Photo and video are mutually exclusive: while one capture is in flight
+     * the other trigger is disabled and visibly dimmed. Mixing them mid-flight
+     * used to abort the recording (the photo's seal unbinds the camera) and
+     * race two seals on one engine.
+     */
+    private fun setTriggers(photo: Boolean, video: Boolean) {
+        b.photoBtn.isEnabled = photo
+        b.photoBtn.alpha = if (photo) 1f else 0.3f
+        b.videoBtn.isEnabled = video
+        b.videoBtn.alpha = if (video) 1f else 0.3f
+    }
+
     private fun takePhoto() {
+        if (recording != null) return // recording owns the camera
+        setTriggers(photo = false, video = false) // one capture at a time
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, "TC_${System.currentTimeMillis()}.jpg")
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
@@ -130,13 +145,17 @@ class CaptureActivity : AppCompatActivity() {
                     res.savedUri?.let { sealCapture(it, "photo") }
                         ?: toast("Capture failed: no URI")
                 }
-                override fun onError(e: ImageCaptureException) = toast("Capture failed: ${e.message}")
+                override fun onError(e: ImageCaptureException) {
+                    toast("Capture failed: ${e.message}")
+                    setTriggers(photo = true, video = true)
+                }
             })
     }
 
     private fun toggleRecording() {
         val vc = videoCapture ?: return
         recording?.let {
+            setTriggers(photo = false, video = false) // finalizing: hands over to sealing
             it.stop()
             recording = null
             return
@@ -165,6 +184,7 @@ class CaptureActivity : AppCompatActivity() {
                         b.status.visibility = View.VISIBLE
                         b.status.text = getString(R.string.rec_elapsed, 0L, 0L)
                         showVideoCropBands(true)
+                        setTriggers(photo = false, video = true)
                     }
                     is VideoRecordEvent.Status -> {
                         val secs = event.recordingStats.recordedDurationNanos / 1_000_000_000L
@@ -174,8 +194,10 @@ class CaptureActivity : AppCompatActivity() {
                         b.videoBtn.setImageResource(R.drawable.ic_record)
                         b.status.visibility = View.GONE
                         showVideoCropBands(false)
-                        if (event.hasError()) toast("Recording failed: ${event.error}")
-                        else sealCapture(event.outputResults.outputUri, "video")
+                        if (event.hasError()) {
+                            toast("Recording failed: ${event.error}")
+                            setTriggers(photo = true, video = true)
+                        } else sealCapture(event.outputResults.outputUri, "video")
                     }
                 }
             }
@@ -367,6 +389,7 @@ class CaptureActivity : AppCompatActivity() {
     private fun finishSealing(message: String) {
         b.sealingOverlay.visibility = View.GONE
         b.controls.visibility = View.VISIBLE
+        setTriggers(photo = true, video = true)
         b.status.visibility = View.VISIBLE
         b.status.text = message
         bindCamera()
