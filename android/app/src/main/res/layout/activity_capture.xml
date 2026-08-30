@@ -164,4 +164,63 @@
             android:textColor="#94A0AE"
             android:textSize="12sp" />
     </LinearLayout>
+
+    <!-- Post-seal result: a dedicated, readable report of what the proof
+         carries (watermark, hardware seal, timestamp, credentials, segments)
+         instead of a one-line status squeezed over the viewfinder -->
+    <LinearLayout
+        android:id="@+id/resultOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:background="#0B0E14"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/resultIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="52sp" />
+
+        <TextView
+            android:id="@+id/resultTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/resultSub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:textColor="#94A0AE"
+            android:textSize="13sp"
+            android:fontFamily="monospace" />
+
+        <LinearLayout
+            android:id="@+id/resultRows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="vertical" />
+
+        <Button
+            android:id="@+id/resultDone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="@string/result_done" />
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

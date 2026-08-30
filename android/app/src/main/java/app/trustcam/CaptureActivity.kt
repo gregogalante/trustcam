@@ -57,6 +57,7 @@ class CaptureActivity : AppCompatActivity() {
 
         b.photoBtn.setOnClickListener { takePhoto() }
         b.videoBtn.setOnClickListener { toggleRecording() }
+        b.resultDone.setOnClickListener { b.resultOverlay.visibility = View.GONE }
         b.identityBtn.setOnClickListener {
             startActivity(android.content.Intent(this, IdentityActivity::class.java))
         }
@@ -272,6 +273,7 @@ class CaptureActivity : AppCompatActivity() {
                 val captureId = java.util.UUID.randomUUID()
                 var markId = 0
                 var gopFinal: GopSigner.Final? = null
+                var c2paOk = false
                 if (mediaType == "photo") {
                     val idBytes = java.nio.ByteBuffer.allocate(16)
                         .putLong(captureId.mostSignificantBits)
@@ -296,8 +298,9 @@ class CaptureActivity : AppCompatActivity() {
                     // C2PA manifest on the watermarked+GOP-signed stream; falls
                     // back to the unmanifested file if embedding fails
                     val ccOut = File(cacheDir, "cc_$captureId.mp4")
-                    val chosen = if (ContentCredentials.embed(this, tmp, ccOut,
-                            captureId.toString(), device.deviceId)) ccOut else tmp
+                    c2paOk = ContentCredentials.embed(this, tmp, ccOut,
+                        captureId.toString(), device.deviceId)
+                    val chosen = if (c2paOk) ccOut else tmp
                     contentResolver.openOutputStream(uri, "wt")!!.use { out ->
                         chosen.inputStream().use { it.copyTo(out, 1 shl 16) }
                     }
@@ -363,8 +366,9 @@ class CaptureActivity : AppCompatActivity() {
                     contentResolver.openInputStream(uri)!!.use { ins ->
                         cIn.outputStream().use { ins.copyTo(it) }
                     }
-                    if (ContentCredentials.embed(this, cIn, cOut,
-                            captureId.toString(), device.deviceId)) {
+                    c2paOk = ContentCredentials.embed(this, cIn, cOut,
+                        captureId.toString(), device.deviceId)
+                    if (c2paOk) {
                         contentResolver.openOutputStream(uri, "wt")!!.use { out ->
                             cOut.inputStream().use { it.copyTo(out, 1 shl 16) }
                         }
@@ -376,26 +380,79 @@ class CaptureActivity : AppCompatActivity() {
                 // compare accelerated vs CPU embedding without extra tooling
                 val secs = (System.currentTimeMillis() - t0) / 1000.0
                 runOnUiThread {
-                    // surface the timestamp outcome: without it the only hint of an
-                    // offline capture would be a missing row in the verifier later
-                    finishSealing(getString(R.string.sealed,
-                        captureId.toString().substring(0, 8), secs,
-                        getString(if (tsr != null) R.string.ts_ok else R.string.ts_missing)))
+                    showSealResult(mediaType, captureId.toString(), secs,
+                        tsOk = tsr != null, ccOk = c2paOk,
+                        gops = gopFinal?.let { it.i + 1 } ?: 0,
+                        securityLevel = key.securityLevel, error = null)
                 }
             } catch (e: Exception) {
-                runOnUiThread { finishSealing("Sealing failed: ${e.message}") }
+                runOnUiThread {
+                    showSealResult(mediaType, "", 0.0, tsOk = false, ccOk = false,
+                        gops = 0, securityLevel = "", error = e.message ?: "unknown error")
+                }
             }
         }
     }
 
     /** Restore the capture UI (camera preview + controls) and show the outcome. */
-    private fun finishSealing(message: String) {
+    private fun restoreCamera() {
         b.sealingOverlay.visibility = View.GONE
         b.controls.visibility = View.VISIBLE
         setTriggers(photo = true, video = true)
-        b.status.visibility = View.VISIBLE
-        b.status.text = message
         bindCamera()
+    }
+
+    /**
+     * Post-seal report: a dedicated screen listing what the proof carries —
+     * watermark, hardware seal, segment signatures, trusted timestamp and
+     * Content Credentials — with degraded items visibly flagged, instead of a
+     * one-line status squeezed over the viewfinder.
+     */
+    private fun showSealResult(mediaType: String, captureId: String, secs: Double,
+                               tsOk: Boolean, ccOk: Boolean, gops: Int,
+                               securityLevel: String, error: String?) {
+        restoreCamera()
+        b.resultRows.removeAllViews()
+        if (error != null) {
+            b.resultIcon.text = "✕"
+            b.resultIcon.setTextColor(0xFFF87171.toInt())
+            b.resultTitle.text = getString(R.string.result_fail_title)
+            b.resultSub.text = error
+        } else {
+            b.resultIcon.text = "✓"
+            b.resultIcon.setTextColor(0xFF4ADE80.toInt())
+            b.resultTitle.text = getString(R.string.result_ok_title)
+            b.resultSub.text = getString(R.string.result_sub,
+                getString(if (mediaType == "photo") R.string.photo else R.string.record),
+                captureId.substring(0, 8), secs)
+            addResultRow(getString(R.string.r_watermark), ok = true)
+            addResultRow(getString(if (securityLevel == "strongbox")
+                R.string.r_seal_strongbox else R.string.r_seal_tee), ok = true)
+            if (gops > 0) addResultRow(getString(R.string.r_gops, gops), ok = true)
+            addResultRow(getString(if (tsOk) R.string.r_ts_ok else R.string.r_ts_missing), ok = tsOk)
+            addResultRow(getString(if (ccOk) R.string.r_cc_ok else R.string.r_cc_missing), ok = ccOk)
+            addResultRow(getString(R.string.result_note), ok = null)
+        }
+        b.resultOverlay.visibility = View.VISIBLE
+    }
+
+    /** One report row: green check, amber warning, or a plain gray note. */
+    private fun addResultRow(text: String, ok: Boolean?) {
+        val tv = android.widget.TextView(this)
+        tv.text = when (ok) {
+            true -> "✓   $text"
+            false -> "!   $text"
+            null -> text
+        }
+        tv.setTextColor(when (ok) {
+            true -> 0xFFE7ECF2.toInt()
+            false -> 0xFFFBBF24.toInt()
+            null -> 0xFF94A0AE.toInt()
+        })
+        tv.textSize = if (ok == null) 12f else 15f
+        tv.setPadding(0, 10.dp, 0, 10.dp)
+        if (ok == null) tv.gravity = android.view.Gravity.CENTER
+        b.resultRows.addView(tv)
     }
 
     /** Material progress indicators only allow mode switches while hidden. */

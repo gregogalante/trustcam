@@ -36,7 +36,17 @@
     <string name="watermarking">Applying invisible watermark…</string>
     <string name="watermarking_pct">Applying invisible watermark… %1$d%%</string>
     <string name="signing">Signing in secure hardware…</string>
-    <string name="sealed">Capture %1$s… sealed in %2$.1fs ✓ %3$s — the proof travels inside the file</string>
-    <string name="ts_ok">· trusted timestamp ✓</string>
-    <string name="ts_missing">· no trusted timestamp (offline?) — capture time stays device-claimed</string>
+    <string name="result_ok_title">Capture sealed</string>
+    <string name="result_fail_title">Sealing failed</string>
+    <string name="result_sub">%1$s · %2$s… · sealed in %3$.0fs</string>
+    <string name="result_done">Done</string>
+    <string name="r_watermark">Invisible watermark embedded in the pixels</string>
+    <string name="r_seal_strongbox">Signed in StrongBox (dedicated secure element)</string>
+    <string name="r_seal_tee">Signed in the secure element (TEE)</string>
+    <string name="r_ts_ok">Trusted timestamp — a third party attests when this file existed</string>
+    <string name="r_ts_missing">No trusted timestamp (offline?) — capture time stays device-claimed</string>
+    <string name="r_cc_ok">Content Credentials (C2PA) embedded</string>
+    <string name="r_cc_missing">Content Credentials not embedded</string>
+    <string name="r_gops">%1$d video segments individually signed</string>
+    <string name="result_note">The proof travels inside the file — share it anywhere, verify it in any browser.</string>
 </resources>

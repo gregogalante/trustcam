@@ -274,7 +274,7 @@ footer {
 }
 /* released project version (= shipped app version) — the ONE place to bump */
 footer::after {
-  content: 'v1.5.3';
+  content: 'v1.5.4';
   display: block; margin-top: .4rem;
   font-family: var(--mono); font-size: .72rem; color: var(--faint);
 }
