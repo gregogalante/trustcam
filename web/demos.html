@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Live demos — TrustCam</title>
-  <meta name="robots" content="noindex">
+  <meta name="description" content="Real TrustCam captures with full proofs — hardware seal, trusted timestamp, signed video segments, Content Credentials. Download and verify them yourself; platform round-trips landing shortly.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -12,17 +12,82 @@
   <nav>
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
+    <a href="/demos.html" aria-current="page">Demos</a>
     <a href="/paper/">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main>
     <h1>Live demos</h1>
-    <div class="card">
-      <p class="note" style="margin:0">The demo gallery is being re-captured with the
-      current release and will be back shortly. In the meantime you can
-      <a href="/trustcam.apk" download>install the app</a> and run the whole flow
-      yourself, or read the <a href="/paper/">paper</a>.</p>
+    <p class="lead">Real captures from a real phone, with every layer of the proof on
+    board — <strong>download them and drop them on <a href="/verify.html">the
+    verifier</a></strong>, or hit <em>verify now</em>. The platform round-trips
+    (WhatsApp, Instagram, YouTube, an AI edit) are being re-recorded and land here
+    shortly.</p>
+    <div class="toc" aria-label="Sections on this page">
+      <a href="#photo">Photo original</a>
+      <a href="#video">Video original</a>
     </div>
+
+    <!-- ============ PHOTO ORIGINAL ============ -->
+    <h2 id="photo">Photo — the sealed original</h2>
+    <p class="note">Captured with the app on a Motorola moto g75 at the sensor's full
+    4:3 resolution. The proof travels inside the file: invisible watermark, hardware
+    signature, hardware attestation, trusted timestamp and a C2PA manifest.</p>
+    <div class="compare single">
+      <figure>
+        <img src="/samples/tc_82975582.jpg" alt="sealed original photo" loading="lazy">
+        <figcaption><strong>Original</strong> · 3072×4096 · 7.5 MB ·
+        <span class="badge ok">Verified — exact file</span><br>
+        <a href="/samples/tc_82975582.jpg" download>download</a> · <a href="/verify.html?file=/samples/tc_82975582.jpg">verify now</a></figcaption>
+      </figure>
+      <div class="card">
+        <h3>What the proof carries</h3>
+        <dl>
+          <dt>Seal</dt><dd>ECDSA P-256 signature from the phone's secure element — attestation chain verified to Google's hardware root, verified boot, official app</dd>
+          <dt>Timestamped</dt><dd>existed no later than <strong>2026-08-30T14:09:24Z</strong> — RFC 3161 token from a public authority, 4 seconds after the shutter</dd>
+          <dt>Credentials</dt><dd>C2PA / Content Credentials manifest embedded — inspect it with any Content Credentials validator <span class="note">(development credentials for now: external validators show the signer as untrusted)</span></dd>
+          <dt>Mark</dt><dd>invisible watermark carrying capture id <code>82975582…</code> — it survives social-media re-encoding and points any copy back here</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- ============ VIDEO ORIGINAL ============ -->
+    <h2 id="video" style="margin-top:3rem">Video — sealed, with signed segments</h2>
+    <p class="note">Same proof stack as the photo — plus a signature on <strong>every
+    ~1s segment</strong>, embedded in the bitstream itself: a losslessly trimmed clip
+    keeps its intact segments cryptographically verifiable even with the seal gone.</p>
+    <div class="compare single">
+      <figure>
+        <video src="/samples/tc_9ac7ea5f.mp4" poster="/demos/posters/tc_9ac7ea5f.jpg" controls muted playsinline preload="metadata"></video>
+        <figcaption><strong>Original</strong> · 1080×1920 H.264 · 15.1 MB ·
+        <span class="badge ok">Verified — exact file</span><br>
+        <a href="/samples/tc_9ac7ea5f.mp4" download>download</a> · <a href="/verify.html?file=/samples/tc_9ac7ea5f.mp4">verify now</a></figcaption>
+      </figure>
+      <div class="card">
+        <h3>What the proof carries</h3>
+        <dl>
+          <dt>Seal</dt><dd>same hardware signature, attestation and verified-boot evidence as the photo</dd>
+          <dt>Segments</dt><dd><strong>8 of 8 GOPs individually signed and verified</strong> — trim the file with a lossless cut (<code>ffmpeg -c copy</code>) and the surviving segments still verify</dd>
+          <dt>Timestamped</dt><dd>existed no later than <strong>2026-08-30T14:11:03Z</strong> — RFC 3161 token from a public authority</dd>
+          <dt>Credentials</dt><dd>C2PA manifest embedded (development credentials)</dd>
+          <dt>Mark</dt><dd>invisible watermark bound to capture id <code>9ac7ea5f…</code>, sized for the harsher video channel</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:2rem">
+      <h3>Try it yourself</h3>
+      <div class="verdict">
+        <div class="verdict-icon ok">✓</div>
+        <div><h3>Verified — original file</h3>
+        <p>what the verifier shows for the files above</p></div>
+      </div>
+      <p class="note" style="margin-top:1rem">Hit <em>verify now</em> under either file — everything runs
+      in your browser; nothing is uploaded. The platform round-trip demos (WhatsApp,
+      Instagram, YouTube, an AI edit, a lossless trim) are being re-recorded with these
+      captures and will appear here with their recognition numbers.</p>
+    </div>
+
     <footer>TrustCam is a project by <a href="https://gregoriogalante.com/">Gregorio Galante</a>.</footer>
   </main>
 </body>

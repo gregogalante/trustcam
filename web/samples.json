@@ -1,27 +1,20 @@
 {
  "_readme": "Verified originals on file. Each entry maps a 128-bit capture id (decoded from the invisible mark) to the original, cryptographically verified capture. In the full design this is a cloud service the app uploads to at capture time; this static file holds a handful of demo captures so the compare-with-original flow can be tried today. Keys are the capture id as 32 lowercase hex chars (UUID without dashes); 'original' points to the exact sealed file under /samples/.",
  "samples": {
-  "e50c82aa06bf4026a3c470efa265665e": {
+  "82975582d71643a285c764cfe54cc659": {
    "name": "Greg",
    "model": "motorola moto g75 5G",
-   "capturedAt": "2026-08-29T06:36:10.370286Z",
+   "capturedAt": "2026-08-30T14:09:20.617129Z",
    "mediaType": "photo",
-   "original": "/samples/tc_e50c82aa.jpg"
+   "original": "/samples/tc_82975582.jpg"
   },
-  "f2365a51b77743be8c39597869fcbf53": {
+  "9ac7ea5f05b548e4827bcf5df78496c3": {
    "name": "Greg",
    "model": "motorola moto g75 5G",
-   "capturedAt": "2026-08-19T06:06:11.646073Z",
-   "mediaType": "photo",
-   "original": "/samples/tc_f2365a51.jpg"
-  },
-  "f0dba8860a68419fab86f85452275524": {
-   "name": "Greg",
-   "model": "motorola moto g75 5G",
-   "capturedAt": "2026-08-19T07:31:00.462099Z",
+   "capturedAt": "2026-08-30T14:09:44.769249Z",
    "mediaType": "video",
-   "markId": "2636a4",
-   "original": "/samples/tc_f0dba886.mp4"
+   "markId": "2a710e",
+   "original": "/samples/tc_9ac7ea5f.mp4"
   }
  }
 }
