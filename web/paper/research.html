@@ -71,7 +71,9 @@
     <p>
       Custom SEI NAL units prepended to every access unit passed through a consumer
       phone's hardware H.264 encoder and MP4 muxer intact (60/60, Motorola Moto G75,
-      Qualcomm encoder) — per-GOP signatures need no custom media stack.
+      Qualcomm encoder) — per-GOP signatures need no custom media stack. This
+      transport now ships in production: every video carries independent per-GOP
+      signatures (see the <a href="/paper/architecture.html#bitstream">architecture</a>).
     </p>
     <h3>Content checksum (explored, not shipped)</h3>
     <p>

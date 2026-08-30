@@ -61,10 +61,13 @@
       re-shared one even when the cryptographic seal is long gone.
     </p>
     <p>
-      The roadmap adds the cloud registry the capture id points into (devices
-      register at setup, sealed originals upload at capture) and per-segment
-      rolling signatures carried in the video bitstream (ONVIF Media Signing),
-      validated on consumer hardware in our feasibility tests.
+      Videos additionally carry <strong>per-segment signatures in the bitstream</strong>
+      (one per GOP, in SEI units): a losslessly trimmed clip keeps its intact
+      segments verifiable. Every capture also embeds a <strong>C2PA / Content
+      Credentials manifest</strong> (development credentials for now). The roadmap
+      adds the cloud registry the capture id points into (devices register at
+      setup, sealed originals upload at capture) and a CA-issued Content
+      Credentials certificate.
     </p>
 
     <h2>Documents</h2>

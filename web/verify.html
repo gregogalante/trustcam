@@ -61,6 +61,12 @@
       </div>
     </div>
 
+    <p class="note" style="margin-top:1rem">Videos can additionally show
+    <strong>bitstream signatures</strong>: every ~1s segment is signed individually at
+    capture, so even a trimmed clip proves which parts are intact. And when a file
+    carries a C2PA / Content Credentials manifest, the verifier says so — inspect it
+    with any Content Credentials validator.</p>
+
     <div class="card" style="margin-top:1rem">
       <h3>Prefer your terminal?</h3>
       <p class="note">Same verification from the command line, fully local — for scripts,

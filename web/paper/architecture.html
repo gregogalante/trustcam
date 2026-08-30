@@ -26,6 +26,7 @@
       <a href="#trailer">Proof trailer</a>
       <a href="#algorithms">Algorithms</a>
       <a href="#payload">Payload encoding</a>
+      <a href="#bitstream">Bitstream signatures</a>
       <a href="#verification">Verification</a>
       <a href="#originals">Verified originals</a>
       <a href="#trust-model">Trust model</a>
@@ -110,13 +111,19 @@
         a repetition format sized to the harsher video channel (both via the on-device
         VideoSeal pipeline, ONNX). Fully offline;
         <strong>media never leaves the phone</strong>.</li>
-      <li><strong>Signing</strong>: the SHA-256 of the watermarked bytes is signed in the
-        secure element (<code>SHA256withECDSA</code>). The private key never exists in
-        application memory.</li>
+      <li><strong>Content Credentials</strong>: a C2PA manifest (mirroring the
+        proof's claims) is embedded after watermarking — currently signed with
+        development credentials, until a CA-issued certificate replaces them.</li>
+      <li><strong>Signing</strong>: the SHA-256 of the final bytes — watermark and
+        manifest included — is signed in the secure element
+        (<code>SHA256withECDSA</code>), and the same hash is sent (never the media)
+        to a public RFC 3161 timestamp authority when online. The private key never
+        exists in application memory.</li>
       <li><strong>Proof-in-file</strong>: the proof (capture id, device id, timestamps,
-        public key, attestation chain, signature) is appended to the file itself as a
-        trailer that is also a valid MP4 <code>free</code> box, so players and JPEG
-        decoders ignore it. <strong>There is no server and nothing to sync</strong> —
+        RFC 3161 token, public key, attestation chain, final GOP signature for video,
+        signature) is appended to the file itself as a trailer that is also a valid
+        MP4 <code>free</code> box, so players and JPEG decoders ignore it.
+        <strong>There is no server and nothing to sync</strong> —
         the file carries its own proof wherever it goes.</li>
     </ol>
 
@@ -222,16 +229,23 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       re-encoded to AV1 (91%).
     </p>
 
-    <h2 id="bitstream">Bitstream signatures for video (next iteration)</h2>
+    <h2 id="bitstream">Bitstream signatures for video</h2>
     <p>
-      Whole-file signing is the current baseline. The validated upgrade path embeds a
-      <strong>rolling signature per GOP</strong> (group of pictures) directly in the
-      H.264/H.265 bitstream as SEI NAL units in the ONVIF Media Signing format:
-      each GOP's hash chains the previous one, proving continuous, ordered,
-      real-time capture, and making any cut or splice detectable at GOP granularity.
-      Our device tests confirmed these SEI units pass through the hardware encoder
-      and MP4 muxer untouched on consumer hardware (60/60 preserved,
-      Qualcomm <code>c2.qti.avc.encoder</code>).
+      On top of the whole-file seal, every video carries a <strong>signature per
+      GOP</strong> (group of pictures, ~1s) directly in the H.264 bitstream as SEI
+      NAL units — the transport our device tests validated end-to-end (60/60 SEI
+      preserved through the hardware encoder and MP4 muxer). Each GOP's VCL data is
+      hashed and the hash signed in the secure element, exactly like the trailer
+      seal; the signature rides in the <em>next</em> GOP's keyframe, and the final
+      GOP's record travels in the proof trailer.
+    </p>
+    <p>
+      Unlike chained designs, the signatures are deliberately <strong>independent
+      per GOP</strong>: a losslessly trimmed clip (a stream-copy cut, no re-encode)
+      keeps every intact interior segment cryptographically verifiable — with the
+      whole-file seal long gone. The verifier reports how many segments verify and
+      the time span they cover; any tampered segment fails alone, at ~1s
+      granularity.
     </p>
 
     <h2 id="verification">Verification — fully client-side</h2>
@@ -241,7 +255,11 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
     <ol>
       <li><strong>Proof trailer present</strong> → strip, hash the canonical bytes,
         verify the signature with WebCrypto against the key in the proof, and validate
-        the attestation chain up to Google's pinned hardware roots →
+        the attestation chain up to Google's pinned hardware roots — including the
+        leaf's attestation extension (verified boot, app identity), the chain's
+        validity windows and Google's live revocation list (fetched best-effort;
+        unavailability is declared, never fatal), plus the RFC 3161 token and, for
+        video, the per-GOP bitstream signatures →
         <em>Verified (original)</em>. Works offline; survives any byte-exact transfer
         (email, Drive, file transfer).</li>
       <li><strong>No trailer</strong> (platforms strip it — but they also change the
@@ -306,11 +324,14 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       C2PA cameras: what gets signed, not the cryptography.
     </p>
     <p>
-      The design maps onto C2PA concepts (hard binding = content hash + signature,
-      carried in the file exactly like a C2PA manifest; soft binding = watermark) and
-      is built to become C2PA-conformant: the trailer can be re-expressed as a C2PA
-      manifest, and the device keys/attestation flow matches the requirements of C2PA
-      Conformance Level 2 (hardware-backed keys). Capture time is anchored by an
+      The design maps onto C2PA concepts (hard binding = content hash + signature;
+      soft binding = watermark) and every capture now <strong>dual-emits</strong>: a
+      C2PA / Content Credentials manifest is embedded alongside the trailer, readable
+      by any Content Credentials validator. Manifests are currently signed with
+      development credentials — external validators show the chain as untrusted until
+      a CA-issued certificate replaces them; the trailer remains the cryptographic
+      binding TrustCam itself verifies, and the device keys/attestation flow matches
+      the requirements of C2PA Conformance Level 2 (hardware-backed keys). Capture time is anchored by an
       <strong>RFC 3161 timestamp token</strong> fetched at capture: the
       app sends the canonical SHA-256 — never the media — to a public timestamp
       authority and stores the returned token in the proof; the verifier checks it

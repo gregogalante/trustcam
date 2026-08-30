@@ -109,8 +109,11 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
   cert-by-cert signatures incl. root self-signature, root pinned against
   Google's published attestation roots — `GOOGLE_ROOTS` sha256 list in
   verifycore.js, source https://android.googleapis.com/attestation/root).
-  Certificate validity dates and the revocation list are NOT checked (offline
-  verifier) — tracked as future work.
+  Chain health: `attestationHealth` checks validity windows and Google's live
+  revocation list (`fetchAttestationCrl`, 4s timeout, hex AND decimal serial
+  keys — the live list mixes both). Revocation is a hard flag; expiry is
+  informational (RKP certs are short-lived by design and cover key creation).
+  Offline → "not checked", declared, never fatal.
 - Attestation extension: `parseKeyDescription` in verifycore.js reads the leaf's
   Android Key Attestation extension (verified-boot state, bootloader lock,
   attestationApplicationId) and `appIdentity` matches it against the pinned
