@@ -96,19 +96,26 @@
     </p>
     <ul>
       <li><strong>Photo → WhatsApp</strong> (3072×4096 → 1536×2048, 8× smaller): the
-        128-bit capture id decoded <em>exactly</em>; BCH corrected 8 of its 18
-        correctable bits.</li>
-      <li><strong>Video → WhatsApp</strong> (1080×1920 @14.5Mbps → 478×850 @1.7Mbps):
-        mark id recovered at 89% signal agreement.</li>
-      <li><strong>Video → YouTube Shorts</strong> (re-encoded to AV1, 2.8Mbps): mark id
-        recovered at 91% signal agreement.</li>
-      <li><strong>Photo → Instagram</strong> (full-frame post, downscaled 2.1×): capture
-        id decoded exactly, 7 of 18 correctable bits repaired. The <strong>1:1 square
-        crop</strong> (25% of the frame lost) exceeds the error-correction budget even
-        after the verifier's aspect-restore rescue (~22 coded errors vs t=18) — a
-        measured boundary; the standard 4:5 portrait crop decodes.</li>
-      <li><strong>Video → Instagram</strong> (re-encoded at 720p): mark id recovered at
-        99% signal agreement.</li>
+        128-bit capture id decoded <em>exactly</em>; BCH repaired 16 of its 18
+        correctable bits — recovered by the verifier's native-resolution retry.</li>
+      <li><strong>Photo → Instagram</strong> (1440×1920, returned as HEIC): id decoded
+        exactly, at the correction limit (all 18 repairable bits used). The
+        <strong>1:1 square crop</strong> (25% of the frame lost) exceeds the budget
+        even after the aspect-restore rescue — a measured boundary; posts keeping
+        the frame decode.</li>
+      <li><strong>Photo → Telegram (photo mode)</strong>: the harshest measured photo
+        pipeline (960×1280 + heavy recompression) — the mark is NOT recovered.
+        Sent <em>as a file</em>, Telegram delivers the exact bytes and the full seal
+        verifies. Published as a failure case on the demos page.</li>
+      <li><strong>Video → WhatsApp / Telegram / Instagram</strong> (478×850 to
+        720×1280 re-encodes): mark id recovered at 80% / 85% / 87% signal agreement.</li>
+      <li><strong>Video → YouTube Shorts</strong> (re-encoded to AV1): mark id
+        recovered at 82%.</li>
+      <li><strong>Video edited on Instagram</strong> (caption + sticker overlays): id
+        still recovered at 82% — the verifier flags origin, the side-by-side
+        comparison exposes the additions.</li>
+      <li><strong>Lossless trim</strong> (<code>-c copy</code>, seal stripped): 4 of 5
+        surviving GOPs verify via their bitstream signatures; mark at 97%.</li>
     </ul>
     <p>
       Two production lessons surfaced by these tests. (1) The video channel flips

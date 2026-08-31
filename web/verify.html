@@ -301,7 +301,21 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
       await loadScanner(ui)
       ui.stage.textContent = 'Scanning for the invisible mark on your device…'
 
-      const bmp = await createImageBitmap(file)
+      let bmp
+      try {
+        bmp = await createImageBitmap(file)
+      } catch {
+        // HEIC/HEIF: several browsers cannot decode it at all — say so instead
+        // of a misleading "no proof" (Instagram returns HEIC on some paths)
+        const head = new TextDecoder().decode(
+          new Uint8Array(await file.slice(0, 24).arrayBuffer()))
+        if (head.includes('ftyp') && /heic|heix|heif|mif1|msf1/.test(head)) {
+          verdictCard('✕', 'bad', 'HEIC — this browser cannot decode it',
+            'The pixels cannot be scanned because this browser has no HEIC decoder. Convert the image to JPEG with any photo app and drop the JPEG — the invisible mark survives the conversion — or use the CLI verifier.', '')
+          return true
+        }
+        return false
+      }
       const { data, w, h } = grabPixels(bmp, bmp.width, bmp.height)
       let decoded = core.decodePayload(await runDetector(data, w, h))
       // rescue passes at native resolution: first the same frame (tall 9:16

@@ -223,15 +223,15 @@
       <p class="eyebrow">Real results</p>
       <h2>Measured, not promised</h2>
       <p class="section-lead">Every number below comes from our own experiments on real
-      hardware and real platforms. The sealed originals are
-      <a href="/demos.html">live on the demos page</a>; the platform round-trip
-      copies are being re-recorded and land there shortly.</p>
+      hardware and real platforms — and the platform results are
+      <a href="/demos.html">live on the demos page</a>, copies included (failure
+      cases too), so you can re-verify them yourself.</p>
 
       <div class="kpis">
         <div class="kpi"><div class="kpi-value">8×</div><div class="kpi-label">smaller after WhatsApp — photo and video both still resolve their verified original</div></div>
         <div class="kpi"><div class="kpi-value">AV1</div><div class="kpi-label">YouTube re-encodes to a whole new codec — the original is still found</div></div>
         <div class="kpi"><div class="kpi-value">0</div><div class="kpi-label">uploads — every verification runs entirely in your browser</div></div>
-        <div class="kpi"><div class="kpi-value">60/60</div><div class="kpi-label">hardware tests passed on a real phone</div></div>
+        <div class="kpi"><div class="kpi-value">8/8</div><div class="kpi-label">video segments individually signed — a trimmed clip keeps verifying</div></div>
       </div>
 
       <div class="card survival">
@@ -239,12 +239,13 @@
         <ul class="matrix">
           <li><span class="check">✓</span> Photo through WhatsApp (8× smaller) <span class="val">id recovered exactly</span></li>
           <li><span class="check">✓</span> Photo posted on Instagram <span class="val">id recovered exactly</span></li>
-          <li><span class="check">✓</span> Video through WhatsApp (75% of pixels gone) <span class="val">original found · 89%</span></li>
-          <li><span class="check">✓</span> Video through YouTube Shorts (re-encoded to AV1) <span class="val">original found · 91%</span></li>
-          <li><span class="check">✓</span> Video through Instagram (720p re-encode) <span class="val">original found · 99%</span></li>
-          <li><span class="check">✓</span> Photo reworked by AI (ChatGPT) <span class="val">no proof — as it should be</span></li>
+          <li><span class="check">✓</span> Video through WhatsApp, Telegram, Instagram <span class="val">original found · 80–87%</span></li>
+          <li><span class="check">✓</span> Video through YouTube Shorts (re-encoded to AV1) <span class="val">original found · 82%</span></li>
+          <li><span class="check">✓</span> Video edited on Instagram (caption + sticker) <span class="val">origin traced — edits visible side by side</span></li>
+          <li><span class="check">✓</span> Video trimmed losslessly (seal stripped) <span class="val">4/5 segments still verify</span></li>
         </ul>
-        <p class="note">Methodology and measurements in the
+        <p class="note">Every file above is <a href="/demos.html">downloadable on the
+        demos page</a> — including the honest failure cases. Methodology in the
         <a href="/paper/research.html">paper</a>.</p>
       </div>
     </section>
@@ -315,7 +316,8 @@
       <p class="section-lead">Install the app, capture, share on WhatsApp and verify the
       received copy. No account needed, ever.</p>
       <div class="cta-row">
-        <a class="btn" href="/verify.html">Try the verifier</a>
+        <a class="btn" href="/demos.html">▶ See the live demos</a>
+        <a class="btn secondary" href="/verify.html">Try the verifier</a>
         <a class="btn ghost" href="/trustcam.apk" download>⬇ Download the app</a>
       </div>
     </section>
