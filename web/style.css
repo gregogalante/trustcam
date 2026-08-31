@@ -244,6 +244,8 @@ li::marker { color: color-mix(in srgb, var(--accent) 75%, transparent) }
   border: 1px solid color-mix(in srgb, var(--ok) 32%, transparent) }
 .badge.bad { background: color-mix(in srgb, var(--bad) 13%, transparent); color: var(--bad);
   border: 1px solid color-mix(in srgb, var(--bad) 32%, transparent) }
+.badge.warn { background: color-mix(in srgb, var(--warn) 13%, transparent); color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 32%, transparent) }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: .55rem 1.4rem; margin: 1.2rem 0 0 }
 dt {
   color: var(--faint); font-family: var(--mono); font-size: .72rem;
@@ -400,11 +402,27 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
 [id] { scroll-margin-top: 4.5rem } /* anchors land clear of the sticky nav */
 
 /* side-by-side copy vs verified original */
-.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.4rem 0 }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; margin: 1.6rem 0 }
 .compare.three { grid-template-columns: 1fr 1fr 1fr }
 /* one tall figure beside its explainer card (trusted-timestamp demo) */
 .compare.single { grid-template-columns: minmax(0, 320px) 1fr; align-items: start }
 .compare.single .card { margin: 0 }
+/* narrow cards: the two-column dl fights for space — stack it */
+.compare.single .card dl { grid-template-columns: 1fr; gap: .2rem }
+.compare.single .card dd { margin-bottom: .75rem }
+.compare.single .card dd:last-child { margin-bottom: 0 }
+
+/* demos page: each experiment is its own visually separated section */
+.demo-sec { border-top: 1px solid var(--line); margin-top: 3.2rem; padding-top: .2rem }
+.demo-sec > h2 { margin-top: 2rem }
+.demo-sec .compare + .card { margin-top: 1.5rem }
+/* caption meta on one line, the actions on their own — denser reads as noise */
+.compare figcaption .acts {
+  display: block; margin-top: .45rem;
+  font-family: var(--mono); font-size: .74rem; letter-spacing: .02em;
+}
+.compare figcaption .acts a { color: var(--accent) }
+.compare figcaption .badge { margin-top: .3rem; display: inline-block }
 .compare figure { margin: 0 }
 .compare img, .compare video {
   width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line);
