@@ -5,26 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Verify a file — TrustCam</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="/theme.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <nav>
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html" aria-current="page">Verify</a>
-    <a href="/demos.html">Demos</a>
+    <a href="/experiments.html">Experiments</a>
     <a href="/paper/">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main>
     <h1>Verify a photo or video</h1>
-    <p class="lead">Drop any copy of a file — even one downloaded from social media —
-    and see who recorded it, when, and whether it was modified.
-    <strong>Everything runs in your browser: the file never leaves your device.</strong></p>
+    <p class="lead">Load any copy of a file, including one downloaded from a social
+    platform, to check which device recorded it, when, and whether it was modified.
+    Verification runs in the browser; the file is not uploaded.</p>
 
     <div class="drop" id="drop">
       <div class="drop-icon"><svg viewBox="0 0 48 48"><path d="M24 32V14m0 0l-8 8m8-8l8 8"/><path d="M10 34v4a4 4 0 004 4h20a4 4 0 004-4v-4"/></svg></div>
       <p style="margin:0"><strong>Drop a photo or video here</strong><br>
-      <span class="note">or click to choose a file — verification is fully local, nothing is uploaded, ever</span></p>
+      <span class="note">or click to choose a file — verification is local, nothing is uploaded</span></p>
       <input type="file" id="file" accept="image/*,video/*" hidden>
     </div>
 
@@ -39,7 +40,7 @@
         </div>
         <p class="note">This is the exact file that came out of the camera: the proof it
         carries inside checks out against its hardware key.
-        <strong>Authentic and untouched</strong> — the strongest claim we make.</p>
+        This is the strongest claim the system makes.</p>
       </div>
       <div class="card tint-warn">
         <div class="verdict" style="margin-bottom:.6rem">
@@ -47,9 +48,9 @@
           <h3 style="margin:0">Origin traced</h3>
         </div>
         <p class="note">The invisible mark carries the capture's id, and it survives
-        social-media compression. When the verified original is on file, we show it
-        <strong>side by side</strong> with your copy — compare them and see exactly what
-        changed. <strong>Never proof of authenticity</strong>, only of origin.</p>
+        social-media compression. When the verified original is on file, it is shown
+        side by side with your copy for comparison. This indicates origin, not
+        authenticity.</p>
       </div>
       <div class="card tint-bad">
         <div class="verdict" style="margin-bottom:.6rem">
@@ -69,9 +70,9 @@
     with any Content Credentials validator.</p>
 
     <div class="card" style="margin-top:1rem">
-      <h3>Prefer your terminal?</h3>
-      <p class="note">Same verification from the command line, fully local — for scripts,
-      newsroom pipelines and batch checks (needs <code>node</code> ≥ 18, plus
+      <h3>Command-line verifier</h3>
+      <p class="note">The same verification modules, run locally from the command line for scripts
+      and batch checks (needs <code>node</code> ≥ 18, plus
       <code>ffmpeg</code> for the pixel scan):</p>
       <pre>curl -sO https://trustcam.gregoriogalante.com/verify.mjs
 node verify.mjs photo.jpg           # proof-trailer check
@@ -103,7 +104,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     input.addEventListener('change', () => { if (!busy && input.files[0]) check(input.files[0]) })
 
     // deep link: /verify.html?file=/demos/… — fetch the file and run the normal
-    // flow, so the demos page can link straight into a live verification.
+    // flow, so the experiments page can link straight into a live verification.
     // Same-origin paths only: this must never become a proxy for arbitrary URLs.
     const linked = new URLSearchParams(window.location.search).get('file')
     if (linked && linked.startsWith('/') && !linked.startsWith('//')) {

@@ -6,13 +6,14 @@
   <title>Architecture — TrustCam</title>
   <meta name="description" content="TrustCam system architecture: capture and signing pipeline, proof-in-file trailer, watermark payload encoding, client-side verification, trust model.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="/theme.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <nav>
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
-    <a href="/demos.html">Demos</a>
+    <a href="/experiments.html">Experiments</a>
     <a href="/paper/" aria-current="page">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
@@ -147,7 +148,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
 
     <h2 id="algorithms">The algorithms</h2>
     <p>
-      Every layer is built on published, battle-tested primitives — nothing bespoke
+      Every layer is built on published, widely deployed primitives — nothing bespoke
       guards anything important:
     </p>
     <ul>
@@ -287,7 +288,7 @@ sig       = ECDSA-P256( SHA-256(H) )         // Android SHA256withECDSA over H</
       app registers the device and uploads each sealed original to a cloud registry at
       capture time; today, with no server, a static <a href="/samples.json">samples
       file</a> holds a handful of demo captures so the flow can be tried end to end.
-      One honest caveat: an attacker with the open embedder can stamp any content with
+      Caveat: an attacker with the open embedder can stamp any content with
       any id — a mark-only match is an <em>origin claim</em>, and the comparison is
       evidence for human judgement. Cryptographic proof remains exclusive to the signed
       trailer.

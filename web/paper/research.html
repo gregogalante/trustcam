@@ -4,15 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Research &amp; feasibility — TrustCam</title>
-  <meta name="description" content="Research behind TrustCam: the provenance ecosystem (C2PA, in-camera signing), key literature, our lab and live results, threat model and honest limits.">
+  <meta name="description" content="Research behind TrustCam: the provenance ecosystem (C2PA, in-camera signing), key literature, our lab and live results, threat model and limitations.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="/theme.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <nav>
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
-    <a href="/demos.html">Demos</a>
+    <a href="/experiments.html">Experiments</a>
     <a href="/paper/" aria-current="page">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
@@ -106,7 +107,7 @@
       <li><strong>Photo → Telegram (photo mode)</strong>: the harshest measured photo
         pipeline (960×1280 + heavy recompression) — the mark is NOT recovered.
         Sent <em>as a file</em>, Telegram delivers the exact bytes and the full seal
-        verifies. Published as a failure case on the demos page.</li>
+        verifies. Published as a failure case on the <a href="/experiments.html">experiments page</a>.</li>
       <li><strong>Video → WhatsApp / Telegram / Instagram</strong> (478×850 to
         720×1280 re-encodes): mark id recovered at 80% / 85% / 87% signal agreement.</li>
       <li><strong>Video → YouTube Shorts</strong> (re-encoded to AV1): mark id
@@ -136,7 +137,7 @@
       be comfortably real-time. An engineering gap, not a feasibility wall.
     </p>
 
-    <h2>Threat model and honest limits</h2>
+    <h2>Threat model and limitations</h2>
     <ul>
       <li><strong>Analog hole</strong> — filming a screen produces a validly signed
         capture of fake content. Unsolvable by signing; mitigable with depth/IMU
@@ -152,7 +153,7 @@
         proof carries an <strong>RFC 3161 token</strong> from a public
         timestamp authority (fetched at capture when online, verified client-side
         against a pinned chain): a third party attests the file existed no later
-        than that moment. Offline captures stay honestly device-claimed.</li>
+        than that moment. Offline captures remain device-claimed.</li>
       <li><strong>Mark forgery</strong> — the watermark model is open source, so the
         mark (and the capture id it carries: 256 bits cannot hold a signature) is
         forgeable by construction. This is why mark-only recovery is an

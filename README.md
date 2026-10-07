@@ -5,6 +5,11 @@ photos and videos at the moment of capture, and a fully static, client-side
 verifier. There are no accounts and no servers — the proof travels inside the
 file, and an invisible watermark in the pixels survives social-media re-encoding.
 
+**Status: research prototype (MVP).** The goal is to show the architecture holds
+end to end on consumer hardware and real platforms — not a product. Tested on one
+device model, single-trial platform results, development C2PA credentials, static
+originals registry, no independent security audit.
+
 Feasibility research and experiment reports live in [docs/](docs/); spike scripts
 in [spikes/](spikes/); the on-device test harness in [seitest/](seitest/).
 
@@ -31,14 +36,14 @@ in [spikes/](spikes/); the on-device test harness in [seitest/](seitest/).
    the verified originals on file — for a side-by-side comparison with the
    original → *Origin traced*. Nothing is ever uploaded.
 
-Live round-trips through WhatsApp, YouTube and Instagram — including the
-honest failures — are on the [demos page](web/demos.html), copies downloadable.
+Platform round-trips (WhatsApp, Telegram, Instagram, YouTube), including the
+failure cases, are on the [experiments page](web/experiments.html), copies downloadable.
 
 ## Components
 
 ```
-web/       Static site (GitHub Pages): landing, client-side verifier, live
-           demos, paper, verified originals (samples), ONNX models, APK
+web/       Static site (GitHub Pages): project page, client-side verifier,
+           experiments, paper, verified originals (samples), ONNX models, APK
 android/   Kotlin app: setup (no account), CameraX capture, on-device
            watermarking, hardware signing, proof trailer
 docs/      Research findings, market analysis, experiment reports (dated

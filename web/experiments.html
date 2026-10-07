@@ -3,28 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Live demos — TrustCam</title>
-  <meta name="description" content="Real TrustCam captures pushed through WhatsApp, Telegram, Instagram and YouTube — including an edited copy, a trimmed clip and the honest failure cases. Download any file and verify it yourself.">
+  <title>Experiments — TrustCam</title>
+  <meta name="description" content="TrustCam prototype experiments: captures shared through WhatsApp, Telegram, Instagram and YouTube, an edited copy, a trimmed clip and the failure cases. All files downloadable for re-verification.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <script src="/theme.js"></script>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <nav>
     <a class="brand" href="/">TrustCam</a>
     <a href="/verify.html">Verify</a>
-    <a href="/demos.html" aria-current="page">Demos</a>
+    <a href="/experiments.html" aria-current="page">Experiments</a>
     <a href="/paper/">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main>
-    <h1>Live demos</h1>
-    <p class="lead">Real captures from a real phone, pushed through real platforms —
-    the cases that work <em>and</em> the ones that honestly don't.
-    <strong>Download any file, or hit <em>verify now</em></strong> to see its verdict
-    live in <a href="/verify.html">the verifier</a>.</p>
+    <h1>Experiments</h1>
+    <p class="lead">Captures from one device (Motorola moto g75), shared once
+    through each platform and saved back. Successes and failures are both
+    reported. Every file can be downloaded, or opened directly in
+    <a href="/verify.html">the verifier</a> with <em>verify now</em>.</p>
     <div class="toc" aria-label="Sections on this page">
       <a href="#photo">Photo through platforms</a>
-      <a href="#photo-limits">Where photos fail</a>
+      <a href="#photo-limits">Photo failure cases</a>
       <a href="#video">Video through platforms</a>
       <a href="#edited">The edited copy</a>
       <a href="#trim">The trimmed clip</a>
@@ -36,7 +37,7 @@
     <p class="note">Captured with the app on a Motorola moto g75 (full 4:3, sealed with
     timestamp and Content Credentials), shared on WhatsApp and posted on Instagram,
     then saved back. Both re-encoded the image and stripped everything attached —
-    the mark in the pixels brought the original back.</p>
+    the watermark in the pixels still resolved the original.</p>
     <div class="compare three">
       <figure>
         <img src="/samples/tc_82975582.jpg" alt="original photo" loading="lazy">
@@ -56,8 +57,8 @@
     </div>
     <div class="card">
       <h3>How much survived</h3>
-      <p><strong>Both copies threw away most of the original pixels — and the capture
-      id still came back exactly.</strong> The numbers:</p>
+      <p>Both copies discard most of the original pixels; the capture id was still
+      decoded exactly.</p>
       <dl>
         <dt>WhatsApp copy</dt><dd>halved each side, file 8× smaller — id recovered <strong>exactly</strong>; error correction repaired 16 of the 18 bits it can fix (the verifier's full-resolution retry did the work)</dd>
         <dt>Instagram post</dt><dd>downscaled 2.1× and recompressed — id recovered <strong>exactly</strong>, at the correction limit: all 18 repairable bits used</dd>
@@ -74,8 +75,8 @@
 
     <!-- ============ PHOTO NEGATIVES ============ -->
     <section class="demo-sec">
-    <h2 id="photo-limits">Photo — where the limit honestly is</h2>
-    <p class="note">Two real failure cases, published on purpose: the verifier reports
+    <h2 id="photo-limits">Photo — failure cases</h2>
+    <p class="note">Two channels where the watermark is not recovered. The verifier reports
     <span class="badge bad">No proof found</span> rather than guessing.</p>
     <div class="compare">
       <figure>
@@ -90,11 +91,11 @@
       </figure>
     </div>
     <div class="card">
-      <h3>Why the mark is lost — and the countermove</h3>
+      <h3>Why the mark is lost</h3>
       <dl>
-        <dt>Telegram photo mode</dt><dd>the harshest pipeline we measured: down to 960×1280 (a third of the original side) plus heavy recompression — the surviving signal drops below what the error correction can repair. <strong>Countermove: send it as a file</strong> — Telegram then delivers the exact bytes, and the copy verifies green with the full cryptographic seal, timestamp included.</dd>
+        <dt>Telegram photo mode</dt><dd>the harshest pipeline we measured: down to 960×1280 (a third of the original side) plus heavy recompression — the surviving signal drops below what the error correction can repair. <strong>Workaround: send it as a file</strong> — Telegram then delivers the exact bytes, and the copy verifies green with the full cryptographic seal, timestamp included.</dd>
         <dt>Instagram square</dt><dd>the 1:1 crop throws away 25% of the frame — beyond the error-correction budget even after the verifier restores the original framing. Posts that keep the frame (or the standard 4:5 crop) verify fine.</dd>
-        <dt>Why we show this</dt><dd>a verifier that can't say "nothing found" honestly can't be trusted when it says "found". These two files are the proof that ours does.</dd>
+        <dt>Why it is reported</dt><dd>a verifier must be able to return a negative result; these files exercise that path.</dd>
       </dl>
     </div>
 
@@ -104,8 +105,8 @@
     <section class="demo-sec">
     <h2 id="video">Video — through WhatsApp, Telegram, Instagram and YouTube</h2>
     <p class="note">Same capture, four platforms, four different compressions —
-    YouTube even re-encoded it to a different codec (AV1). The mark survived all of
-    them; every copy resolves back to the verified original.</p>
+    YouTube even re-encoded it to a different codec (AV1). The mark was recovered
+    from all of them; every copy resolves back to the verified original.</p>
     <div class="compare three">
       <figure>
         <video src="/samples/tc_9ac7ea5f.mp4" poster="/demos/posters/tc_9ac7ea5f.jpg" controls muted playsinline preload="metadata"></video>
@@ -135,8 +136,8 @@
     </div>
     <div class="card">
       <h3>How much survived</h3>
-      <p><strong>Four platforms, four different compressions — one of them a codec the
-      original never touched — and the mark outlived them all.</strong> The numbers:</p>
+      <p>Four platforms, four different encoders (one of them switches codec to
+      AV1); the mark was recovered from all four.</p>
       <dl>
         <dt>WhatsApp</dt><dd>75% of the pixels gone, file 8× smaller — mark signal <strong>80%</strong>, capture id recovered</dd>
         <dt>Telegram</dt><dd>re-encoded at 720p — mark signal <strong>85%</strong> (video survives Telegram; only its photo pipeline is harsher, see above)</dd>
@@ -156,10 +157,10 @@
     <section class="demo-sec">
     <h2 id="edited">Video — the edited copy</h2>
     <p class="note">The same video posted on Instagram <strong>with a caption and a
-    sticker added</strong>. The mark survives the edit — so the verifier still finds
-    the original, puts the two side by side, and the additions have nowhere to hide.
-    This is exactly what "origin, not authenticity" means: we prove where it comes
-    from, the comparison shows what changed.</p>
+    sticker added</strong>. The mark survives the edit, so the verifier still finds
+    the original and shows the two side by side, where the additions are visible.
+    This illustrates the "origin, not authenticity" distinction: the mark indicates
+    where a copy comes from; the comparison shows what changed.</p>
     <div class="compare">
       <figure>
         <video src="/samples/tc_9ac7ea5f.mp4" poster="/demos/posters/tc_9ac7ea5f.jpg" controls muted playsinline preload="metadata"></video>
@@ -176,8 +177,8 @@
       <h3>The numbers</h3>
       <dl>
         <dt>Mark recovery</dt><dd>signal <strong>82%</strong> — the overlays cover part of the frame, the mark in the rest is enough</dd>
-        <dt>What the verifier says</dt><dd>Origin traced, original shown side by side — <strong>never</strong> "authentic": the mark alone cannot bless content, and this copy is the reason why</dd>
-        <dt>What your eyes say</dt><dd>play both: the caption and the sticker are additions the original never had</dd>
+        <dt>Verifier output</dt><dd>Origin traced, original shown side by side — not "authentic": a watermark match alone cannot authenticate content, as this copy shows</dd>
+        <dt>Visual comparison</dt><dd>the caption and the sticker are absent from the original</dd>
       </dl>
     </div>
 
@@ -199,9 +200,9 @@
       <div class="card">
         <h3>What survives a cut</h3>
         <dl>
-          <dt>Segments</dt><dd><strong>4 of 5</strong> GOPs carry valid hardware signatures — the boundary segment is cut mid-GOP and honestly fails; the seal and manifest are gone with the trim</dd>
+          <dt>Segments</dt><dd><strong>4 of 5</strong> GOPs carry valid hardware signatures — the boundary segment is cut mid-GOP and fails; the seal and manifest are gone with the trim</dd>
           <dt>Mark</dt><dd>signal <strong>97%</strong> — the id still resolves to the verified original</dd>
-          <dt>Why it matters</dt><dd>a newsroom can cut a clip for length and still prove, segment by segment, that what remains is untouched — nothing else on a consumer phone does this</dd>
+          <dt>Implication</dt><dd>a clip shortened without re-encoding keeps segment-level integrity evidence for what remains</dd>
         </dl>
       </div>
     </div>
@@ -209,15 +210,14 @@
     </section>
 
     <div class="card" style="margin-top:3rem">
-      <h3>Try it yourself</h3>
+      <h3>Re-verifying</h3>
       <div class="verdict">
         <div class="verdict-icon ok">✓</div>
         <div><h3>Origin traced — verified original on file</h3>
         <p>what the verifier shows for any surviving copy above</p></div>
       </div>
-      <p class="note" style="margin-top:1rem">Hit <em>verify now</em> under any file — or download a copy,
-      screenshot it, re-share it once more, and drop it on
-      <a href="/verify.html">the verifier</a> yourself. Everything runs in your
+      <p class="note" style="margin-top:1rem">Use <em>verify now</em> under any file, or download a copy,
+      transform it further and load it in <a href="/verify.html">the verifier</a>. Everything runs in your
       browser; nothing is uploaded. The exact originals verify green instantly; the
       first scan of a re-encoded copy downloads the ~67&nbsp;MB detector model once
       (cached for every later visit).</p>

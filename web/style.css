@@ -3,10 +3,11 @@
    hairline borders instead of shadows, monospace for anything machine-emitted
    (labels, ids, numbers), sans for prose. Light theme is the same system with
    inverted surfaces. Every token below is used by all pages; page-specific
-   rules live under the LANDING / DOC sections at the bottom.
+   rules live under their own sections further down.
    ========================================================================== */
 
 :root {
+  color-scheme: dark;
   /* surfaces, from deepest to raised */
   --bg: #05070c;
   --surface: #0a0e17;
@@ -22,35 +23,36 @@
   --faint: #67748a;
   /* brand + semantics */
   --accent: #5b8cff;
-  --accent2: #a78bfa;
   --cyan: #22d3ee;
   --ok: #34d399;
   --warn: #f5b13d;
   --bad: #fb7185;
   --nav-bg: rgba(5, 7, 12, .72);
   --font: 15.5px/1.65 -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  /* long-form prose on research pages (.doc): system serifs, no font download */
+  --serif: Charter, 'Bitstream Charter', 'Iowan Old Style', 'Source Serif Pro', Georgia, serif;
   --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Mono', Menlo, monospace;
 }
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f6f8fc;
-    --surface: #ffffff;
-    --surface-2: #f2f5fa;
-    --code-bg: #0a0e17;      /* code stays dark in both themes — it reads as output */
-    --line: #e2e7f0;
-    --line-strong: #cbd4e2;
-    --grid: rgba(40, 70, 130, .06);
-    --fg: #0c1220;
-    --muted: #566276;
-    --faint: #8b97a9;
-    --accent: #2a5bff;
-    --accent2: #7c3aed;
-    --cyan: #0891b2;
-    --ok: #0d9f6e;
-    --warn: #b4750b;
-    --bad: #e11d48;
-    --nav-bg: rgba(246, 248, 252, .75);
-  }
+/* light theme: data-theme is resolved by /theme.js (stored choice, else the
+   OS preference); without JS the site stays dark */
+:root[data-theme='light'] {
+  color-scheme: light; /* native controls + scrollbars follow the theme */
+  --bg: #f6f8fc;
+  --surface: #ffffff;
+  --surface-2: #f2f5fa;
+  --code-bg: #0a0e17;      /* code stays dark in both themes — it reads as output */
+  --line: #e2e7f0;
+  --line-strong: #cbd4e2;
+  --grid: rgba(40, 70, 130, .06);
+  --fg: #0c1220;
+  --muted: #566276;
+  --faint: #8b97a9;
+  --accent: #2a5bff;
+  --cyan: #0891b2;
+  --ok: #0d9f6e;
+  --warn: #b4750b;
+  --bad: #e11d48;
+  --nav-bg: rgba(246, 248, 252, .75);
 }
 
 * { box-sizing: border-box }
@@ -58,7 +60,7 @@ html { scroll-behavior: smooth; background: var(--bg) }
 body {
   margin: 0; background: transparent; color: var(--fg);
   font: var(--font); -webkit-font-smoothing: antialiased;
-  overflow-x: clip; /* the hero glow spans 100vw */
+  overflow-x: clip;
 }
 /* Fixed blueprint grid, faded out below the fold so long text pages stay calm */
 body::before {
@@ -70,8 +72,11 @@ body::before {
   -webkit-mask-image: radial-gradient(120% 70% at 50% 0%, #000 10%, transparent 70%);
   mask-image: radial-gradient(120% 70% at 50% 0%, #000 10%, transparent 70%);
 }
-main { max-width: 1000px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem }
-main.doc { max-width: 780px } /* prose pages: shorter measure */
+/* one content width for every page, so switching pages never shifts the column */
+main { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem }
+/* research pages read as a paper: serif prose. :where() keeps specificity at 0,
+   so any classed element (captions, bit labels, notes in mono) keeps its own font */
+:where(main.doc) :where(p, li, dd) { font-family: var(--serif); font-size: 1.06rem }
 ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent) }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px }
 
@@ -100,18 +105,23 @@ nav a:not(.brand) {
 }
 nav a:not(.brand):hover { color: var(--fg) }
 nav a[aria-current='page'] { color: var(--fg) }
+/* theme switch, injected by /theme.js */
+.theme-toggle {
+  background: none; border: 1px solid var(--line); border-radius: 8px;
+  color: var(--muted); font: inherit; font-size: .85rem; line-height: 1;
+  width: 30px; height: 30px; cursor: pointer; transition: color .15s, border-color .15s;
+}
+.theme-toggle:hover { color: var(--fg); border-color: var(--line-strong) }
 nav a[aria-current='page']::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: -.85rem; height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  background: var(--accent);
 }
 
 /* ---------- base type ---------- */
 h1, h2, h3 { text-wrap: balance }
 h1 { font-size: clamp(1.75rem, 4vw, 2.2rem); line-height: 1.15; letter-spacing: -.03em; font-weight: 680 }
-/* text pages (paper, verify) need breathing room above headings;
-   the landing zeroes it via its own section spacing */
+
 h2 { font-size: 1.4rem; margin-top: 3rem; letter-spacing: -.02em; font-weight: 660 }
-.landing h2 { margin-top: 0 }
 h3 { letter-spacing: -.01em }
 a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px }
 p.lead { font-size: 1.1rem; color: var(--muted); max-width: 68ch }
@@ -123,7 +133,6 @@ ul, ol { padding-left: 1.35rem }
 li { margin: .45rem 0 }
 li::marker { color: color-mix(in srgb, var(--accent) 75%, transparent) }
 .card ul, .card ol { margin: .3rem 0 0 }
-.matrix li { margin: 0 }
 
 /* ---------- cards ---------- */
 .card {
@@ -171,8 +180,7 @@ li::marker { color: color-mix(in srgb, var(--accent) 75%, transparent) }
 .drop-icon {
   position: relative; width: 68px; height: 68px; margin: 0 auto 1.3rem; border-radius: 18px;
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(150deg, var(--accent), var(--accent2));
-  box-shadow: 0 10px 34px -12px color-mix(in srgb, var(--accent) 75%, transparent);
+  background: var(--accent);
 }
 .drop-icon svg { width: 34px; height: 34px; stroke: #fff; stroke-width: 2.2;
   stroke-linecap: round; stroke-linejoin: round; fill: none }
@@ -283,113 +291,17 @@ footer::after {
 .note { color: var(--muted); font-size: .85rem }
 .error { color: var(--bad); margin: 1rem 0 0 }
 
-/* ---------- forms & buttons ---------- */
-form.card label {
-  display: block; margin: 1.1rem 0 .35rem; color: var(--faint);
-  font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase;
-}
-form.card label:first-child { margin-top: 0 }
-form.card input {
-  width: 100%; padding: .7rem .9rem; border: 1px solid var(--line-strong); border-radius: 10px;
-  background: var(--bg); color: var(--fg); font: inherit;
-}
-form.card input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent }
-form.card button, .btn {
-  display: inline-flex; align-items: center; gap: .45rem;
-  margin-top: 1.4rem; padding: .7rem 1.35rem; border: 1px solid transparent; border-radius: 11px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #fff; font: inherit; font-size: .94rem; font-weight: 600; letter-spacing: -.005em;
-  cursor: pointer; text-decoration: none;
-  box-shadow: 0 8px 26px -12px color-mix(in srgb, var(--accent) 85%, transparent);
-  transition: transform .12s, box-shadow .12s, border-color .12s, color .12s;
-}
-form.card button:hover, .btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--accent) 95%, transparent);
-}
-form.card button:disabled { opacity: .55; cursor: default; transform: none }
-.btn.secondary {
-  background: var(--surface); color: var(--fg);
-  border-color: var(--line-strong); box-shadow: none;
-}
-.btn.secondary:hover { border-color: var(--accent); color: var(--accent); box-shadow: none }
-.btn.ghost { background: transparent; color: var(--muted); border-color: var(--line); box-shadow: none }
-.btn.ghost:hover { color: var(--fg); border-color: var(--line-strong); box-shadow: none }
-.cta-row { display: flex; gap: .7rem; flex-wrap: wrap; margin: 1.6rem 0 }
-.cta-row .btn { margin-top: 0 }
-
-/* ---------- eyebrow / section labels ---------- */
-.eyebrow {
-  display: flex; align-items: center; gap: .5rem;
-  color: var(--accent); font-family: var(--mono); font-weight: 500; font-size: .72rem;
-  letter-spacing: .16em; text-transform: uppercase; margin-bottom: .5rem;
-}
-.eyebrow::before {
-  content: ''; width: 18px; height: 1px; flex: none;
-  background: linear-gradient(90deg, transparent, currentColor);
-}
-.hero .eyebrow { justify-content: center }
-.hero .eyebrow::after {
-  content: ''; width: 18px; height: 1px; flex: none;
-  background: linear-gradient(90deg, currentColor, transparent);
-}
-
 /* ==========================================================================
-   LANDING
+   HOME — research project page: title block, byline, resource links
    ========================================================================== */
-.landing section { margin-top: 7rem }
-.landing h2 { font-size: 1.65rem; margin-bottom: .5rem }
-.landing section > .eyebrow { margin-bottom: .6rem }
-.landing section > .eyebrow + h2 { margin-top: 0 }
-/* tinted band to break up long stretches */
-.band {
-  border-radius: 22px; padding: 2.6rem 2.2rem;
-  border: 1px solid var(--line);
-  background:
-    radial-gradient(38rem 16rem at 12% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%),
-    var(--surface);
-}
-
-/* hero */
-.hero { margin-top: 3.5rem !important; text-align: center; position: relative }
-/* Full-viewport glow so the gradient fades out before any box edge is visible */
-.hero::before {
-  content: ''; position: absolute; left: 50%; top: -12rem;
-  width: 100vw; height: 34rem; transform: translateX(-50%);
-  z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(36rem 17rem at 42% 34%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%),
-    radial-gradient(32rem 15rem at 62% 18%, color-mix(in srgb, var(--accent2) 13%, transparent), transparent 62%);
-}
-.hero h1 {
-  font-size: clamp(2.4rem, 6.2vw, 3.7rem); line-height: 1.05;
-  letter-spacing: -.04em; font-weight: 700; margin: .4rem 0 1.1rem;
-}
-.hero h1 .grad {
-  background: linear-gradient(96deg, var(--accent) 10%, var(--accent2) 55%, var(--cyan));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.hero .lead { max-width: 620px; margin-left: auto; margin-right: auto }
-.hero .cta-row { justify-content: center }
-.hero .note { font-family: var(--mono); font-size: .76rem; letter-spacing: .01em }
-.section-lead { color: var(--muted); max-width: 66ch }
-
-/* plain-words strip */
-.plain { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.8rem }
-.plain .card { text-align: left }
-.plain .num {
-  display: inline-flex; width: 26px; height: 26px; border-radius: 8px;
-  align-items: center; justify-content: center; margin-bottom: .7rem;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  color: var(--accent); font-family: var(--mono); font-weight: 600; font-size: .78rem;
-}
-.plain p { margin: 0; color: var(--muted); font-size: .9rem }
-.plain h3 { margin: 0 0 .35rem; font-size: .98rem }
+.paper-head { text-align: center; margin: 1rem 0 2rem }
+.paper-head h1 { margin-bottom: .6rem }
+.paper-head .toc { justify-content: center }
+.byline { color: var(--muted); margin: 0; font-size: .95rem }
 
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.5rem }
-.grid2 .card:hover, .grid3 .card:hover, .plain .card:hover { border-color: var(--line-strong) }
+.grid2 .card:hover, .grid3 .card:hover { border-color: var(--line-strong) }
 
 /* in-page section index (demos, paper docs) */
 .toc { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.3rem 0 0 }
@@ -503,106 +415,9 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
   color: var(--muted); margin: .55rem 0 0; text-align: center;
 }
 
-/* ---------- steps ---------- */
-.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-top: 1.8rem }
-.step h3 { font-size: .93rem; margin: .9rem 0 .35rem }
-.step h3::first-line { letter-spacing: .01em }
-.step p { font-size: .86rem; color: var(--muted); margin: 0 }
-.step-icon {
-  width: 50px; height: 50px; border-radius: 14px;
-  background:
-    linear-gradient(var(--grid) 1px, transparent 1px) 0 0/12px 12px,
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/12px 12px,
-    linear-gradient(150deg, color-mix(in srgb, var(--accent) 14%, var(--surface)),
-      color-mix(in srgb, var(--accent2) 12%, var(--surface)));
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line));
-  display: flex; align-items: center; justify-content: center;
-}
-.step-icon svg { width: 28px; height: 28px; stroke: var(--accent); stroke-width: 2.4;
-  stroke-linecap: round; stroke-linejoin: round; fill: none }
-
-/* layer dots */
-.dot { display: inline-block; width: 8px; height: 8px; border-radius: 3px;
-  background: var(--accent); margin-right: .5rem; vertical-align: 1px;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent) }
-.dot2 { background: var(--ok); box-shadow: 0 0 10px color-mix(in srgb, var(--ok) 70%, transparent) }
-
-/* ---------- KPI tiles ---------- */
-.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.8rem 0 }
-.kpi {
-  position: relative; background: var(--surface); border: 1px solid var(--line);
-  border-radius: 14px; padding: 1.15rem 1.15rem 1.2rem;
-}
-/* crosshair tick — instrument-panel detail */
-.kpi::after {
-  content: '+'; position: absolute; top: .45rem; right: .6rem;
-  color: var(--line-strong); font-family: var(--mono); font-size: .8rem; line-height: 1;
-}
-.kpi-value {
-  font-family: var(--mono); font-size: 1.95rem; font-weight: 600; letter-spacing: -.05em;
-  font-variant-numeric: tabular-nums; line-height: 1.1;
-  background: linear-gradient(100deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.kpi-label { color: var(--muted); font-size: .8rem; margin-top: .45rem; line-height: 1.45 }
-
-/* ---------- survival matrix ---------- */
-.survival { margin-top: .6rem }
-.matrix { list-style: none; padding: 0; margin: 1rem 0 0 }
-.matrix li {
-  display: flex; align-items: baseline; gap: .7rem; padding: .6rem 0;
-  border-bottom: 1px solid var(--line); font-size: .92rem;
-}
-.matrix li:last-child { border-bottom: 0 }
-.matrix .check {
-  color: var(--ok); font-weight: 700; font-size: .78rem; flex: none;
-  width: 18px; height: 18px; border-radius: 5px; align-self: center;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: color-mix(in srgb, var(--ok) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ok) 32%, transparent);
-}
-.matrix .val {
-  margin-left: auto; padding-left: 1rem; text-align: right;
-  font-family: var(--mono); font-size: .78rem; letter-spacing: -.01em;
-  font-variant-numeric: tabular-nums; color: var(--fg);
-}
-
-/* ---------- timeline ---------- */
-.timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin: 2rem 0 1.5rem }
-.tl-item { position: relative; border-top: 1px solid var(--line); padding-top: 1.1rem }
-.tl-item::before {
-  content: ''; position: absolute; top: -4px; left: 0; width: 7px; height: 7px;
-  border-radius: 50%; background: var(--line-strong);
-}
-.tl-item.done::before { background: var(--faint) }
-.tl-item.now { border-top-color: color-mix(in srgb, var(--accent) 60%, transparent) }
-.tl-item.now::before {
-  background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
-}
-.tl-item p { font-size: .85rem; color: var(--muted); margin: .35rem 0 0 }
-.tl-date { font-family: var(--mono); font-weight: 600; font-size: .8rem; letter-spacing: .03em; color: var(--muted) }
-.tl-item.now .tl-date { color: var(--accent) }
-
-/* ---------- final CTA ---------- */
-.final-cta {
-  text-align: center; border: 1px solid var(--line); border-radius: 22px;
-  padding: 3.2rem 1.5rem;
-  background:
-    radial-gradient(28rem 13rem at 50% -15%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
-    linear-gradient(var(--grid) 1px, transparent 1px) 0 0/40px 40px,
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0/40px 40px,
-    var(--surface);
-}
-.final-cta h2 { font-size: 1.8rem }
-.final-cta .cta-row { justify-content: center; margin-bottom: 0 }
-.final-cta .section-lead { margin-left: auto; margin-right: auto }
-
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
-  .grid2, .grid3, .steps, .kpis, .timeline { grid-template-columns: 1fr 1fr }
-  .plain { grid-template-columns: 1fr }
-  .landing section { margin-top: 5rem }
-  .band { padding: 2rem 1.3rem }
+  .grid2, .grid3 { grid-template-columns: 1fr 1fr }
 }
 
 /* Tablet down: the flow diagrams stop being rows and become vertical stacks —
@@ -640,8 +455,6 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
   .fnode svg { width: 24px; height: 24px; margin: 0 }
   .fnode-sub, .fnode-title + .fnode-sub { flex: 0 0 100%; margin-top: 0 }
   .fnode-title { flex: 1 }
-  .hero .eyebrow::before, .hero .eyebrow::after { display: none }
-  .eyebrow { flex-wrap: wrap }
 }
 @keyframes marchy { to { background-position: 0 10px } }
 
@@ -649,39 +462,14 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
   main { padding: 1.8rem 1rem 3.5rem }
   nav { gap: .85rem; padding: .75rem 1rem }
   nav a:not(.brand) { font-size: .68rem; letter-spacing: .05em }
-  .hero h1 { font-size: clamp(2rem, 8.6vw, 2.5rem) }
+  /* logo only: the text label no longer fits beside four links + theme switch */
+  nav .brand { font-size: 0; gap: 0 }
+  .theme-toggle { width: 26px; height: 26px; flex: none }
   p.lead { font-size: 1.02rem }
   .card { padding: 1.1rem }
   .grid2, .grid3 { grid-template-columns: 1fr }
-  /* KPIs stay paired: one number per row wastes the whole width */
-  .kpis { grid-template-columns: 1fr 1fr; gap: .7rem }
-  .kpi { padding: .9rem }
-  .kpi-value { font-size: 1.5rem }
-  .kpi-label { font-size: .74rem }
-  .band { padding: 1.6rem 1.1rem; border-radius: 18px }
-  .final-cta { padding: 2.2rem 1.1rem; border-radius: 18px }
-  .final-cta h2 { font-size: 1.5rem }
-  /* one full-width button per row — centred pills of unequal width read as noise */
-  .cta-row { flex-direction: column; align-items: stretch; gap: .6rem }
-  .cta-row .btn { justify-content: center }
   dl { grid-template-columns: 1fr; gap: .15rem }
   dd + dt { margin-top: .8rem }
-  /* check + claim on one row, the measurement under it (no hanging indent) */
-  .matrix li { display: grid; grid-template-columns: 18px 1fr; column-gap: .6rem; row-gap: .2rem; align-items: start }
-  .matrix .check { grid-row: 1 }
-  .matrix .val { grid-column: 2; margin: 0; padding: 0; text-align: left }
-  /* steps: icon next to its text, not orphaned above it */
-  .steps { grid-template-columns: 1fr; gap: 1.3rem }
-  .step { display: grid; grid-template-columns: 44px 1fr; column-gap: .9rem }
-  .step-icon { grid-row: 1 / span 2; width: 44px; height: 44px; border-radius: 12px }
-  .step-icon svg { width: 24px; height: 24px }
-  .step h3 { margin: 0 0 .2rem; align-self: center }
-  /* timeline turns into a vertical rail with the dots on it */
-  .timeline { grid-template-columns: 1fr; gap: 0; margin-top: 1.5rem }
-  .tl-item { border-top: 0; border-left: 1px solid var(--line); padding: 0 0 1.4rem 1.1rem }
-  .tl-item::before { top: .35rem; left: -4px }
-  .tl-item.now { border-left-color: color-mix(in srgb, var(--accent) 60%, transparent) }
-  .tl-item:last-child { padding-bottom: 0 }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto }
@@ -692,9 +480,7 @@ form.card button:disabled { opacity: .55; cursor: default; transform: none }
 
 /* Light theme wants a touch of elevation — hairlines alone read as unfinished
    on a light ground, where dark surfaces separate by luminance already. */
-@media (prefers-color-scheme: light) {
-  .card, .kpi, .drop, .band, .final-cta {
-    box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 10px 26px -18px rgba(16, 24, 40, .18);
-  }
-  pre { color: #d7e3fb }
+[data-theme='light'] .card, [data-theme='light'] .drop {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 10px 26px -18px rgba(16, 24, 40, .18);
 }
+[data-theme='light'] pre { color: #d7e3fb }

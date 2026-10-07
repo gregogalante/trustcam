@@ -77,13 +77,19 @@ cd spikes/videoseal && python ../export_detector.py   # re-export detector + par
 - Web pages are plain static HTML/CSS/JS in `web/`. No framework, no backend —
   keep it that way. onnxruntime-web is vendored in `web/ort/`.
 - **One design system**: `web/style.css` (single stylesheet, every page).
-  Tokens on `:root` (dark) + a `prefers-color-scheme: light` override — never
-  hardcode a color in a page. Monospace (`--mono`) marks machine-emitted text
-  (labels, ids, numbers, badges), sans is for prose. Diagrams are HTML, never
+  Tokens on `:root` (dark) + a `:root[data-theme='light']` override — never
+  hardcode a color in a page. `web/theme.js` (blocking, in every `<head>`
+  before the stylesheet) resolves `data-theme` from the stored choice, else
+  the OS preference, and injects the nav toggle; it sits outside `web/js/`
+  so it is not part of the CLI-pinned set. Tone: research-prototype project
+  page, not product marketing — state limits, report failures, no hype. Monospace (`--mono`) marks machine-emitted text
+  (labels, ids, numbers, badges), sans is for UI and prose; research pages
+  (`main.doc`: home + paper) set prose in `--serif`. Every page shares one
+  `main` width — never give a page its own. Diagrams are HTML, never
   fixed-viewBox SVG: flow charts use `.flow` / `.fnode` / `.farrow` (`.branch`
   + `.lanes` for the two-route one), bit layouts use `.bits` / `.bitbar` with
   proportional `flex` values — all of them turn into vertical stacks under
-  720px, so nothing scrolls sideways on a phone. Prose-only pages use
+  720px, so nothing scrolls sideways on a phone. Research/prose pages use
   `<main class="doc">`; the nav link of the current page carries
   `aria-current="page"`.
 - **Single verification source**: all verdict logic lives in
