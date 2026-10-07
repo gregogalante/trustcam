@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">TrustCam</string>
-    <string name="tagline">Every capture, cryptographically yours.</string>
+    <string name="tagline">Research prototype · capture-time provenance</string>
     <string name="name_hint">Your display name</string>
     <string name="setup_note">No account needed. Your name is shown by the public verifier next to what you capture. A signing key is created inside this phone\'s secure hardware and never leaves it.</string>
     <string name="setup_start">Set up this device</string>
@@ -23,15 +23,15 @@
     <string name="regen_done">New identity ready</string>
     <string name="identity">Device identity</string>
     <string name="about_title">About TrustCam</string>
-    <string name="about_note">TrustCam seals every photo and video at the moment of capture: an invisible watermark in the pixels plus a proof signed by this phone\'s secure hardware, travelling inside the file. Anyone can verify a capture in the browser — no account, no server, nothing uploaded.</string>
-    <string name="about_link">Learn more on the website</string>
+    <string name="about_note">TrustCam is a research prototype (MVP) testing capture-time provenance. Each photo and video gets an invisible watermark in the pixels and a proof signed by this phone\'s secure hardware, stored inside the file. Captures can be checked in a browser with no account and no upload. Not a production tool: tested on a limited set of devices, without an independent security audit.</string>
+    <string name="about_link">Project page and paper</string>
     <string name="rec_elapsed">● REC %1$d:%2$02d</string>
     <string name="downloading_model">Downloading watermark engine… %1$d%%</string>
     <string name="generic_error">Something went wrong</string>
     <string name="photo">Photo</string>
     <string name="record">Record</string>
     <string name="stop">Stop</string>
-    <string name="sealing_title">Sealing your capture</string>
+    <string name="sealing_title">Sealing capture</string>
     <string name="sealing_note">The file is watermarked and signed on this device.\nIt will appear in your gallery when done.</string>
     <string name="watermarking">Applying invisible watermark…</string>
     <string name="watermarking_pct">Applying invisible watermark… %1$d%%</string>
@@ -42,11 +42,11 @@
     <string name="result_done">Done</string>
     <string name="r_watermark">Invisible watermark embedded in the pixels</string>
     <string name="r_seal_strongbox">Signed in StrongBox (dedicated secure element)</string>
-    <string name="r_seal_tee">Signed in the secure element (TEE)</string>
+    <string name="r_seal_tee">Signed in the trusted execution environment (TEE)</string>
     <string name="r_ts_ok">Trusted timestamp — a third party attests when this file existed</string>
     <string name="r_ts_missing">No trusted timestamp (offline?) — capture time stays device-claimed</string>
     <string name="r_cc_ok">Content Credentials (C2PA) embedded</string>
     <string name="r_cc_missing">Content Credentials not embedded</string>
     <string name="r_gops">%1$d video segments individually signed</string>
-    <string name="result_note">The proof travels inside the file — share it anywhere, verify it in any browser.</string>
+    <string name="result_note">The proof is stored inside the file; any copy can be checked in a browser.</string>
 </resources>
