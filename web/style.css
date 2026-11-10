@@ -156,6 +156,21 @@ li::marker { color: color-mix(in srgb, var(--accent) 75%, transparent) }
 .card.tint-ok { --tint: var(--ok); background: color-mix(in srgb, var(--ok) 5%, var(--surface)) }
 .card.tint-warn { --tint: var(--warn); background: color-mix(in srgb, var(--warn) 5%, var(--surface)) }
 .card.tint-bad { --tint: var(--bad); background: color-mix(in srgb, var(--bad) 5%, var(--surface)) }
+/* call-to-action card: the whole card is the link (home → successor page) */
+a.card.cta {
+  display: block; margin-top: 1.2rem; color: var(--fg); text-decoration: none;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+}
+a.card.cta::before { background: linear-gradient(90deg, transparent, var(--accent), transparent) }
+a.card.cta:hover { border-color: var(--accent); transform: translateY(-1px) }
+a.card.cta h3 { font-size: 1.2rem; margin: .35rem 0 .5rem }
+a.card.cta p { color: var(--muted); margin: 0 }
+.cta-kicker {
+  font-family: var(--mono); font-size: .72rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent);
+}
+.cta-link { display: inline-block; margin-top: .9rem; font-weight: 620; color: var(--accent) }
 
 /* ---------- drop zone ---------- */
 .drop {
