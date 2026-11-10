@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>From TrustCam to VCAP — TrustCam</title>
-  <meta name="description" content="TrustCam, the research prototype, continues as VCAP: an open, versioned proof format with conformance vectors and independent implementations. What changed, and which problems found in the prototype VCAP fixes.">
+  <meta name="description" content="TrustCam was an experiment. It worked well enough to become VCAP. Why the project moved on, and what the prototype got wrong along the way.">
   <link rel="canonical" href="https://trustcam.gregoriogalante.com/vcap.html">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <script src="/theme.js"></script>
@@ -20,229 +20,81 @@
   </nav>
   <main class="doc">
     <h1>From TrustCam to VCAP</h1>
-    <p class="lead">TrustCam asked whether capture-time provenance could work on a
-    commodity phone. The answer was a qualified yes, and the project now
-    continues as VCAP. This page explains the move and lists the problems
-    found in this prototype that VCAP fixes.</p>
+    <p class="lead">TrustCam was an experiment. It worked well enough to become
+    a real project, and that project is VCAP.</p>
 
-    <div class="toc" aria-label="VCAP resources">
-      <a href="https://vcap.gregoriogalante.com/">VCAP</a>
-      <a href="https://github.com/VCAP-org/vcap-spec">Specification</a>
-      <a href="https://verify.vcap.gregoriogalante.com/">Public verifier</a>
-      <a href="https://github.com/VCAP-org">github.com/VCAP-org</a>
-    </div>
+    <h2 id="why">Why it moved on</h2>
+    <p>TrustCam started with one question: can an ordinary phone take a photo
+    or a video and prove, later, that nobody touched it? I built the quickest
+    thing that could answer it: one app, one web page to check files, one
+    phone to test on.</p>
+    <p>The answer was mostly yes. The phone can seal a file the moment it is
+    taken, and the seal can be checked by anyone in a browser. Even when a
+    social network strips the seal away, a mark hidden in the image can often
+    point back to the original.</p>
+    <p>But a quick experiment is not something people should rely on. The rules
+    lived only in my code, nobody else could check them, and building fast
+    meant cutting corners. VCAP is the same idea done properly: the rules are
+    written down for anyone to read, they are tested, and they work across
+    several apps and devices, not just mine.</p>
+    <p>This site stays online as it was, the record of the experiment, mistakes
+    included.</p>
 
-    <h2 id="move">What changed</h2>
-    <p>TrustCam was a feasibility study: one app, one verifier, one device model,
-    and a proof format defined by whatever the code happened to do. VCAP keeps
-    the two-layer idea, a hardware-backed signature plus an invisible
-    watermark, and rebuilds everything around it as a specification first.</p>
-    <ul>
-      <li><strong>A written, versioned format.</strong> The proof format, JSON
-        Schema, watermark layouts and threat model are public under the MIT
-        licence. An independent verifier can be written from the specification
-        alone.</li>
-      <li><strong>Conformance vectors.</strong> Every rule comes with test files
-        and the outcome a verifier must return, so two implementations can be
-        checked against each other rather than trusted.</li>
-      <li><strong>Several implementations.</strong> SDKs for Android, iOS, React
-        Native and the web, and a public verifier that runs entirely in the
-        browser.</li>
-      <li><strong>Graded answers.</strong> Instead of one "verified" headline,
-        the verifier returns an outcome from the specification and a colour
-        that never exceeds what was actually proven: the hardware level, the
-        trusted time, the key's status.</li>
-      <li><strong>Infrastructure where it is needed, and stated.</strong>
-        TrustCam described itself as having "zero infrastructure" while relying
-        on a timestamp authority, Google's revocation list and a static file of
-        originals. VCAP names its registry, its public transparency log and its
-        timestamp providers, and states what the verifier can prove without
-        them.</li>
-    </ul>
-    <p>VCAP does not read TrustCam proofs: the formats are incompatible by
-    design, so no constraint from the prototype carries over. This site stays
-    online unchanged as the record of the experiment, including its
-    mistakes.</p>
+    <h2 id="mistakes">What TrustCam got wrong</h2>
+    <p>Looking back at the prototype with fresh eyes, I found things that did
+    not hold up. Each one is fixed in VCAP.</p>
 
-    <h2 id="fixed">Problems in TrustCam that VCAP fixes</h2>
-    <p>A review of this prototype's verifier and documents found the issues
-    below. They are listed here because the prototype's pages still describe
-    the design as it was.</p>
+    <h3>It said "verified" too easily</h3>
+    <p>The checker gave the same green "verified" to a file signed by a real
+    phone's secure chip and to one signed by a key anyone could make on a
+    laptop. The difference was there, but in small print. VCAP's answer is
+    never stronger than what was actually proven, and it says what is
+    missing.</p>
 
-    <h3>Verifier</h3>
-    <table>
-      <thead>
-        <tr><th>Issue in TrustCam</th><th>In VCAP</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>The <code>VERIFIED</code> headline and the CLI's exit code depended
-            on the signature alone. A key generated in software, with a chain
-            not rooted at Google or no chain at all, received the same
-            headline; the attestation result was a secondary line.</td>
-          <td>The answer's colour is capped by the hardware level the
-            attestation chain actually proves. A key that proves no hardware
-            never reaches green.</td>
-        </tr>
-        <tr>
-          <td>The signature covered only the file hash. Name, device model,
-            security level, capture time, capture id and the timestamp token
-            sat in unsigned JSON next to it and could be rewritten without
-            breaking the seal.</td>
-          <td>A signed core covers every field the verdict relies on. The
-            timestamp is taken over that core, not only over the media
-            hash.</td>
-        </tr>
-        <tr>
-          <td>Each per-GOP video signature carried its own public key, which
-            was never compared with the attested key. GOP indices were not
-            checked, so groups could be reordered, removed or taken from
-            another recording.</td>
-          <td>Segments are chained to each other and their count is in the
-            signed core. Every group of frames must be accounted for, in order,
-            each at most once; segment timing is signed too.</td>
-        </tr>
-        <tr>
-          <td>For JPEG, any APP11 segment whose first bytes contained
-            <code>"JP"</code>, <code>"jumb"</code> or <code>"c2pa"</code> was
-            left out of the hash, so such a segment could be added or altered
-            without breaking the seal. Two hash inputs were accepted, the
-            stripped bytes and the full bytes.</td>
-          <td>Only the one segment that is a C2PA manifest store is excluded,
-            identified by its structure.</td>
-        </tr>
-        <tr>
-          <td>The signature was ECDSA over SHA-256 of a SHA-256 hash, described
-            ambiguously as "SHA256withECDSA over H". Signatures were in DER
-            form.</td>
-          <td>One hash, ES256 over the canonical (JCS) core. A fixed-length
-            <code>r‖s</code> encoding with low-<code>s</code> required from
-            writers.</td>
-        </tr>
-        <tr>
-          <td>A watermark-only match exited with the same code as a verified
-            file, under "ORIGIN TRACED — verified original ON FILE", although
-            the verifier never re-checked that original.</td>
-          <td>A watermark alone is <em>origin traced</em> at most and never
-            authentic. On video the verifier must report how many sampled
-            frames carry the id, so one marked frame spliced into foreign
-            footage cannot pass as a marked recording.</td>
-        </tr>
-        <tr>
-          <td>The attestation challenge was never read. Intermediate
-            certificates were not checked to be CAs, the key's origin was not
-            checked, and the security level did not affect the verdict.
-            Certificate windows were checked against the current time rather
-            than the capture time.</td>
-          <td>Six required attestation rules, among them CA constraints,
-            <code>origin = GENERATED</code>, leaf key equal to the signing key,
-            locked bootloader with verified boot, and validity at the proven
-            instant. The proven level is the weaker of the two the chain
-            reports.</td>
-        </tr>
-        <tr>
-          <td>The timestamp check did not verify the timestamping key usage or
-            the signer's validity at the time it signed. There was a single
-            provider.</td>
-          <td>Six required timestamp checks, including key usage and validity
-            at the signed time. Two providers. No green without a trusted time
-            source.</td>
-        </tr>
-        <tr>
-          <td>The MP4 parser read box tables without bounds checks, so a
-            malformed file could crash the verifier.</td>
-          <td>A fixed 16-byte footer with version and CRC-32, structural checks
-            before anything else, and dedicated tests on hostile inputs.</td>
-        </tr>
-      </tbody>
-    </table>
+    <h3>Part of the proof could be rewritten</h3>
+    <p>The seal protected the picture, but not the details next to it: who took
+    it, with which phone, and when. Someone could change those and the file
+    would still look genuine. In VCAP the seal covers everything the answer
+    relies on.</p>
 
-    <h3>Claims and documentation</h3>
-    <table>
-      <thead>
-        <tr><th>Issue in TrustCam</th><th>In VCAP</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>"Never silently wrong (0 miscorrections in 31,000 trials)" stated
-            an empirical result as a guarantee. A BCH decoder with radius 18
-            over 252 bits accepts a random word with a probability of roughly
-            2<sup>−34</sup>.</td>
-          <td>The guaranteed radius is stated in bits. The point where a real
-            channel stops recovering is marked as not measured, and false
-            positives have their own measurement.</td>
-        </tr>
-        <tr>
-          <td>The 24-bit video mark id was described three ways: as a random
-            device UUID, as device id plus counter, and as a random id.
-            Collisions were not discussed.</td>
-          <td>The mark id is derived from the 128-bit capture id. Collision
-            probabilities are tabulated, and the mark is defined as a lookup
-            hint only.</td>
-        </tr>
-        <tr>
-          <td>The photo payload was described as 256 bits while its parts added
-            up to 252.</td>
-          <td>The layout is given exactly: 128 data bits, 124 parity bits and 4
-            padding bits.</td>
-        </tr>
-        <tr>
-          <td>"Which device recorded it" referred to an id the app chose itself,
-            with no registry behind it.</td>
-          <td>The device key id is derived from the public key and recorded in
-            a public transparency log. The format states that it proves a key,
-            not who held the phone.</td>
-        </tr>
-        <tr>
-          <td>Watermark recovery was said to fail "below roughly half of the
-            original area", but a 1:1 crop keeping 75% of the frame failed. The
-            same channels were reported with different agreement figures on
-            different pages.</td>
-          <td>Robustness is reported per channel as bit errors and agreement
-            under a pinned toolchain. Channels are named as simulations of a
-            platform, not as the platform itself.</td>
-        </tr>
-        <tr>
-          <td>Video embedding was described as "about 2× short of real-time",
-            while 1 s per keyframe against 33 ms per frame at 30 fps is roughly
-            30× short.</td>
-          <td>Latency is reported only where it was measured, and on-phone cost
-            is marked as not yet measured.</td>
-        </tr>
-        <tr>
-          <td>The C2PA flow was said to match "Conformance Level 2" while it was
-            signed with development certificates.</td>
-          <td>No conformance level is claimed. VCAP does not sign C2PA claims
-            yet and says so; its proof can travel inside a C2PA manifest.</td>
-        </tr>
-        <tr>
-          <td>Some pages said "timestamped by a third-party authority" without
-            noting that offline captures carry only the device's clock.</td>
-          <td>The device clock is a declaration and never yields green. The
-            proven time is the timestamp, then a blockchain anchor, then the
-            device clock, in that order.</td>
-        </tr>
-        <tr>
-          <td>A losslessly trimmed clip was said to keep "segment-level
-            integrity", but the group at the cut failed exactly like a tampered
-            one, and a reader could not tell a cut from an edit.</td>
-          <td>Frames before the first keyframe belong to no segment. A trimmed
-            clip is <em>verified clip</em> (amber), distinct from
-            <em>tampered</em> (red), and a clip whose frames cannot be tied to
-            the signed ones says so.</td>
-        </tr>
-      </tbody>
-    </table>
-    <p class="note">The full rules are in the
-    <a href="https://github.com/VCAP-org/vcap-spec">VCAP specification</a>.
-    The TrustCam pages and code are kept as they were.</p>
+    <h3>A video could be shuffled</h3>
+    <p>Videos were sealed piece by piece, but nothing tied the pieces together
+    or kept them in order. Someone could drop, reorder or mix in pieces of
+    another recording and each one would still check out. In VCAP the pieces
+    are linked, counted and kept in order, so a shuffled video is caught.</p>
+
+    <h3>Some hidden data in photos was not checked</h3>
+    <p>To make room for other provenance labels, the checker skipped certain
+    hidden sections inside a photo. It skipped too many, so something could be
+    slipped in without breaking the seal. VCAP skips only the one section it
+    has to, and recognises it precisely.</p>
+
+    <h3>The hidden mark was treated like proof</h3>
+    <p>The mark hidden in the pixels is useful for finding the original, but
+    anyone can add one to any image. TrustCam still presented a match almost
+    as if it were a verification. VCAP treats it only as a clue, never as
+    proof, and on video it says how much of the clip actually carries the
+    mark.</p>
+
+    <h3>It promised more than it measured</h3>
+    <p>Some pages turned a few tests into guarantees, gave different numbers for
+    the same test, called the project "zero infrastructure" while it relied
+    on outside services, or claimed compliance with a standard without
+    support. VCAP states what was measured, what was not, and what each
+    service it uses can see.</p>
+
+    <h3>Small things a careful reviewer would catch</h3>
+    <p>The date on a file was trusted even when it came only from the phone's
+    clock; some security checks on the phone's certificates were missing; a
+    damaged video file could crash the checker. All of these are handled in
+    VCAP.</p>
 
     <a class="card cta" href="https://vcap.gregoriogalante.com/">
       <span class="cta-kicker">Continue</span>
-      <h3>VCAP</h3>
-      <p>Photo and video provenance with an open proof format and a public
-      verifier.</p>
-      <span class="cta-link">vcap.gregoriogalante.com <span aria-hidden="true">→</span></span>
+      <h3>See what TrustCam became</h3>
+      <p>VCAP seals photos and videos when they are taken, so anyone can check
+      later that they were not changed.</p>
+      <span class="cta-link">Go to VCAP <span aria-hidden="true">→</span></span>
     </a>
 
     <footer>TrustCam is a research project by <a href="https://gregoriogalante.com/">Gregorio Galante</a>.</footer>
