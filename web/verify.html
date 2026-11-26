@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Verify a file — TrustCam</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <script src="/theme.js"></script>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <nav>
-    <a class="brand" href="/">TrustCam</a>
-    <a href="/verify.html" aria-current="page">Verify</a>
-    <a href="/experiments.html">Experiments</a>
-    <a href="/paper/">Paper</a>
+    <a class="brand" href="./">TrustCam</a>
+    <a href="verify.html" aria-current="page">Verify</a>
+    <a href="experiments.html">Experiments</a>
+    <a href="paper/">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main>
@@ -82,10 +82,10 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     <footer>TrustCam is a project by <a href="https://gregoriogalante.com/">Gregorio Galante</a>.</footer>
   </main>
 
-  <script src="/ort/ort.min.js"></script>
-  <script src="/js/codec.js"></script>
-  <script src="/js/codec_v3.js"></script>
-  <script src="/js/verifycore.js"></script>
+  <script src="ort/ort.min.js"></script>
+  <script src="js/codec.js"></script>
+  <script src="js/codec_v3.js"></script>
+  <script src="js/verifycore.js"></script>
   <script>
     const drop = document.getElementById('drop')
     const input = document.getElementById('file')
@@ -103,12 +103,14 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     })
     input.addEventListener('change', () => { if (!busy && input.files[0]) check(input.files[0]) })
 
-    // deep link: /verify.html?file=/demos/… — fetch the file and run the normal
+    // deep link: verify.html?file=demos/… — fetch the file and run the normal
     // flow, so the experiments page can link straight into a live verification.
-    // Same-origin paths only: this must never become a proxy for arbitrary URLs.
+    // Paths resolve relative to this page (the site may live under a subpath);
+    // same-origin only: this must never become a proxy for arbitrary URLs.
     const linked = new URLSearchParams(window.location.search).get('file')
-    if (linked && linked.startsWith('/') && !linked.startsWith('//')) {
-      fetch(linked).then(async r => {
+    const linkedUrl = linked && new URL(linked, window.location.href)
+    if (linkedUrl && linkedUrl.origin === window.location.origin) {
+      fetch(linkedUrl).then(async r => {
         if (!r.ok) throw new Error('HTTP ' + r.status)
         const blob = await r.blob()
         check(new File([blob], linked.split('/').pop(), { type: blob.type }))
@@ -144,7 +146,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     let samplesPromise = null
     function samples () {
       if (!samplesPromise) {
-        samplesPromise = fetch('/samples.json').then(r => r.json()).catch(() => ({ samples: {} }))
+        samplesPromise = fetch('samples.json').then(r => r.json()).catch(() => ({ samples: {} }))
       }
       return samplesPromise
     }
@@ -229,7 +231,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     let detectorPromise = null
     function detector () {
       if (!detectorPromise) {
-        window.ort.env.wasm.wasmPaths = '/ort/'
+        window.ort.env.wasm.wasmPaths = new URL('ort/', window.location.href).href
         detectorPromise = fetchModel().then(bytes =>
           window.ort.InferenceSession.create(bytes, { executionProviders: ['wasm'] }))
       }
@@ -240,7 +242,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
     // Cache API so later visits skip the ~67 MB fetch entirely.
     let modelProgress = () => {}
     async function fetchModel () {
-      const url = '/models/detector.onnx'
+      const url = 'models/detector.onnx'
       let cache = null
       try {
         cache = await caches.open('trustcam-model-v1')
@@ -461,7 +463,7 @@ node verify.mjs --scan file.jpg     # + invisible-mark scan (photos AND videos)<
       const slot = document.getElementById('origProof')
       if (!slot) return
       const cta = `<p class="note" style="margin:.8rem 0 0">
-        <a href="/verify.html?file=${entry.original}">open the original's full verification</a>
+        <a href="verify.html?file=${entry.original}">open the original's full verification</a>
         · <a href="${entry.original}" download>download the original</a></p>`
       try {
         const bytes = new Uint8Array(await (await fetch(entry.original)).arrayBuffer())

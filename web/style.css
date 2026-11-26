@@ -95,7 +95,7 @@ nav .brand {
 }
 nav .brand::before {
   content: ''; width: 20px; height: 20px;
-  background: url('/favicon.svg') center/contain no-repeat;
+  background: url('favicon.svg') center/contain no-repeat;
 }
 nav a:not(.brand) {
   color: var(--muted); text-decoration: none;

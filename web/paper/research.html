@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Research &amp; feasibility — TrustCam</title>
   <meta name="description" content="Research behind TrustCam: the provenance ecosystem (C2PA, in-camera signing), key literature, our lab and live results, threat model and limitations.">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <script src="/theme.js"></script>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <script src="../theme.js"></script>
+  <link rel="stylesheet" href="../style.css">
 </head>
 <body>
   <nav>
-    <a class="brand" href="/">TrustCam</a>
-    <a href="/verify.html">Verify</a>
-    <a href="/experiments.html">Experiments</a>
-    <a href="/paper/" aria-current="page">Paper</a>
+    <a class="brand" href="../">TrustCam</a>
+    <a href="../verify.html">Verify</a>
+    <a href="../experiments.html">Experiments</a>
+    <a href="../paper/" aria-current="page">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main class="doc">
@@ -75,7 +75,7 @@
       phone's hardware H.264 encoder and MP4 muxer intact (60/60, Motorola Moto G75,
       Qualcomm encoder) — per-GOP signatures need no custom media stack. This
       transport now ships in production: every video carries independent per-GOP
-      signatures (see the <a href="/paper/architecture.html#bitstream">architecture</a>).
+      signatures (see the <a href="../paper/architecture.html#bitstream">architecture</a>).
     </p>
     <h3>Content checksum (explored, not shipped)</h3>
     <p>
@@ -107,7 +107,7 @@
       <li><strong>Photo → Telegram (photo mode)</strong>: the harshest measured photo
         pipeline (960×1280 + heavy recompression) — the mark is NOT recovered.
         Sent <em>as a file</em>, Telegram delivers the exact bytes and the full seal
-        verifies. Published as a failure case on the <a href="/experiments.html">experiments page</a>.</li>
+        verifies. Published as a failure case on the <a href="../experiments.html">experiments page</a>.</li>
       <li><strong>Video → WhatsApp / Telegram / Instagram</strong> (478×850 to
         720×1280 re-encodes): mark id recovered at 80% / 85% / 87% signal agreement.</li>
       <li><strong>Video → YouTube Shorts</strong> (re-encoded to AV1): mark id

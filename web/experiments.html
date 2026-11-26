@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Experiments — TrustCam</title>
   <meta name="description" content="TrustCam prototype experiments: captures shared through WhatsApp, Telegram, Instagram and YouTube, an edited copy, a trimmed clip and the failure cases. All files downloadable for re-verification.">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <script src="/theme.js"></script>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <nav>
-    <a class="brand" href="/">TrustCam</a>
-    <a href="/verify.html">Verify</a>
-    <a href="/experiments.html" aria-current="page">Experiments</a>
-    <a href="/paper/">Paper</a>
+    <a class="brand" href="./">TrustCam</a>
+    <a href="verify.html">Verify</a>
+    <a href="experiments.html" aria-current="page">Experiments</a>
+    <a href="paper/">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main>
@@ -22,7 +22,7 @@
     <p class="lead">Captures from one device (Motorola moto g75), shared once
     through each platform and saved back. Successes and failures are both
     reported. Every file can be downloaded, or opened directly in
-    <a href="/verify.html">the verifier</a> with <em>verify now</em>.</p>
+    <a href="verify.html">the verifier</a> with <em>verify now</em>.</p>
     <div class="toc" aria-label="Sections on this page">
       <a href="#photo">Photo through platforms</a>
       <a href="#photo-limits">Photo failure cases</a>
@@ -40,19 +40,19 @@
     the watermark in the pixels still resolved the original.</p>
     <div class="compare three">
       <figure>
-        <img src="/samples/tc_82975582.jpg" alt="original photo" loading="lazy">
+        <img src="samples/tc_82975582.jpg" alt="original photo" loading="lazy">
         <figcaption><strong>Original</strong> · 3072×4096 · 7.5 MB ·
-        <span class="badge ok">Verified — exact file</span><span class="acts"><a href="/samples/tc_82975582.jpg" download>download</a> · <a href="/verify.html?file=/samples/tc_82975582.jpg">verify now</a></span></figcaption>
+        <span class="badge ok">Verified — exact file</span><span class="acts"><a href="samples/tc_82975582.jpg" download>download</a> · <a href="verify.html?file=samples/tc_82975582.jpg">verify now</a></span></figcaption>
       </figure>
       <figure>
-        <img src="/demos/photo_whatsapp.jpg" alt="WhatsApp copy" loading="lazy">
+        <img src="demos/photo_whatsapp.jpg" alt="WhatsApp copy" loading="lazy">
         <figcaption><strong>WhatsApp copy</strong> · 1536×2048 · 0.9 MB ·
-        <span class="badge ok">original found</span><span class="acts"><a href="/demos/photo_whatsapp.jpg" download>download</a> · <a href="/verify.html?file=/demos/photo_whatsapp.jpg">verify now</a></span></figcaption>
+        <span class="badge ok">original found</span><span class="acts"><a href="demos/photo_whatsapp.jpg" download>download</a> · <a href="verify.html?file=demos/photo_whatsapp.jpg">verify now</a></span></figcaption>
       </figure>
       <figure>
-        <img src="/demos/photo_instagram.jpg" alt="Instagram copy" loading="lazy">
+        <img src="demos/photo_instagram.jpg" alt="Instagram copy" loading="lazy">
         <figcaption><strong>Instagram post</strong> · 1440×1920 ·
-        <span class="badge ok">original found</span><span class="acts"><a href="/demos/photo_instagram.jpg" download>download</a> · <a href="/verify.html?file=/demos/photo_instagram.jpg">verify now</a></span></figcaption>
+        <span class="badge ok">original found</span><span class="acts"><a href="demos/photo_instagram.jpg" download>download</a> · <a href="verify.html?file=demos/photo_instagram.jpg">verify now</a></span></figcaption>
       </figure>
     </div>
     <div class="card">
@@ -65,7 +65,7 @@
         <dt>Verdict</dt><dd>both copies: Origin traced — verified original on file, shown side by side</dd>
       </dl>
       <p class="note">Instagram hands photos back as <strong>HEIC</strong>
-      (<a href="/demos/photo_instagram.heic" download>original HEIC</a> — the copy above
+      (<a href="demos/photo_instagram.heic" download>original HEIC</a> — the copy above
       is a JPEG conversion, the mark decodes in both). Browsers without a HEIC decoder
       can't scan those pixels; the verifier now says so explicitly — convert to JPEG or
       use the CLI.</p>
@@ -80,14 +80,14 @@
     <span class="badge bad">No proof found</span> rather than guessing.</p>
     <div class="compare">
       <figure>
-        <img src="/demos/photo_telegram.jpg" alt="Telegram photo-mode copy" loading="lazy">
+        <img src="demos/photo_telegram.jpg" alt="Telegram photo-mode copy" loading="lazy">
         <figcaption><strong>Telegram, sent as photo</strong> · 960×1280 · 0.46 MB ·
-        <span class="badge bad">No proof found</span><span class="acts"><a href="/demos/photo_telegram.jpg" download>download</a> · <a href="/verify.html?file=/demos/photo_telegram.jpg">verify now</a></span></figcaption>
+        <span class="badge bad">No proof found</span><span class="acts"><a href="demos/photo_telegram.jpg" download>download</a> · <a href="verify.html?file=demos/photo_telegram.jpg">verify now</a></span></figcaption>
       </figure>
       <figure>
-        <img src="/demos/photo_instagram_square.jpg" alt="Instagram square crop" loading="lazy">
+        <img src="demos/photo_instagram_square.jpg" alt="Instagram square crop" loading="lazy">
         <figcaption><strong>Instagram, 1:1 square</strong> · 1440×1440 ·
-        <span class="badge bad">No proof found</span><span class="acts"><a href="/demos/photo_instagram_square.jpg" download>download</a> · <a href="/verify.html?file=/demos/photo_instagram_square.jpg">verify now</a></span></figcaption>
+        <span class="badge bad">No proof found</span><span class="acts"><a href="demos/photo_instagram_square.jpg" download>download</a> · <a href="verify.html?file=demos/photo_instagram_square.jpg">verify now</a></span></figcaption>
       </figure>
     </div>
     <div class="card">
@@ -109,29 +109,29 @@
     from all of them; every copy resolves back to the verified original.</p>
     <div class="compare three">
       <figure>
-        <video src="/samples/tc_9ac7ea5f.mp4" poster="/demos/posters/tc_9ac7ea5f.jpg" controls muted playsinline preload="metadata"></video>
+        <video src="samples/tc_9ac7ea5f.mp4" poster="demos/posters/tc_9ac7ea5f.jpg" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>Original</strong> · 1080×1920 H.264 · 15.1 MB · 8/8 segments signed ·
-        <span class="badge ok">Verified — exact file</span><span class="acts"><a href="/samples/tc_9ac7ea5f.mp4" download>download</a> · <a href="/verify.html?file=/samples/tc_9ac7ea5f.mp4">verify now</a></span></figcaption>
+        <span class="badge ok">Verified — exact file</span><span class="acts"><a href="samples/tc_9ac7ea5f.mp4" download>download</a> · <a href="verify.html?file=samples/tc_9ac7ea5f.mp4">verify now</a></span></figcaption>
       </figure>
       <figure>
-        <video src="/demos/video_whatsapp.mp4" poster="/demos/posters/video_whatsapp.jpg" controls muted playsinline preload="metadata"></video>
+        <video src="demos/video_whatsapp.mp4" poster="demos/posters/video_whatsapp.jpg" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>WhatsApp</strong> · 478×850 · 1.8 MB ·
-        <span class="badge ok">original found</span><span class="acts"><a href="/demos/video_whatsapp.mp4" download>download</a> · <a href="/verify.html?file=/demos/video_whatsapp.mp4">verify now</a></span></figcaption>
+        <span class="badge ok">original found</span><span class="acts"><a href="demos/video_whatsapp.mp4" download>download</a> · <a href="verify.html?file=demos/video_whatsapp.mp4">verify now</a></span></figcaption>
       </figure>
       <figure>
-        <video src="/demos/video_telegram.mp4" poster="/demos/posters/video_telegram.jpg" controls muted playsinline preload="metadata"></video>
+        <video src="demos/video_telegram.mp4" poster="demos/posters/video_telegram.jpg" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>Telegram</strong> · 720×1280 · 3.2 MB ·
-        <span class="badge ok">original found</span><span class="acts"><a href="/demos/video_telegram.mp4" download>download</a> · <a href="/verify.html?file=/demos/video_telegram.mp4">verify now</a></span></figcaption>
+        <span class="badge ok">original found</span><span class="acts"><a href="demos/video_telegram.mp4" download>download</a> · <a href="verify.html?file=demos/video_telegram.mp4">verify now</a></span></figcaption>
       </figure>
       <figure>
-        <video src="/demos/video_instagram.mp4" poster="/demos/posters/video_instagram.jpg" controls muted playsinline preload="metadata"></video>
+        <video src="demos/video_instagram.mp4" poster="demos/posters/video_instagram.jpg" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>Instagram</strong> · 720×1280 · 4.8 MB ·
-        <span class="badge ok">original found</span><span class="acts"><a href="/demos/video_instagram.mp4" download>download</a> · <a href="/verify.html?file=/demos/video_instagram.mp4">verify now</a></span></figcaption>
+        <span class="badge ok">original found</span><span class="acts"><a href="demos/video_instagram.mp4" download>download</a> · <a href="verify.html?file=demos/video_instagram.mp4">verify now</a></span></figcaption>
       </figure>
       <figure>
-        <video src="/demos/video_youtube.mp4" poster="/demos/posters/video_youtube.jpg" controls muted playsinline preload="metadata"></video>
+        <video src="demos/video_youtube.mp4" poster="demos/posters/video_youtube.jpg" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>YouTube Short</strong> · 1080×1920 AV1 · 2.6 MB ·
-        <span class="badge ok">original found</span><span class="acts"><a href="/demos/video_youtube.mp4" download>download</a> · <a href="/verify.html?file=/demos/video_youtube.mp4">verify now</a></span></figcaption>
+        <span class="badge ok">original found</span><span class="acts"><a href="demos/video_youtube.mp4" download>download</a> · <a href="verify.html?file=demos/video_youtube.mp4">verify now</a></span></figcaption>
       </figure>
     </div>
     <div class="card">
@@ -163,14 +163,14 @@
     where a copy comes from; the comparison shows what changed.</p>
     <div class="compare">
       <figure>
-        <video src="/samples/tc_9ac7ea5f.mp4" poster="/demos/posters/tc_9ac7ea5f.jpg" controls muted playsinline preload="metadata"></video>
+        <video src="samples/tc_9ac7ea5f.mp4" poster="demos/posters/tc_9ac7ea5f.jpg" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>Original</strong> ·
-        <span class="badge ok">Verified — exact file</span><span class="acts"><a href="/samples/tc_9ac7ea5f.mp4" download>download</a></span></figcaption>
+        <span class="badge ok">Verified — exact file</span><span class="acts"><a href="samples/tc_9ac7ea5f.mp4" download>download</a></span></figcaption>
       </figure>
       <figure>
-        <video src="/demos/video_instagram_edited.mp4" poster="/demos/posters/video_instagram_edited.jpg" controls muted playsinline preload="metadata"></video>
+        <video src="demos/video_instagram_edited.mp4" poster="demos/posters/video_instagram_edited.jpg" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>Instagram, edited</strong> · caption + sticker added ·
-        <span class="badge warn">origin traced — content changed</span><span class="acts"><a href="/demos/video_instagram_edited.mp4" download>download</a> · <a href="/verify.html?file=/demos/video_instagram_edited.mp4">verify now</a></span></figcaption>
+        <span class="badge warn">origin traced — content changed</span><span class="acts"><a href="demos/video_instagram_edited.mp4" download>download</a> · <a href="verify.html?file=demos/video_instagram_edited.mp4">verify now</a></span></figcaption>
       </figure>
     </div>
     <div class="card">
@@ -193,9 +193,9 @@
     cryptographically, and the mark still finds the original.</p>
     <div class="compare single">
       <figure>
-        <video src="/demos/video_trimmed.mp4" poster="/demos/posters/video_trimmed.jpg" controls muted playsinline preload="metadata"></video>
+        <video src="demos/video_trimmed.mp4" poster="demos/posters/video_trimmed.jpg" controls muted playsinline preload="metadata"></video>
         <figcaption><strong>Trimmed clip</strong> · 4 s of the original 7.6 s ·
-        <span class="badge ok">4/5 segments verified</span><span class="acts"><a href="/demos/video_trimmed.mp4" download>download</a> · <a href="/verify.html?file=/demos/video_trimmed.mp4">verify now</a></span></figcaption>
+        <span class="badge ok">4/5 segments verified</span><span class="acts"><a href="demos/video_trimmed.mp4" download>download</a> · <a href="verify.html?file=demos/video_trimmed.mp4">verify now</a></span></figcaption>
       </figure>
       <div class="card">
         <h3>What survives a cut</h3>
@@ -217,7 +217,7 @@
         <p>what the verifier shows for any surviving copy above</p></div>
       </div>
       <p class="note" style="margin-top:1rem">Use <em>verify now</em> under any file, or download a copy,
-      transform it further and load it in <a href="/verify.html">the verifier</a>. Everything runs in your
+      transform it further and load it in <a href="verify.html">the verifier</a>. Everything runs in your
       browser; nothing is uploaded. The exact originals verify green instantly; the
       first scan of a re-encoded copy downloads the ~67&nbsp;MB detector model once
       (cached for every later visit).</p>

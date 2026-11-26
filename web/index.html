@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TrustCam — capture-time provenance for photos and video (research prototype)</title>
   <meta name="description" content="Research prototype (MVP) testing whether capture-time provenance for photos and video can work with zero infrastructure: hardware-signed proofs carried inside the file, a robust watermark that survives platform re-encoding, and a fully client-side verifier.">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <script src="/theme.js"></script>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <nav>
-    <a class="brand" href="/">TrustCam</a>
-    <a href="/verify.html">Verify</a>
-    <a href="/experiments.html">Experiments</a>
-    <a href="/paper/">Paper</a>
+    <a class="brand" href="./">TrustCam</a>
+    <a href="verify.html">Verify</a>
+    <a href="experiments.html">Experiments</a>
+    <a href="paper/">Paper</a>
     <a href="https://github.com/gregogalante/trustcam">GitHub</a>
   </nav>
   <main class="doc">
@@ -23,10 +23,10 @@
       <h1>TrustCam: capture-time provenance for photos and video with zero infrastructure</h1>
       <p class="byline"><a href="https://gregoriogalante.com/">Gregorio Galante</a> · research prototype · 2026</p>
       <div class="toc" aria-label="Project resources">
-        <a href="/paper/">Paper</a>
-        <a href="/experiments.html">Experiments</a>
-        <a href="/verify.html">Verifier</a>
-        <a href="/trustcam.apk" download>Android APK</a>
+        <a href="paper/">Paper</a>
+        <a href="experiments.html">Experiments</a>
+        <a href="verify.html">Verifier</a>
+        <a href="trustcam.apk" download>Android APK</a>
         <a href="https://github.com/gregogalante/trustcam">Code</a>
       </div>
     </header>
@@ -132,12 +132,12 @@
       </div>
     </div>
     <p class="note">Full specification in the
-    <a href="/paper/architecture.html">architecture document</a>.</p>
+    <a href="paper/architecture.html">architecture document</a>.</p>
 
     <h2 id="results">Results</h2>
     <p>Captures from a Motorola moto g75 (TEE-backed key), shared through each
     platform once and verified with the published verifier. Each row is a single
-    trial; every file is <a href="/experiments.html">downloadable</a> and can be
+    trial; every file is <a href="experiments.html">downloadable</a> and can be
     re-verified.</p>
     <table>
       <thead>
@@ -158,7 +158,7 @@
     </table>
     <p class="note">Agreement = fraction of decoded watermark bits matching the
     expected repetition pattern. Lab robustness sweeps, on-device cost and
-    methodology are in <a href="/paper/research.html">the research document</a>.</p>
+    methodology are in <a href="paper/research.html">the research document</a>.</p>
 
     <h2 id="claims">Claims and limitations</h2>
     <ul>
@@ -186,21 +186,21 @@
     2026, and California AB 853 requires capture-device makers to embed
     provenance by default from January 2028. This prototype explores the gap
     those systems leave open: video, and copies after redistribution. Related
-    work is reviewed in <a href="/paper/research.html">the research
+    work is reviewed in <a href="paper/research.html">the research
     document</a>.</p>
 
     <h2 id="reproduce">Reproducing the results</h2>
     <ul>
-      <li>Verify any file in the browser: <a href="/verify.html">verifier</a>
+      <li>Verify any file in the browser: <a href="verify.html">verifier</a>
         (nothing is uploaded), or from the command line with
-        <a href="/verify.mjs"><code>verify.mjs</code></a>, which runs the same
+        <a href="verify.mjs"><code>verify.mjs</code></a>, which runs the same
         modules.</li>
       <li>Original captures and platform copies, including failures:
-        <a href="/experiments.html">demos</a>.</li>
+        <a href="experiments.html">demos</a>.</li>
       <li>Experiment scripts, codecs and model exports:
         <a href="https://github.com/gregogalante/trustcam/tree/main/spikes"><code>spikes/</code></a>;
         experiment reports: <a href="https://github.com/gregogalante/trustcam/tree/main/docs"><code>docs/</code></a>.</li>
-      <li>Capture your own: install the <a href="/trustcam.apk" download>Android
+      <li>Capture your own: install the <a href="trustcam.apk" download>Android
         APK</a> (Android, sideloaded, no account).</li>
     </ul>
 
@@ -215,7 +215,7 @@
 }</pre>
 
     <h2 id="status">Status</h2>
-    <a class="card cta" href="/vcap.html">
+    <a class="card cta" href="vcap.html">
       <span class="cta-kicker">Superseded</span>
       <h3>TrustCam continues as VCAP</h3>
       <p>This experiment is finished, and the idea lives on in VCAP. Read why

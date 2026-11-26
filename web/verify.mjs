@@ -143,7 +143,7 @@ function printSampleHit (core, key, entry) {
   console.log(`  recorded by : ${entry.name} (${entry.model})`)
   console.log(`  captured at : ${entry.capturedAt} (device-claimed)`)
   console.log(`  capture id  : ${core.idPretty(key)}`)
-  console.log(`  original    : ${BASE}${entry.original}`)
+  console.log(`  original    : ${BASE}/${entry.original}`)
   console.log('  compare your copy against the original above — any depicted difference is an edit.')
   process.exit(0)
 }
